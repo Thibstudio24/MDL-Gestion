@@ -4,7 +4,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pytest
+from django.conf import settings
 from django.template import Context, Template
+from django.test import override_settings
 
 from core import theme
 from core.models import Setting
@@ -163,3 +165,21 @@ class TestRenduDesMessages:
         from core.templatetags.ui import markdown
 
         assert markdown("") == ""
+
+
+class TestRedirectionHttps:
+    """En production (DEBUG=false), une requête HTTP est redirigée en HTTPS.
+
+    La suite de tests désactive volontairement cette redirection
+    (``settings.TESTING``) : ce test vérifie que le mécanisme reste en place.
+    """
+
+    @override_settings(SECURE_SSL_REDIRECT=True)
+    def test_une_requete_http_est_redirigee_en_https(self, client):
+        response = client.get("/", secure=False)
+        assert response.status_code == 301
+        assert response["Location"].startswith("https://")
+
+    def test_la_suite_de_tests_desactive_la_redirection(self):
+        assert settings.TESTING is True
+        assert settings.SECURE_SSL_REDIRECT is False

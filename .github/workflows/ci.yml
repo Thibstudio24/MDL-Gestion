@@ -33,7 +33,7 @@ jobs:
         run: bandit -q -c pyproject.toml -r . -ll
 
   tests:
-    name: Tests (Django ${{ matrix.django }})
+    name: Tests (Django ${{ matrix.django }}, Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

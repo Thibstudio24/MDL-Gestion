@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -196,12 +197,17 @@ AUTH_USER_MODEL = "accounts.User"
 SESSION_COOKIE_AGE = int(cfg("security", "session_days", 14, "MDL_SESSION_DAYS")) * 86400
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = cfg("security", "cookie_secure", not DEBUG, "MDL_COOKIE_SECURE")
+# En test, les requêtes passent par le client Django en HTTP : la redirection HTTPS
+# et les cookies « Secure » rendraient toute page inaccessible (301 au lieu de 200).
+TESTING = "pytest" in sys.modules or "test" in sys.argv
+SESSION_COOKIE_SECURE = False if TESTING else cfg("security", "cookie_secure", not DEBUG,
+                                                  "MDL_COOKIE_SECURE")
 SESSION_SAVE_EVERY_REQUEST = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
-SECURE_SSL_REDIRECT = cfg("security", "ssl_redirect", not DEBUG, "MDL_SSL_REDIRECT")
+SECURE_SSL_REDIRECT = False if TESTING else cfg("security", "ssl_redirect", not DEBUG,
+                                                "MDL_SSL_REDIRECT")
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = False
