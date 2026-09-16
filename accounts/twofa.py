@@ -69,6 +69,14 @@ def use_recovery_code(user, code: str) -> bool:
         return False
     record.used_at = timezone.now()
     record.save(update_fields=["used_at"])
+    try:
+        from audit.services import log
+
+        log(user, "auth.2fa_recovery_used", "accounts", user,
+            "Code de récupération A2F utilisé (%d restants)" % recovery_codes_left(user),
+            level="warn")
+    except Exception:
+        pass
     return True
 
 

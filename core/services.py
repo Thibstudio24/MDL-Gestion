@@ -297,6 +297,13 @@ def revoke_intervention(intervention: Intervention, actor=None) -> None:
     intervention.status = "revoked"
     intervention.revoked_by = actor
     intervention.save(update_fields=["status", "revoked_by"])
+    try:
+        from audit.services import log
+
+        log(actor, "devhub.intervention_revoked", "devhub", intervention,
+            "Intervention technique révoquée : %s" % intervention.action, level="warn")
+    except Exception:
+        pass
 
 
 # --------------------------------------------------------------------------- #

@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from audit import services as audit
 from core import permissions, services, theme
 from core.decorators import administrator_required, module_required, reauth_required
 from core.forms_settings import (
@@ -27,6 +28,23 @@ from core.forms_settings import (
 )
 from core.models import ClosureDay, Installation, Intervention, LegalDocument, SchoolYear, Setting
 from core.rich import render as render_markdown
+
+# Clés dont la valeur ne doit jamais atteindre le journal d'audit.
+_SECRET_KEYS = frozenset({"password", "private_key", "secret", "token", "totp_secret"})
+
+
+def _safe(payload) -> dict:
+    """Renvoie une copie journalisable : les valeurs sensibles sont masquées.
+
+    Le journal d'audit est lisible par tout administrateur et conservé cinq ans ;
+    un mot de passe SMTP ou une clé privée VAPID n'ont rien à y faire.
+    """
+    if not payload:
+        return {}
+    return {
+        key: ("***" if value and key in _SECRET_KEYS else value)
+        for key, value in dict(payload).items()
+    }
 
 
 def _tabs(active: str) -> list[dict]:
@@ -63,7 +81,11 @@ def brand(request):
     if request.method == "POST":
         form = BrandForm(request.POST)
         if form.is_valid():
+            previous = Setting.brand()
             Setting.update_section("branding", form.cleaned_data)
+            audit.log(request.user, "settings.brand_updated", "settings", None,
+                      "Réglages de marque enregistrés", previous=_safe(previous),
+                      current=_safe(form.cleaned_data), request=request)
             messages.success(request, _("Marque enregistrée."))
             return redirect("settings:settings_brand")
     previews = [{"key": key, "label": label, "light": theme.preview_svg(key, "light"),
@@ -79,6 +101,8 @@ def years(request):
     form = YearForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         year = form.save()
+        audit.log(request.user, "settings.year_created", "settings", year,
+                  "Année scolaire créée : %s" % year.label, request=request)
         messages.success(request, _("Année « %(label)s » enregistrée.") % {"label": year.label})
         return redirect("settings:settings_years")
     closure_form = ClosureDayForm(request.POST or None)
@@ -104,10 +128,14 @@ def year_action(request, pk: int):
         if not year.is_locked:
             year.is_locked = True
             year.save(update_fields=["is_locked"])
+            audit.log(request.user, "settings.year_locked", "settings", year,
+                      "Année clôturée (lecture seule) : %s" % year.label, level="warn", request=request)
             messages.success(request, _("Année clôturée : lecture seule."))
     elif action == "unlock":
         year.is_locked = False
         year.save(update_fields=["is_locked"])
+        audit.log(request.user, "settings.year_unlocked", "settings", year,
+                  "Année rouverte : %s" % year.label, level="warn", request=request)
         messages.warning(request, _("Année rouverte."))
     elif action == "delete" and not year.is_current:
         year.delete()
@@ -145,6 +173,9 @@ def quotas(request):
         form = QuotaForm(request.POST)
         if form.is_valid():
             Setting.update_section("quota", form.cleaned_data)
+            audit.log(request.user, "settings.quota_updated", "settings", None,
+                      "Quotas et purges enregistrés", previous=_safe(quota),
+                      current=_safe(form.cleaned_data), request=request)
             messages.success(request, _("Quotas enregistrés."))
             return redirect("settings:settings_quotas")
     purges = {}
@@ -167,6 +198,9 @@ def security_settings(request):
     form = SecurityForm(request.POST or None, initial=data)
     if request.method == "POST" and form.is_valid():
         Setting.update_section("securite", form.cleaned_data)
+        audit.log(request.user, "settings.security_updated", "settings", None,
+                  "Réglages de sécurité enregistrés", previous=_safe(data),
+                  current=_safe(form.cleaned_data), level="warn", request=request)
         messages.success(request, _("Réglages de sécurité enregistrés."))
         return redirect("settings:settings_security")
     return render(request, "core/settings/security.html", {
@@ -186,6 +220,9 @@ def notifications(request):
                 _kind, channel = key[4:].rsplit("-", 1)
                 payload.setdefault(_kind, {})[channel] = value
         save_matrix(payload)
+        audit.log(request.user, "settings.matrix_updated", "settings", None,
+                  "Matrice de notifications enregistrée", previous=_safe(matrix),
+                  current=_safe(payload), request=request)
         messages.success(request, _("Matrice de notifications enregistrée."))
         return redirect("settings:settings_notifications")
     return render(request, "core/settings/notifications.html", {
@@ -208,6 +245,9 @@ def smtp(request):
             if not payload.get("password"):
                 payload.pop("password", None)
             Setting.update_section("mail", payload)
+            audit.log(request.user, "settings.smtp_updated", "settings", None,
+                      "Réglages SMTP enregistrés", previous=_safe(data), current=_safe(payload),
+                      level="warn", request=request)
             messages.success(request, _("Réglages SMTP enregistrés. Redémarrez le service web pour les appliquer."))
             return redirect("settings:settings_smtp")
     return render(request, "core/settings/smtp.html", {
@@ -258,6 +298,9 @@ def pwa(request):
         form = PushForm(request.POST)
         if form.is_valid():
             Setting.update_section("push", form.cleaned_data)
+            audit.log(request.user, "settings.push_updated", "settings", None,
+                      "Réglages push enregistrés", previous=_safe(data),
+                      current=_safe(form.cleaned_data), request=request)
             messages.success(request, _("Réglages push enregistrés."))
             return redirect("settings:settings_pwa")
     devices = []
@@ -330,6 +373,9 @@ def backup_view(request):
 def backup_create(request):
     try:
         path = services.backup(with_media=request.POST.get("media") != "0")
+        audit.log(request.user, "settings.backup_created", "settings", None,
+                  "Sauvegarde créée : %s (%d octets)" % (path.name, path.stat().st_size),
+                  request=request)
         messages.success(request, _("Sauvegarde créée : %(fichier)s") % {"fichier": path.name})
     except Exception as exc:
         messages.error(request, _("Sauvegarde impossible : %(erreur)s") % {"erreur": exc})
@@ -346,6 +392,9 @@ def backup_restore(request):
         return redirect("settings:settings_backup")
     try:
         result = services.restore(str(path))
+        audit.log(request.user, "settings.backup_restored", "settings", None,
+                  "Sauvegarde restaurée : %s (%s fichiers)" % (name, result["fichiers"]),
+                  level="danger", request=request)
         messages.success(request, _("Sauvegarde restaurée (%(n)s fichiers). Redémarrez le service web.")
                          % {"n": result["fichiers"]})
     except Exception as exc:
@@ -392,6 +441,9 @@ def maintenance(request):
         payload = dict(form.cleaned_data)
         payload["exclus_maintenance"] = [item.strip() for item in payload["exclus_maintenance"].split(",") if item.strip()]
         Setting.update_section("app", payload)
+        audit.log(request.user, "settings.maintenance", "settings", None,
+                  "Mode maintenance : %s" % ("activé" if payload.get("maintenance") else "désactivé"),
+                  previous=_safe(app), current=_safe(payload), level="warn", request=request)
         messages.success(request, _("Mode maintenance mis à jour."))
         return redirect("settings:settings_maintenance")
     return render(request, "core/settings/maintenance.html", {
@@ -412,6 +464,9 @@ def update(request):
         form = UpdateForm(request.POST)
         if form.is_valid():
             Setting.update_section("hub", form.cleaned_data)
+            audit.log(request.user, "settings.update_applied", "settings", None,
+                      "Réglages de mise à jour enregistrés", previous=_safe(hub),
+                      current=_safe(form.cleaned_data), request=request)
             messages.success(request, _("Réglages de mise à jour enregistrés."))
             return redirect("settings:settings_update")
     return render(request, "core/settings/update.html", {
@@ -427,6 +482,8 @@ def telemetry(request):
     if request.method == "POST":
         if request.POST.get("ping"):
             outcome = services.hub_ping()
+            audit.log(request.user, "devhub.ping", "devhub", None,
+                      "Ping du canal éditeur : %s" % outcome["message"], request=request)
             messages.info(request, _("Ping hub : %(message)s") % {"message": outcome["message"]})
             return redirect("settings:settings_telemetry")
         form = TelemetryForm(request.POST)
@@ -457,6 +514,9 @@ def text_edit(request, slug: str):
         saved = form.save(commit=False)
         saved.updated_by = request.user
         saved.save()
+        audit.log(request.user, "settings.legal_updated", "settings", saved,
+                  "Texte légal mis à jour : %s (version %s)" % (saved.title, saved.version),
+                  request=request)
         messages.success(request, _("« %(titre)s » mis à jour (version %(v)s).")
                          % {"titre": saved.title, "v": saved.version})
         return redirect("settings:settings_text", slug=slug)

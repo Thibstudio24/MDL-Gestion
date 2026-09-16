@@ -64,6 +64,28 @@ _DEFAULTS = {
         "notifier_users": [],
     },
     "notifications": {"matrice": {}, "silence": {"debut": "22:00", "fin": "07:00", "actif": False}},
+    # Les deux sections ci-dessous doivent rester déclarées : Setting.data() ne
+    # fusionne que les sections listées ici. Sans elles, les réglages SMTP et les
+    # clés VAPID sont écrits en base mais invisibles à la relecture.
+    "mail": {
+        "enabled": False,
+        "host": "",
+        "port": 587,
+        "use_ssl": False,
+        "use_tls": True,
+        "user": "",
+        "password": "",
+        "from": "",
+        "reply_to": "",
+        "rate_per_minute": 15,
+        "fallback": "inapp",
+    },
+    "push": {
+        "enabled": False,
+        "public_key": "",
+        "private_key": "",
+        "claims_email": "",
+    },
     "menage": {"rappel_heure": "19:30", "auto_publish": False, "max_refusals": 0, "min_people": 1},
     "salle": {
         "jour_debut": 1,

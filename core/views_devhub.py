@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from audit import services as audit
 from core import crypto, services
 from core.decorators import administrator_required
 from core.models import Installation, Intervention
@@ -50,6 +51,9 @@ def apply_token(request):
         },
     )
     outcome = services.apply_intervention(intervention, actor=request.user)
+    audit.log(request.user, "devhub.token_applied", "devhub", intervention,
+              "Jeton d'intervention appliqué : %s" % result["action"],
+              level="danger", request=request)
     if outcome.get("ok"):
         messages.success(request, _("Intervention appliquée : %(detail)s") % {"detail": outcome.get("message", "")})
     else:
