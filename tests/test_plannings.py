@@ -130,3 +130,25 @@ class TestPages:
         response = admin_client.get("/planning/%d/export/" % campaign.pk)
         assert response.status_code == 200
         assert "text/csv" in response["Content-Type"]
+
+    def test_export_pdf_de_la_grille(self, admin_client, campaign, slots, member):
+        """Le PDF A4 paysage porte la grille puis la synthèse par membre."""
+        services.save_availability(member, campaign, slots[0], "yes", note="")
+        response = admin_client.get("/planning/%d/export/?format=pdf" % campaign.pk)
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/pdf"
+        assert 'filename="planning-%d.pdf"' % campaign.pk in response["Content-Disposition"]
+        body = b"".join(response.streaming_content) if response.streaming else response.content
+        assert body.startswith(b"%PDF-")
+        # Deux pages : grille + synthèse par membre
+        assert body.count(b"/Type /Page") >= 2
+
+    def test_export_pdf_sans_reponse_ne_plante_pas(self, admin_client, campaign, slots):
+        response = admin_client.get("/planning/%d/export/?format=pdf" % campaign.pk)
+        assert response.status_code == 200
+        body = b"".join(response.streaming_content) if response.streaming else response.content
+        assert body.startswith(b"%PDF-")
+
+    def test_le_csv_reste_le_format_par_defaut(self, admin_client, campaign, slots):
+        response = admin_client.get("/planning/%d/export/" % campaign.pk)
+        assert "text/csv" in response["Content-Type"]

@@ -3,7 +3,8 @@
 {% block content %}
 <div class="page-head"><div><h2 class="page-heading">Couverture — {{ campaign.label }}</h2>
 <p class="page-help">{{ stats.reponse_pct }} % de réponses · {{ stats.gaps }} créneau(x) à pourvoir sur {{ stats.slots }}.</p></div>
-<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'plannings:campaign_detail' campaign.pk %}">Retour à la grille</a></div></div>
+<div class="page-actions"><a class="btn btn-primary btn-sm" href="{% url 'plannings:export' campaign.pk %}?format=pdf">{% icon 'download' 14 %} Générer le planning (PDF)</a>
+<a class="btn btn-ghost btn-sm" href="{% url 'plannings:campaign_detail' campaign.pk %}">Retour à la grille</a></div></div>
 {% if stats.gaps %}<div class="alert alert-danger"><span>{% icon 'warning' 18 %}</span>
 <div><strong>{{ stats.gaps }} créneau(x) sans gérant.</strong> Relancez les membres ou proposez un échange.</div></div>{% endif %}
 <div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">

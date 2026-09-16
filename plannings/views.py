@@ -150,8 +150,13 @@ def slot_delete(request, pk):
 
 @module_required(MODULE)
 def export(request, pk):
-    """Export CSV de la grille pour affichage papier."""
+    """Export de la grille : CSV pour tableur, PDF A4 paysage pour affichage papier."""
     campaign = get_object_or_404(Campaign, pk=pk)
+    if request.GET.get("format") == "pdf":
+        from plannings import pdf
+
+        audit.log(request.user, "planning.campaign_updated", MODULE, campaign, "Export du planning (PDF)")
+        return pdf.campaign_pdf(campaign)
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="planning-%s.csv"' % campaign.pk
     response.write("\ufeff")
