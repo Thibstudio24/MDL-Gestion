@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Codes de récupération</h2>
+<p class="page-help">Ces 10 codes ne seront <strong>affichés qu'une seule fois</strong>. Conservez-les hors de votre téléphone : chacun ne sert qu'une fois.</p></div></div>
+<div class="card"><div class="card-body">
+<ul class="codes">{% for code in codes %}<li><code>{{ code }}</code></li>{% endfor %}</ul>
+<a class="btn btn-primary" href="/">J'ai bien noté mes codes</a>
+</div></div>
+{% endblock %}

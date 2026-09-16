@@ -1,0 +1,13 @@
+<div class="form-grid">
+  <label class="field"><span class="field-label">Prénom</span><input type="text" name="first_name" required maxlength="80"></label>
+  <label class="field"><span class="field-label">Nom</span><input type="text" name="last_name" required maxlength="80"></label>
+  <label class="field"><span class="field-label">Adresse e-mail</span><input type="email" name="email" required></label>
+  <label class="field"><span class="field-label">Rôle</span><select name="role" required>
+    {% for role in roles %}<option value="{{ role.pk }}">{{ role.name }}</option>{% endfor %}</select></label>
+  <label class="field"><span class="field-label">Fonction affichée</span><input type="text" name="display_function" maxlength="120" placeholder="ex. Trésorier"></label>
+  <label class="field"><span class="field-label">Validité</span><select name="days">
+    <option value="1">1 jour</option><option value="3">3 jours</option>
+    <option value="7" selected>7 jours (défaut)</option><option value="30">30 jours</option></select></label>
+</div>
+<label class="checkbox-line"><input type="checkbox" name="is_boarder"><span>Interne (hébergé au lycée) — donne accès à la plage du soir</span></label>
+<label class="field"><span class="field-label">Message d'accompagnement</span><textarea name="message" rows="3" placeholder="Un mot du bureau…"></textarea></label>

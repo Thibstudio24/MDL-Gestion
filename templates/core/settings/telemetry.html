@@ -1,0 +1,11 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>Canal éditeur &amp; télémétrie</h3><span class="grow"></span>
+<form method="post">{% csrf_token %}<button class="btn btn-ghost btn-sm" name="ping" value="1">Tester le contact</button></form></div>
+<div class="card-body"><form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+<button type="submit" class="btn btn-primary">Enregistrer</button></form>
+<p class="small muted">Payload envoyé (aucun nom, aucun contenu) :</p>
+<pre>{{ payload }}</pre>
+<p class="small muted">Dernier contact : {{ install.last_ping_at|date_fr:"%d/%m/%Y %H:%M"|default:"jamais" }}{% if install.last_error %} — erreur : {{ install.last_error|truncatechars:120 }}{% endif %}</p></div></div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Aide-intervention</h2>
+<p class="page-help">Repli hors ligne du canal éditeur : collez le jeton signé (Ed25519) fourni par le développeur. La signature, l'expiration, l'identifiant d'installation et la liste blanche d'actions sont vérifiés.</p></div></div>
+{% if pending %}<div class="alert alert-warning"><span>{% icon 'warning' 18 %}</span><div><strong>{{ pending|length }} intervention(s) en attente</strong> — <a href="/reglages/interventions/">voir et révoquer</a>.</div></div>{% endif %}
+<div class="card"><div class="card-head"><h3>Appliquer un jeton</h3></div>
+<div class="card-body">
+<form method="post" action="/aide-intervention/appliquer/">{% csrf_token %}
+<label class="field"><span class="field-label">Jeton signé</span><textarea name="token" rows="4" required placeholder="v1|install|action|cible|code|exp|motif.signature"></textarea></label>
+<button type="submit" class="btn btn-primary" data-confirm-click="Appliquer cette intervention technique ?">Vérifier et appliquer</button>
+</form>
+<p class="small muted">Actions autorisées : {% for action in allowed %}<code>{{ action }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+<p class="small muted">Identifiant de cette installation : <code>{{ install.install_id }}</code> — clé publique déclarée au hub{% if not install.public_key_pem %} <span class="danger">(absente)</span>{% endif %}.</p>
+</div></div>
+{% endblock %}

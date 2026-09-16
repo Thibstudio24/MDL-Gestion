@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Activer l'authentification à deux facteurs</h2>
+<p class="page-help">Scannez le QR code avec une application d'authentification (Google Authenticator, Aegis, FreeOTP…), ou recopiez la clé manuellement. Codes TOTP : 6 chiffres, 30 secondes, SHA-1.</p></div></div>
+{% if overdue %}<div class="alert alert-danger"><span>{% icon 'warning' 18 %}</span><div><strong>Délai dépassé.</strong> Votre rôle impose l'A2F : la connexion reste bloquée sur cet écran jusqu'à l'activation.</div></div>
+{% elif deadline %}<div class="alert alert-info"><span>{% icon 'info' 18 %}</span><div>À activer avant le {{ deadline|date_fr }}.</div></div>{% endif %}
+<div class="card"><div class="card-body">
+<div class="twofa-grid">
+  <div class="qr">{{ qr|safe }}</div>
+  <div>
+    <p><strong>Clé manuelle</strong></p>
+    <p><code data-copy="{{ secret }}">{{ secret }}</code> <button type="button" class="btn btn-ghost btn-sm" data-copy="{{ secret }}">Copier</button></p>
+    <p class="small muted">URI : <code>{{ uri }}</code></p>
+    <form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+    <button type="submit" class="btn btn-primary">Activer l'A2F</button></form>
+  </div>
+</div>
+</div></div>
+{% endblock %}

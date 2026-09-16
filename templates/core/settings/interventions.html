@@ -1,0 +1,20 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+{% if pending %}<div class="alert alert-danger"><span>{% icon 'warning' 18 %}</span><div><strong>Une intervention technique est en attente.</strong> Vous pouvez la révoquer tant qu'elle n'est pas appliquée.</div></div>{% endif %}
+<div class="card"><div class="card-head"><h3>Interventions de l'éditeur</h3><span class="grow"></span>
+<span class="small muted">Install ID : <code>{{ install.install_id|truncatechars:16 }}</code></span></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Code</th><th>Action</th><th>Cible</th><th>Motif</th><th>Origine</th><th>État</th><th class="right">Actions</th></tr></thead>
+<tbody>{% for item in items %}<tr><td><code>{{ item.code|truncatechars:12 }}</code></td><td>{{ item.action }}</td>
+<td>{{ item.target|default:"—" }}</td><td>{{ item.reason|default:"—" }}</td><td>{{ item.get_origin_display }}</td>
+<td>{% status_badge item.status item.get_status_display %}</td>
+<td class="right nowrap">{% if item.is_pending %}
+<form method="post" action="/reglages/interventions/{{ item.pk }}/" style="display:inline">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" name="action" value="apply" data-confirm-click="Appliquer cette intervention ?">Appliquer</button>
+<button class="btn btn-ghost btn-sm" name="action" value="revoke">Révoquer</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucune intervention. L'éditeur ne peut demander que : réinitialiser un mot de passe, couper l'A2F, renvoyer une invitation, ou lire l'état de santé." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+<div class="card"><div class="card-head"><h3>Jeton hors ligne</h3></div>
+<div class="card-body"><p class="small">Sans connexion au hub, collez le jeton signé fourni par l'éditeur sur <a href="/aide-intervention/">la page aide-intervention</a>.</p></div></div>
+{% endblock %}

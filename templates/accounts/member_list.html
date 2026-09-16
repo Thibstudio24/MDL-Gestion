@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Membres &amp; invitations</h2>
+<p class="page-help">Accès sur invitation uniquement : aucun formulaire public. Les comptes « en attente » ne peuvent pas se connecter avant d'avoir choisi leur mot de passe.</p></div>
+<div class="page-actions">
+  {% if can_invite %}<button type="button" class="btn btn-primary btn-sm" data-open-modal="invite">{% icon 'plus' 14 %} Inviter un membre</button>{% endif %}
+  <a class="btn btn-ghost btn-sm" href="/membres/export/?{{ request.GET.urlencode }}">Exporter en CSV</a>
+  <a class="btn btn-ghost btn-sm" href="/membres/export/?detail=1">Export détaillé</a>
+</div></div>
+<form class="filters" method="get">
+  <label class="field field-inline"><span class="field-label">Recherche</span><input type="search" name="q" value="{{ params.q|default:'' }}" placeholder="Nom, e-mail, fonction"></label>
+  <label class="field field-inline"><span class="field-label">Rôle</span><select name="role"><option value="">Tous</option>{% for role in roles %}<option value="{{ role.pk }}"{% if role.pk|stringformat:"s" == params.role %} selected{% endif %}>{{ role.name }}</option>{% endfor %}</select></label>
+  <label class="field field-inline"><span class="field-label">État</span><select name="status"><option value="">Tous</option>
+    <option value="active"{% if params.status == "active" %} selected{% endif %}>Actifs</option>
+    <option value="pending"{% if params.status == "pending" %} selected{% endif %}>En attente</option>
+    <option value="inactive"{% if params.status == "inactive" %} selected{% endif %}>Inactifs</option>
+    <option value="anonymized"{% if params.status == "anonymized" %} selected{% endif %}>Anonymisés</option></select></label>
+  <label class="checkbox-line"><input type="checkbox" name="sans_a2f" value="1"{% if params.sans_a2f %} checked{% endif %}><span>Sans A2F</span></label>
+  <label class="checkbox-line"><input type="checkbox" name="inactifs" value="1"{% if params.inactifs %} checked{% endif %}><span>Inactifs depuis 12 mois</span></label>
+  <div class="filters-actions"><button type="submit" class="btn btn-ghost btn-sm">{% icon 'filter' 14 %} Filtrer</button><a class="btn btn-ghost btn-sm" href="/membres/">Réinitialiser</a></div>
+</form>
+{% if invitations %}<div class="alert alert-info"><span>{% icon 'info' 18 %}</span><div><strong>{{ invitations|length }} invitation(s) en attente.</strong>
+{% for invitation in invitations %}{{ invitation.user.get_full_name|default:invitation.user.email }} (code {{ invitation.code }}){% if not forloop.last %} · {% endif %}{% endfor %}</div></div>{% endif %}
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Nom</th><th>Fonction</th><th>Rôle</th><th>Statut</th><th>A2F</th><th>Dernière activité</th><th></th></tr></thead>
+<tbody>{% for member in page_obj %}
+<tr><td><a href="/membres/{{ member.pk }}/"><strong>{{ member.get_full_name|default:member.email }}</strong></a><br><span class="small muted">{{ member.email }}</span></td>
+<td>{{ member.display_function|default:"—" }}</td><td>{{ member.role.name|default:"—" }}</td>
+<td>{% status_badge member.status member.get_status_display %}{% if member.is_boarder %} <span class="badge badge-info">interne</span>{% endif %}</td>
+<td>{% if member.two_factor_on %}{% status_badge "validated" "oui" %}{% else %}{% status_badge "inactive" "non" %}{% endif %}</td>
+<td>{{ member.last_seen|date_fr:"%d/%m/%Y"|default:"jamais" }}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="/membres/{{ member.pk }}/">Fiche</a></td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun membre ne correspond à ces filtres. Aucun compte de démonstration n'est créé : invitez le bureau." %}</td></tr>{% endfor %}</tbody>
+</table></div></div><div class="card-foot">{% pagination page_obj %}</div></div>
+
+<dialog class="modal" id="invite">
+  <form method="post" action="/membres/inviter/">{% csrf_token %}
+    <h3>Inviter un membre</h3>
+    <p class="small muted">Le compte est créé « en attente » et ne peut pas se connecter avant d'avoir choisi son mot de passe.</p>
+    {% include "accounts/_invite_fields.html" %}
+    <div class="btn-row"><button type="submit" class="btn btn-primary">Créer l'invitation</button>
+    <button type="button" class="btn btn-ghost" data-close-modal>Annuler</button></div>
+  </form>
+</dialog>
+{% endblock %}

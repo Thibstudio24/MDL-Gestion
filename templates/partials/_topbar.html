@@ -1,0 +1,26 @@
+{% load ui %}<header class="topbar">
+  <button type="button" class="icon-btn only-mobile" data-sidebar-open aria-label="Ouvrir la navigation">{% icon 'list' 20 %}</button>
+  <h1 class="page-title">{{ page_title|default:'' }}</h1>
+  {% if current_year %}
+  <form class="year-filter" method="get" action="">
+    <label class="sr-only" for="year-select">Année scolaire</label>
+    <select id="year-select" name="annee" data-autosubmit>
+      {% for year in years_available %}
+      <option value="{{ year.pk }}"{% if year.pk == current_year.pk %} selected{% endif %}>{{ year.label }}{% if year.is_locked %} (clôturée){% endif %}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% endif %}
+  <form class="search" method="get" action="/documents/" role="search">
+    <span class="search-icon">{% icon 'search' 16 %}</span>
+    <input type="search" name="q" placeholder="Rechercher un document, une écriture…" aria-label="Rechercher">
+  </form>
+  <span class="grow"></span>
+  <div class="topbar-actions">
+    <button type="button" class="icon-btn" data-mode-toggle title="Clair / sombre" aria-label="Basculer clair ou sombre">{% icon 'moon' 18 %}</button>
+    <a class="icon-btn bell{% if nav_unread %} has-unread{% endif %}" href="/notifications/" title="Notifications" aria-label="Notifications">
+      {% icon 'bell' 18 %}{% if nav_unread %}<span class="bell-count">{{ nav_unread }}</span>{% endif %}
+    </a>
+    <a class="icon-btn" href="/parametres/" title="Mes réglages" aria-label="Mes réglages">{% icon 'user' 18 %}</a>
+  </div>
+</header>

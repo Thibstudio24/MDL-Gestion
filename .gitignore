@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Instance locale (JAMAIS commité : contient la clé secrète et les mots de passe)
+config/instance.json
+config/instance.json.*
+
+# Données
+db.sqlite3
+db.sqlite3-journal
+media/*
+!media/.gitkeep
+staticfiles/
+backups/
+*.log
+cron.log
+
+# Éditeurs / OS
+.idea/
+.vscode/
+.DS_Store

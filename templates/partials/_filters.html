@@ -1,0 +1,22 @@
+{% load ui %}{% if filters %}
+<form class="filters" method="get" action="{{ base_url|default:'' }}">
+  {% for field in filters %}
+  <label class="field field-inline">
+    <span class="field-label">{{ field.label }}</span>
+    {% if field.type == 'select' %}
+    <select name="{{ field.name }}"{% if field.autosubmit %} data-autosubmit{% endif %}>
+      {% for value, label in field.choices %}
+      <option value="{{ value }}"{% if value|slugify == field.value|slugify %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    {% else %}
+    <input type="{{ field.type|default:'text' }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" placeholder="{{ field.placeholder|default:'' }}">
+    {% endif %}
+  </label>
+  {% endfor %}
+  <div class="filters-actions">
+    <button type="submit" class="btn btn-ghost btn-sm">{% icon 'filter' 14 %} Filtrer</button>
+    <a class="btn btn-ghost btn-sm" href="{{ base_url|default:'' }}">Réinitialiser</a>
+  </div>
+</form>
+{% endif %}

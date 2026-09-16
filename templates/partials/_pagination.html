@@ -1,0 +1,12 @@
+{% if page_obj and paginator.num_pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+  <span class="pagination-info">{{ page_obj.start_index }}–{{ page_obj.end_index }} sur {{ paginator.count }}</span>
+  {% if page_obj.has_previous %}
+  <a class="btn btn-ghost btn-sm" href="{{ base_url }}?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Précédent</a>
+  {% endif %}
+  <span class="pagination-current">Page {{ page_obj.number }} / {{ paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a class="btn btn-ghost btn-sm" href="{{ base_url }}?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Suivant</a>
+  {% endif %}
+</nav>
+{% endif %}

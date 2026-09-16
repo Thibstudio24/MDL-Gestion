@@ -1,0 +1,10 @@
+{% if messages %}
+<div class="messages" id="django-messages">
+  {% for message in messages %}
+  <div class="message message-{{ message.tags|default:'info' }}" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" class="icon-btn" data-dismiss aria-label="Fermer">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

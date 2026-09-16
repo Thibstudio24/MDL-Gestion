@@ -1,0 +1,37 @@
+{% load ui %}<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+  <div class="sidebar-head">
+    <a class="brand" href="/">
+      {% if asso_logo %}<img src="{{ asso_logo }}" alt="" class="brand-logo">{% else %}<span class="brand-mark">{{ asso_sigle|slice:":2" }}</span>{% endif %}
+      <span class="brand-text">
+        <strong>{{ asso_nom }}</strong>
+        {% if asso_lycee %}<small>{{ asso_lycee }}</small>{% endif %}
+      </span>
+    </a>
+    <button type="button" class="icon-btn sidebar-toggle" data-sidebar-toggle title="Réduire la sidebar" aria-label="Réduire la sidebar">{% icon 'grid' 18 %}</button>
+  </div>
+  {% for group in nav_groups %}
+  <nav class="nav-group" aria-label="{{ group.key }}">
+    {% if not forloop.first %}<span class="nav-sep"></span>{% endif %}
+    {% for item in group.items %}
+    <a class="nav-item{% if item.active %} is-active{% endif %}" href="{{ item.url }}" title="{{ item.label }}">
+      <span class="nav-icon">{% icon item.icon 18 %}</span>
+      <span class="nav-label">{{ item.label }}</span>
+      {% if item.module == 'mail' and nav_unread %}<span class="nav-badge">{{ nav_unread }}</span>{% endif %}
+      {% if item.module == 'settings_global' and nav_pending_interventions %}<span class="nav-badge nav-badge-danger">{{ nav_pending_interventions }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </nav>
+  {% endfor %}
+  <div class="sidebar-foot">
+    <a class="profile" href="/parametres/">
+      <span class="avatar">{{ user|initials }}</span>
+      <span class="profile-text">
+        <strong>{{ user.get_short_name|default:user.email }}</strong>
+        <small>{{ user.display_function|default:user.role.name|default:'Membre' }}</small>
+      </span>
+    </a>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+      <button type="submit" class="icon-btn" title="Se déconnecter" aria-label="Se déconnecter">{% icon 'logout' 18 %}</button>
+    </form>
+  </div>
+</aside>

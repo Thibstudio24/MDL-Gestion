@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Ligne d'audit</h2>
+<p class="page-help">{{ entry.at|date_fr:"%d/%m/%Y à %H:%M:%S" }} — <code>{{ entry.action }}</code> ({{ entry.level }})</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="/audit/">Retour au journal</a></div></div>
+<div class="card"><div class="card-body">
+<dl class="detail-list">
+<dt>Auteur</dt><dd>{{ entry.actor_label }}</dd>
+<dt>Module</dt><dd>{{ entry.module|default:"—" }}</dd>
+<dt>Objet</dt><dd>{{ entry.model_name|default:"—" }} {{ entry.object_id }} — {{ entry.object_repr|default:"—" }}</dd>
+<dt>Message</dt><dd>{{ entry.message|default:"—" }}</dd>
+<dt>IP</dt><dd>{{ entry.ip|default:"—" }}</dd>
+<dt>Agent</dt><dd class="small">{{ entry.user_agent|default:"—" }}</dd>
+<dt>Origine</dt><dd>{{ entry.origin }}</dd>
+</dl>
+<h3>Avant / après</h3>
+<pre>{{ entry.changes|as_json }}</pre>
+</div></div>
+{% endblock %}

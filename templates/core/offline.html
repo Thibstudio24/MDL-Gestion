@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Hors ligne — MDL Gestion{% endblock %}
+{% block content %}
+<div class="auth-card wide">
+  <span class="offline-icon">{% icon 'wifi-off' 40 %}</span>
+  <h2>Vous êtes hors ligne</h2>
+  <p>La connexion au serveur de l'association est interrompue. Les pages déjà consultées restent lisibles en
+     lecture seule ; les saisies reprendront dès le retour du réseau.</p>
+  <ul class="checklist">
+    <li>Vérifiez le Wi-Fi ou les données mobiles de l'appareil.</li>
+    <li>Rechargez la page : la coquille de l'application est conservée en cache.</li>
+    <li>Les écritures, disponibilités et tâches saisies avant la coupure sont enregistrées.</li>
+  </ul>
+  <button type="button" class="btn btn-primary" onclick="location.reload()">Réessayer maintenant</button>
+</div>
+{% endblock %}

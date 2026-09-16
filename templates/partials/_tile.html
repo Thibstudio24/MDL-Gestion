@@ -1,0 +1,22 @@
+{% load ui %}<a class="tile tile-{{ tile.level|default:'info' }}{% if tile.alert %} tile-alert{% endif %}" href="{{ tile.url }}">
+  <div class="tile-head">
+    <h3 class="tile-title">{{ tile.title }}</h3>
+    {% if tile.alert %}<span class="tile-flag">!</span>{% endif %}
+  </div>
+  <div class="tile-value">
+    {% if tile.money %}{{ tile.value|money }}{% elif tile.percent %}{{ tile.value }} %{% else %}{{ tile.value|number_fr }}{% endif %}
+  </div>
+  {% if tile.subtitle %}<p class="tile-sub">{{ tile.subtitle }}</p>{% endif %}
+  {% if tile.chart %}
+  <div class="tile-chart">
+    <canvas data-chart='{{ tile.chart|as_json }}' height="64" aria-hidden="true"></canvas>
+  </div>
+  {% endif %}
+  {% if tile.items %}
+  <ul class="tile-items">
+    {% for item in tile.items|slice:":5" %}
+    <li><span>{{ item.label }}</span><strong class="{{ item.css }}">{{ item.value|default:'' }}</strong></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</a>

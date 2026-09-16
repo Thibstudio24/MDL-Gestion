@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="page-heading">Tableau de bord</h2>
+    <p class="page-help">Vue d'ensemble de l'association{% if current_year %} — {{ current_year.label }}{% endif %}. Chaque tuile est cliquable.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost btn-sm" href="/aide/">{% icon 'info' 14 %} Aide</a>
+    <button type="button" class="btn btn-ghost btn-sm" data-print>{% icon 'print' 14 %} Imprimer</button>
+  </div>
+</div>
+{% if sections %}
+  {% for section in sections %}
+  <section class="dash-section">
+    <h3 class="section-title">{{ section.label }}</h3>
+    <div class="tiles">
+      {% for tile in section.tiles %}{% tile tile %}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+{% else %}
+  {% include "partials/_empty.html" with text="Aucune tuile à afficher : votre rôle n'a encore accès à aucun module. Demandez à un administrateur de régler vos droits." %}
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{% static_path 'vendor/chart.umd.min.js' %}" defer></script>{% endblock %}

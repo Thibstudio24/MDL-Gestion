@@ -1,0 +1,8 @@
+{% extends "accounts/_bare.html" %}
+{% block auth_content %}
+<h3>Authentification à deux facteurs</h3>
+<p class="small muted">Saisissez le code à 6 chiffres affiché par votre application, ou un code de récupération.</p>
+<form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+<button type="submit" class="btn btn-primary" style="width:100%">Vérifier</button></form>
+<div class="auth-links"><a href="/deconnexion/">Annuler</a></div>
+{% endblock %}

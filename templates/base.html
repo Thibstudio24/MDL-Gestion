@@ -1,0 +1,55 @@
+{% load ui %}<!doctype html>
+<html lang="fr" data-palette="{{ palette|default:'ardoise' }}" data-mode="{{ mode|default:'light' }}" data-density="{{ density|default:'confort' }}"{% if palette_seed %} data-seed="{{ palette_seed }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="referrer" content="same-origin">
+  <meta name="theme-color" content="{{ asso_couleur|default:'#33556e' }}">
+  <title>{% block title %}{{ page_title|default:'MDL Gestion' }} — {{ asso_titre }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static_path 'css/app.css' %}">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{% static_path 'icons/app-192.png' %}">
+</head>
+<body class="{% if user.is_authenticated %}with-sidebar{% else %}bare{% endif %}" data-offline-banner="1">
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+{% include "partials/_messages.html" %}
+<div class="layout">
+  {% if user.is_authenticated %}{% include "partials/_sidebar.html" %}{% endif %}
+  <div class="main">
+    {% if user.is_authenticated %}{% include "partials/_topbar.html" %}{% endif %}
+    <main class="content" id="contenu">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">
+      <span>MDL Gestion v{{ version }}</span>
+      <span class="sep">·</span>
+      <a href="/aide/">Mode d'emploi</a>
+      <span class="sep">·</span>
+      <a href="/reglages/textes/mentions/">Mentions légales</a>
+      <span class="sep">·</span>
+      <a href="/reglages/textes/rgpd/">Données personnelles</a>
+      <span class="sep">·</span>
+      <a href="/sante/">État du service</a>
+      <span class="grow"></span>
+      <span>Vos données ne sortent pas de l'hébergement de votre association.</span>
+    </footer>
+  </div>
+</div>
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<div id="install-banner" class="install-banner" hidden>
+  <div>
+    <strong>Installer l'application</strong>
+    <p>Ajoutez MDL Gestion à votre écran d'accueil pour l'ouvrir comme une application et recevoir les notifications.</p>
+  </div>
+  <div class="row">
+    <button type="button" class="btn btn-primary" data-install-accept>Installer</button>
+    <button type="button" class="btn btn-ghost" data-install-dismiss>Plus tard</button>
+  </div>
+</div>
+<script src="{% static_path 'js/app.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>Sauvegardes</h3><span class="grow"></span>
+<form method="post" action="/reglages/sauvegarde/creer/">{% csrf_token %}<button class="btn btn-primary btn-sm">Créer une sauvegarde</button></form></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Fichier</th><th class="num">Taille</th><th>Date</th><th class="right">Restaurer</th></tr></thead>
+<tbody>{% for item in backups %}<tr><td>{{ item.name }}</td><td class="num">{{ item.size|kb }}</td>
+<td>{{ item.date|date_fr:"%d/%m/%Y %H:%M" }}</td>
+<td class="right"><form method="post" action="/reglages/sauvegarde/restaurer/">{% csrf_token %}
+<input type="hidden" name="archive" value="{{ item.name }}">
+<button class="btn btn-ghost btn-sm" data-confirm-click="Restaurer cette sauvegarde ? Les données actuelles seront remplacées.">Appliquer</button></form></td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune sauvegarde sur le serveur. Créez-en une puis téléchargez-la hors du serveur." %}</td></tr>{% endfor %}</tbody>
+</table></div></div>
+<div class="card-foot"><span class="small muted">Contenu : dump JSON des données, configuration (mots de passe remplacés par ***) et fichiers média. Espace utilisé : {{ usage.label }}.</span></div>
+</div>
+{% endblock %}

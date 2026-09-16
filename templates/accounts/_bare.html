@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <a class="brand" href="/"><span class="brand-mark">{{ asso_sigle|slice:":2" }}</span></a>
+    <h2>{{ asso_nom }}</h2>
+    {% if asso_lycee %}<p class="small muted">{{ asso_lycee }}{% if asso_ville %} — {{ asso_ville }}{% endif %}</p>{% endif %}
+  </div>
+  <div class="auth-card">{% block auth_content %}{% endblock %}</div>
+</div>
+{% endblock %}
