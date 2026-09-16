@@ -251,3 +251,24 @@ class TestBilan:
         response = admin_client.get("/tresorerie/export/?format=xlsx")
         assert response.status_code == 200
         assert response["Content-Disposition"].startswith("attachment")
+
+    def test_export_pdf_du_grand_livre(self, admin_client, year, bank, admin):
+        """Le PDF porte l'en-tête reportlab, le nom de fichier et les montants français."""
+        services.create_entry(admin, year, day=year.start_date, title="Papeterie",
+                              amount=Decimal("1250.50"), kind="D", account=bank)
+        services.create_entry(admin, year, day=year.start_date, title="Subvention",
+                              amount=Decimal("2000"), kind="R", account=bank)
+        response = admin_client.get("/tresorerie/export/?format=pdf")
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/pdf"
+        assert "grand-livre-%s.pdf" % year.label in response["Content-Disposition"]
+        body = b"".join(response.streaming_content) if response.streaming else response.content
+        assert body.startswith(b"%PDF-")
+        assert b"/Title" in body
+
+    def test_export_pdf_avec_filtres(self, admin_client, year, bank, safe, admin):
+        services.create_entry(admin, year, day=year.start_date, title="Papeterie",
+                              amount=Decimal("10"), kind="D", account=bank)
+        response = admin_client.get("/tresorerie/export/?format=pdf&q=papeterie&kind=D")
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/pdf"

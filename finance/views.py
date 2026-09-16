@@ -54,6 +54,27 @@ def _year(request) -> SchoolYear:
     return SchoolYear.get_or_current()
 
 
+def _filter_summary(form) -> str:
+    """Résumé lisible des filtres actifs, imprimé en sous-titre du PDF."""
+    if not form.is_valid():
+        return ""
+    data = form.cleaned_data
+    parts = []
+    if data.get("q"):
+        parts.append("recherche « %s »" % data["q"])
+    for field in ("account", "category"):
+        if data.get(field):
+            parts.append("%s : %s" % (form.fields[field].label, data[field]))
+    for field in ("mode", "kind"):
+        if data.get(field):
+            labels = dict(form.fields[field].choices)
+            parts.append("%s : %s" % (form.fields[field].label, labels.get(data[field], data[field])))
+    if data.get("start") or data.get("end"):
+        parts.append("du %s au %s" % (data["start"].strftime("%d/%m/%Y") if data.get("start") else "…",
+                                      data["end"].strftime("%d/%m/%Y") if data.get("end") else "…"))
+    return ", ".join(parts)
+
+
 def _fail(request, exc: Exception, back: str, **kwargs) -> HttpResponse:
     """Signale une erreur métier et revient à la page d'origine."""
     messages.error(request, str(exc))
@@ -406,7 +427,7 @@ def import_revert(request, pk):
 
 @fine_required("finance.export", MODULE)
 def export(request):
-    """Export du grand livre en Excel ou en CSV."""
+    """Export du grand livre en Excel, en CSV ou en PDF."""
     year = _year(request)
     form = LedgerFilterForm(request.GET or None)
     entries = Entry.objects.filter(year=year).select_related("account", "category")
@@ -416,6 +437,10 @@ def export(request):
     fmt = request.GET.get("format", "xlsx")
     audit.log(request.user, "finance.exported", MODULE, None, "Export du grand livre (%s lignes, %s)"
               % (entries.count(), fmt))
+    if fmt == "pdf":
+        from finance import pdf
+
+        return pdf.ledger_pdf(year, list(entries), services.flows(entries), filters=_filter_summary(form))
     if fmt == "csv":
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = 'attachment; filename="grand-livre-%s.csv"' % year.label
