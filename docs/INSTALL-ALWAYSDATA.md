@@ -65,21 +65,35 @@ module `config.wsgi`, 1 processus. Dans « Variables d'environnement », collez 
 
 ## 8. Lancer l'assistant d'installation
 
-Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les six étapes :
-prérequis, base de données, comptes (administrateur + bureau), marque & textes, envois,
-finalisation. L'assistant se verrouille ensuite (réponse 410) ; pour recommencer :
-`python manage.py install --reset` en SSH.
+Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les quatre étapes :
+prérequis techniques, identité de l'association, création du premier compte administrateur,
+récapitulatif.
 
-## 9. Coller les lignes de cron
+L'assistant disparaît dès qu'un compte existe : il redirige alors vers la page de connexion.
+Il n'y a pas de commande de réinitialisation — pour le revoir, il faut supprimer tous les
+comptes, ce qui n'est pas une opération courante.
 
-Panneau → **Tâches planifiées** → type *bash*, une ligne par tâche :
+## 9. Coller la ligne de cron
+
+Panneau → **Tâches planifiées** → type *bash*. Une seule ligne suffit :
 
 ```
-0 * * * * cd ~/apps/mdl && .venv/bin/python manage.py cron:run >> ~/cron.log 2>&1
-15 7 * * * cd ~/apps/mdl && .venv/bin/python manage.py bilans --auto >> ~/bilan.log 2>&1
-30 19 * * * cd ~/apps/mdl && .venv/bin/python manage.py menage:rappels >> ~/menage.log 2>&1
-*/10 * * * * cd ~/apps/mdl && .venv/bin/python manage.py mail:drain >> ~/mail.log 2>&1
+0 * * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_cron >> ~/cron.log 2>&1
 ```
+
+`mdl_cron` enchaîne toutes les tâches horaires dans cet ordre : vidage de la file SMTP,
+envoi des diffusions programmées, relance des invitations, clôture des campagnes expirées,
+rappels de ménage, génération du bilan à échéance, alertes de quota et purges. Chaque étape
+est indépendante : un échec n'interrompt pas les suivantes.
+
+Ajoutez une sauvegarde quotidienne si vous le souhaitez :
+
+```
+45 3 * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_backup >> ~/backup.log 2>&1
+```
+
+En diagnostic, `manage.py mdl_health` affiche l'état de l'installation et
+`manage.py mdl_purge tout --dry-run` compte ce que les purges supprimeraient.
 
 ## 10. Générer les clés VAPID et installer la PWA
 

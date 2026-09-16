@@ -171,7 +171,7 @@ voir la page Glossaire
 - [ ] Code monté dans `~/apps/mdl`, environnement virtuel installé, migrations jouées
 - [ ] Application Python (uWSGI) créée et démarrée
 - [ ] Assistant d'installation terminé (administrateur + bureau invités)
-- [ ] 4 lignes de cron collées
+- [ ] Ligne de cron `mdl_cron` collée
 - [ ] Clés VAPID générées, PWA installée sur au moins un téléphone
 - [ ] Année scolaire ouverte, catégories de trésorerie vérifiées
 - [ ] Soldes d'ouverture saisis (banque + coffre)
@@ -227,7 +227,7 @@ période, avec un motif et une trace dans le journal d'audit.
 
 ### Le bilan n'est pas arrivé
 
-Vérifiez que la ligne de cron `bilans --auto` existe, que l'échéance est bien atteinte
+Vérifiez que la ligne de cron `mdl_cron` existe, que l'échéance est bien atteinte
 (Réglages → Bilan) et que le SMTP fonctionne. Le bouton *Générer maintenant* déclenche la
 génération immédiatement.
 
@@ -268,8 +268,8 @@ gratuit alwaysdata ; nous avons besoin de votre validation pour deux points tech
 1. Création du compte alwaysdata (plan Free) : 1 Go de disque, 256 Mo de mémoire, un
    sous-domaine du type mdl-<lycee>.alwaysdata.net. Aucun nom de domaine personnel n'est
    nécessaire ni possible sur ce plan.
-2. Coller quatre lignes de tâches planifiées (cron) dans le panneau alwaysdata : elles
-   envoient les e-mails, génèrent le bilan mensuel et rappellent les ménages.
+2. Coller une ligne de tâche planifiée (cron) dans le panneau alwaysdata : elle envoie les
+   e-mails, génère le bilan mensuel, rappelle les ménages et lance les purges.
 
 Nous créons nous-mêmes la base de données et la boîte e-mail d'envoi dans le panneau, et nous
 nous chargeons de l'installation. Aucune donnée ne sort de cet hébergement.

@@ -72,20 +72,34 @@ module `config.wsgi`, 1 processus. Dans « Variables d'environnement », collez 
 (ou laissez l'assistant écrire `config/instance.json`).
 """),
     ("8", "Lancer l'assistant d'installation", """
-Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les six étapes :
-prérequis, base de données, comptes (administrateur + bureau), marque & textes, envois,
-finalisation. L'assistant se verrouille ensuite (réponse 410) ; pour recommencer :
-`python manage.py install --reset` en SSH.
+Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les quatre étapes :
+prérequis techniques, identité de l'association, création du premier compte administrateur,
+récapitulatif.
+
+L'assistant disparaît dès qu'un compte existe : il redirige alors vers la page de connexion.
+Il n'y a pas de commande de réinitialisation — pour le revoir, il faut supprimer tous les
+comptes, ce qui n'est pas une opération courante.
 """),
-    ("9", "Coller les lignes de cron", """
-Panneau → **Tâches planifiées** → type *bash*, une ligne par tâche :
+    ("9", "Coller la ligne de cron", """
+Panneau → **Tâches planifiées** → type *bash*. Une seule ligne suffit :
 
 ```
-0 * * * * cd ~/apps/mdl && .venv/bin/python manage.py cron:run >> ~/cron.log 2>&1
-15 7 * * * cd ~/apps/mdl && .venv/bin/python manage.py bilans --auto >> ~/bilan.log 2>&1
-30 19 * * * cd ~/apps/mdl && .venv/bin/python manage.py menage:rappels >> ~/menage.log 2>&1
-*/10 * * * * cd ~/apps/mdl && .venv/bin/python manage.py mail:drain >> ~/mail.log 2>&1
+0 * * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_cron >> ~/cron.log 2>&1
 ```
+
+`mdl_cron` enchaîne toutes les tâches horaires dans cet ordre : vidage de la file SMTP,
+envoi des diffusions programmées, relance des invitations, clôture des campagnes expirées,
+rappels de ménage, génération du bilan à échéance, alertes de quota et purges. Chaque étape
+est indépendante : un échec n'interrompt pas les suivantes.
+
+Ajoutez une sauvegarde quotidienne si vous le souhaitez :
+
+```
+45 3 * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_backup >> ~/backup.log 2>&1
+```
+
+En diagnostic, `manage.py mdl_health` affiche l'état de l'installation et
+`manage.py mdl_purge tout --dry-run` compte ce que les purges supprimeraient.
 """),
     ("10", "Générer les clés VAPID et installer la PWA", """
 Réglages → **PWA & push** → *Générer les clés*, puis redémarrez le service web.
@@ -218,7 +232,7 @@ peut pas redémarrer le service web : cliquez sur *Redémarrer* dans le panneau 
 - [ ] Code monté dans `~/apps/mdl`, environnement virtuel installé, migrations jouées
 - [ ] Application Python (uWSGI) créée et démarrée
 - [ ] Assistant d'installation terminé (administrateur + bureau invités)
-- [ ] 4 lignes de cron collées
+- [ ] Ligne de cron `mdl_cron` collée
 - [ ] Clés VAPID générées, PWA installée sur au moins un téléphone
 - [ ] Année scolaire ouverte, catégories de trésorerie vérifiées
 - [ ] Soldes d'ouverture saisis (banque + coffre)
@@ -258,7 +272,7 @@ intervention de sa part est datée et journalisée."""),
 Le mois est clôturé. Le message nomme le mois concerné. Seul un administrateur peut rouvrir la
 période, avec un motif et une trace dans le journal d'audit."""),
     ("Le bilan n'est pas arrivé", """
-Vérifiez que la ligne de cron `bilans --auto` existe, que l'échéance est bien atteinte
+Vérifiez que la ligne de cron `mdl_cron` existe, que l'échéance est bien atteinte
 (Réglages → Bilan) et que le SMTP fonctionne. Le bouton *Générer maintenant* déclenche la
 génération immédiatement."""),
     ("Mon iPhone ne reçoit pas les notifications", """
@@ -296,8 +310,8 @@ gratuit alwaysdata ; nous avons besoin de votre validation pour deux points tech
 1. Création du compte alwaysdata (plan Free) : 1 Go de disque, 256 Mo de mémoire, un
    sous-domaine du type mdl-<lycee>.alwaysdata.net. Aucun nom de domaine personnel n'est
    nécessaire ni possible sur ce plan.
-2. Coller quatre lignes de tâches planifiées (cron) dans le panneau alwaysdata : elles
-   envoient les e-mails, génèrent le bilan mensuel et rappellent les ménages.
+2. Coller une ligne de tâche planifiée (cron) dans le panneau alwaysdata : elle envoie les
+   e-mails, génère le bilan mensuel, rappelle les ménages et lance les purges.
 
 Nous créons nous-mêmes la base de données et la boîte e-mail d'envoi dans le panneau, et nous
 nous chargeons de l'installation. Aucune donnée ne sort de cet hébergement.

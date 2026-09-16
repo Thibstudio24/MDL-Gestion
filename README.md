@@ -40,7 +40,7 @@ Puis ouvrir <http://127.0.0.1:8000/installation/> et suivre l'assistant en quatr
 ## Déploiement alwaysdata
 
 Voir [`docs/INSTALL-ALWAYSDATA.md`](docs/INSTALL-ALWAYSDATA.md) : création du compte, base SQL,
-boîte SMTP, application Python (uWSGI), assistant d'installation, 4 lignes de cron, clés VAPID.
+boîte SMTP, application Python (uWSGI), assistant d'installation, ligne de cron, clés VAPID.
 
 ## Tests
 
