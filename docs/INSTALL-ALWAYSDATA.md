@@ -10,6 +10,12 @@ SMTP inclus. Comptez une demi-heure.
 Les limites du plan Free sont suffisantes pour 10 à 25 comptes. Au-delà, passez
 sur un plan payant ou découpez l'association en plusieurs installations.
 
+## 1. Installation sur le serveur
+1. Connectez vous en SSH sur le serveur sous la forme `ssh nom_d_utilisateur@ssh-votrenom.alwaysdata.net`
+2. Collez cette commande : `cd ~/www
+git clone -b arena/01a0a9db-mdl-gestion https://github.com/Thibstudio24/MDL-Gestion.git mdl
+cd mdl`
+
 ## 3. Créer le compte alwaysdata
 
 1. Créez un compte sur **alwaysdata** (plan Free).
