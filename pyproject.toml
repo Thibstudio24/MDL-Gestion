@@ -5,11 +5,19 @@ extend-exclude = ["hub", "migrations", "static"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
-ignore = ["E501", "B008", "B904"]
+# E501 : la largeur est déjà fixée à 110 ci-dessus.
+# UP031/UP032 : le formatage « %s » est conservé partout pour s'aligner sur gettext_lazy.
+ignore = ["E501", "B008", "B904", "UP031", "UP032"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "hub", ".venv", "migrations", "static"]
+# B101 : assert est utilisé dans les tests uniquement.
+# B311/B404/B603/B607 : générateurs aléatoires non cryptographiques (codes d'invitation),
+# imports et appels de commandes maîtrisés (sauvegarde, cron).
 skips = ["B101", "B311", "B404", "B603", "B607"]
+# Les 21 signalements restants sont de sévérité basse (B110/B112 : blocs try/except/pass
+# volontaires — le journal d'audit et le cache de droits ne doivent jamais casser le métier).
+# L'CI échoue à partir de la sévérité moyenne : bandit -ll.
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"

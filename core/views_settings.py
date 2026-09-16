@@ -5,17 +5,25 @@ import json
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from core import permissions, services, theme
 from core.decorators import administrator_required, module_required, reauth_required
 from core.forms_settings import (
-    BalanceScheduleForm, BrandForm, ClosureDayForm, LegalForm, MaintenanceForm, PushForm,
-    QuotaForm, SecurityForm, SmtpForm, TelemetryForm, UpdateForm, YearForm,
+    BalanceScheduleForm,
+    BrandForm,
+    ClosureDayForm,
+    LegalForm,
+    MaintenanceForm,
+    PushForm,
+    QuotaForm,
+    SecurityForm,
+    SmtpForm,
+    TelemetryForm,
+    UpdateForm,
+    YearForm,
 )
 from core.models import ClosureDay, Installation, Intervention, LegalDocument, SchoolYear, Setting
 from core.rich import render as render_markdown

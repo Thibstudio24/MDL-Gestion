@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from django.conf import settings
-from django.urls import reverse, NoReverseMatch
+from django.urls import NoReverseMatch, reverse
 
 from core import permissions
 from core.models import Setting

@@ -19,7 +19,7 @@ LEVEL_CHOICES = [
 ]
 LEVEL_LABELS = {LEVEL_NONE: "Aucun", LEVEL_VIEW: "Consulter", LEVEL_EDIT: "Modifier"}
 
-MODULES: "OrderedDict[str, str]" = OrderedDict(
+MODULES: OrderedDict[str, str] = OrderedDict(
     [
         ("dashboard", "Tableau de bord"),
         ("members", "Membres & invitations"),
@@ -36,7 +36,7 @@ MODULES: "OrderedDict[str, str]" = OrderedDict(
 )
 
 # clé → (libellé UI, module porteur, accordé automatiquement par « Modifier »)
-FINE_PERMISSIONS: "OrderedDict[str, tuple]" = OrderedDict(
+FINE_PERMISSIONS: OrderedDict[str, tuple] = OrderedDict(
     [
         ("documents.import", ("Importer des documents", "documents", True)),
         ("documents.export", ("Exporter les documents", "documents", True)),
@@ -114,6 +114,9 @@ def invalidate_all() -> None:
 def _load(user) -> dict:
     """Construit la carte des droits d'un membre (niveaux + droits fins)."""
     if user is None or not getattr(user, "is_authenticated", False):
+        return {"admin": False, "levels": {}, "fine": set()}
+    if getattr(user, "status", "active") != "active" or not getattr(user, "is_active", True):
+        # Un compte désactivé, en attente ou anonymisé n'a plus aucun droit (défense en profondeur).
         return {"admin": False, "levels": {}, "fine": set()}
     role = getattr(user, "role", None)
     if role is None:

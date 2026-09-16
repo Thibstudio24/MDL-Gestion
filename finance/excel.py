@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from finance.models import Account, AccountOpening, Category, CashCount, Entry, MonthLock
+from finance.models import Account, AccountOpening, CashCount, Category, Entry, MonthLock
 
 NUMBER = '#,##0.00 "€"'
 DATE_FORMAT = "DD/MM/YYYY"

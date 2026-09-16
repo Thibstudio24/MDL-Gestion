@@ -7,7 +7,7 @@ from django import forms
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from finance.models import Account, AccountOpening, Category, Entry, MODES
+from finance.models import MODES, Account, AccountOpening, Category, Entry
 
 
 class LedgerFilterForm(forms.Form):

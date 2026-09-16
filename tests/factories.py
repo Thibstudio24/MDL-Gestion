@@ -31,9 +31,13 @@ def make_user(email: str = "membre@example.test", password: str = "MotDePasse-So
               role: Role | None = None, administrator: bool = False, **kwargs) -> User:
     if role is None:
         role = Role.objects.filter(is_administrator=administrator).first() or make_role(administrator=administrator)
+    status = kwargs.pop("status", "active")
     user = User.objects.create_user(email=email, password=password, role=role,
                                     first_name=kwargs.pop("first_name", "Camille"),
-                                    last_name=kwargs.pop("last_name", "Test"), status="active", **kwargs)
+                                    last_name=kwargs.pop("last_name", "Test"), **kwargs)
+    if status != "active":
+        user.status = status
+        user.save(update_fields=["status"])
     return user
 
 
@@ -58,8 +62,23 @@ def make_entry(year: SchoolYear, day: date, title: str = "Achat", amount: str = 
 
 
 def make_campaign(year: SchoolYear, label: str = "Campagne test", **kwargs):
+    """Campagne de planning de la salle ouverte aujourd'hui par défaut."""
     from plannings.models import Campaign
 
+    today = timezone.localdate()
     return Campaign.objects.create(year=year, label=label,
-                                   start_date=kwargs.pop("start_date", timezone.localdate()),
-                                   weeks_count=kwargs.pop("weeks_count", 4), **kwargs)
+                                   start_date=kwargs.pop("start_date", today),
+                                   end_date=kwargs.pop("end_date", today + timedelta(days=14)),
+                                   **kwargs)
+
+
+def make_chore_campaign(year: SchoolYear, label: str = "Ménage test", **kwargs):
+    """Campagne de ménage dont la semaine couvre aujourd'hui."""
+    from chores.models import Campaign
+
+    today = timezone.localdate()
+    return Campaign.objects.create(year=year, label=label,
+                                   start_date=kwargs.pop("start_date", today - timedelta(days=1)),
+                                   end_date=kwargs.pop("end_date", today + timedelta(days=5)),
+                                   deadline=kwargs.pop("deadline", today + timedelta(days=3)),
+                                   **kwargs)

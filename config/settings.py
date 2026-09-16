@@ -92,6 +92,8 @@ if isinstance(ALLOWED_HOSTS, str):
     ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS.split(",") if h.strip()]
 BASE_URL = cfg("app", "base_url", "", "MDL_BASE_URL")
 
+# L'application est servie en HTTPS uniquement (sous-domaine *.alwaysdata.net)
+
 VERSION = "1.0.0"
 try:
     VERSION = (BASE_DIR / "VERSION").read_text(encoding="utf-8").strip() or VERSION
@@ -223,7 +225,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "core.validators.PersonalDataValidator"},
 ]
 
-LOGIN_URL = "login"
+LOGIN_URL = "auth:login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 

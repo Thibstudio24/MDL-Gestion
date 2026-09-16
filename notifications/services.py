@@ -1,12 +1,9 @@
 """Notifications : matrice événement × canaux, envoi in-app / e-mail / push, heures de silence."""
 from __future__ import annotations
 
-import json
 from datetime import timedelta
 
-from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import gettext as _
 
 from core.models import Setting
 
@@ -203,7 +200,6 @@ def purge_notifications(days: int = 90, dry_run: bool = False) -> int:
 
 
 def mark_read(user, notification_id: int | None = None) -> int:
-    from notifications.models import Notification
 
     queryset = user.notifications.filter(read_at__isnull=True)
     if notification_id:

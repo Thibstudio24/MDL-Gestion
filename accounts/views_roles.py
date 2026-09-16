@@ -6,12 +6,11 @@ import json
 from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.forms import RoleForm, RoleRightsForm
-from accounts.models import Role, RolePermission, User
+from accounts.models import Role, RolePermission
 from accounts.services import _apply_levels, _slug
 from audit.services import log
 from core import permissions

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import csv
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from django.contrib import messages
@@ -19,10 +19,27 @@ from core.decorators import fine_required, module_required, reauth_required
 from core.models import SchoolYear
 from finance import services
 from finance.forms import (
-    AccountForm, BalanceForm, CashCountForm, CategoryForm, DeleteReasonForm, EntryForm,
-    ImportForm, LedgerFilterForm, LockForm, OpeningForm,
+    AccountForm,
+    BalanceForm,
+    CashCountForm,
+    CategoryForm,
+    DeleteReasonForm,
+    EntryForm,
+    ImportForm,
+    LedgerFilterForm,
+    LockForm,
+    OpeningForm,
 )
-from finance.models import Account, AccountOpening, BalanceRun, CashCount, Category, Entry, ImportBatch, MonthLock
+from finance.models import (
+    Account,
+    AccountOpening,
+    BalanceRun,
+    CashCount,
+    Category,
+    Entry,
+    ImportBatch,
+    MonthLock,
+)
 from finance.services import FinanceError
 
 MODULE = "finance"
@@ -465,7 +482,6 @@ def locks(request):
         messages.success(request, _("Mois clôturé : plus aucune écriture ne peut y être modifiée."))
         return redirect("finance:locks")
     locks = MonthLock.objects.filter(year=year).select_related("locked_by")
-    locked = {(lock.month, lock.year_number) for lock in locks}
     lock_by_month = {(lock.month, lock.year_number): lock for lock in locks}
     months = []
     for item in services.months_for(year):

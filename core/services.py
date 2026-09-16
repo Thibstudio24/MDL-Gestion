@@ -4,20 +4,17 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-import os
 import shutil
-import subprocess
 import sys
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
-from django.core.cache import cache
-from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from core.models import Installation, Intervention, SchoolYear, Setting
+
 
 # --------------------------------------------------------------------------- #
 # Quota

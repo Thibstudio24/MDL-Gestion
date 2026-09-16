@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.utils import timezone
 
 from core import permissions
-from core.models import SchoolYear, Setting
+from core.models import SchoolYear
 
 ZERO = Decimal("0.00")
 
@@ -37,7 +37,7 @@ def _months_labels(year) -> tuple[list[str], list[tuple[int, int]]]:
 # Tuiles
 # --------------------------------------------------------------------------- #
 def tile_balance(user) -> dict:
-    from finance.models import Account, Entry
+    from finance.models import Account
     from finance.services import balance_for_account
 
     year = _year()
@@ -85,7 +85,6 @@ def _previous_month_delta(year):
 
 
 def tile_month_flows(user) -> dict:
-    from finance.models import Entry
     from finance.services import month_flows
 
     year = _year()
@@ -154,7 +153,6 @@ def tile_safe(user) -> dict:
 
 def tile_unclosed(user) -> dict:
     from finance.models import Entry, MonthLock
-    from finance.services import month_locked
 
     year = _year()
     today = timezone.localdate()
@@ -230,7 +228,7 @@ def tile_room(user) -> dict:
 
 
 def tile_chores(user) -> dict:
-    from chores.models import Assignment, Campaign, Response
+    from chores.models import Assignment, Campaign
     from chores.services import campaign_progress
 
     campaign = _safe(lambda: Campaign.objects.order_by("-start_date").first())

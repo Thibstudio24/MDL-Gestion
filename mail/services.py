@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -11,13 +11,16 @@ from django.utils import timezone
 
 from audit import services as audit
 
+if TYPE_CHECKING:  # pragma: no cover
+    from mail.models import Outbox
+
 logger = logging.getLogger(__name__)
 MAX_ATTEMPTS = 5
 READ_RETENTION_DAYS = 180
 
 
 def queue_email(*, to_email: str, recipient_user=None, subject: str, text_body: str,
-                kind: str = "", urgent: bool = False, notification=None) -> "Outbox":
+                kind: str = "", urgent: bool = False, notification=None) -> Outbox:
     """Met un courriel en file. Jamais d'envoi synchrone dans une requête web."""
     from mail.models import Outbox
 
@@ -83,7 +86,9 @@ def audience_members(broadcast) -> list:
     from accounts.models import User
 
     if broadcast.audience == "board":
-        return list(User.objects.filter(status="active", role__is_board=True))
+        from core.permissions import BOARD_ROLES
+
+        return list(User.objects.filter(status="active", role__name__in=BOARD_ROLES))
     if broadcast.audience == "role":
         return list(User.objects.filter(status="active", role__in=broadcast.roles.all()))
     return list(User.objects.filter(status="active"))

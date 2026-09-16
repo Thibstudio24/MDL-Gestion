@@ -4,10 +4,12 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import re
 from calendar import monthrange
+from collections.abc import Iterable
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import Any, Iterable
+from typing import Any
 
 from django.db import models, transaction
 from django.utils import timezone
@@ -15,8 +17,17 @@ from django.utils import timezone
 from audit import services as audit
 from core.models import Setting
 from finance.models import (
-    DEFAULT_EXPENSES, DEFAULT_INCOMES, MODES, Account, AccountOpening, BalanceRun,
-    CashCount, Category, Entry, ImportBatch, MonthLock,
+    DEFAULT_EXPENSES,
+    DEFAULT_INCOMES,
+    MODES,
+    Account,
+    AccountOpening,
+    BalanceRun,
+    CashCount,
+    Category,
+    Entry,
+    ImportBatch,
+    MonthLock,
 )
 
 logger = logging.getLogger(__name__)
@@ -390,16 +401,19 @@ def read_import(file_obj) -> tuple[list[dict[str, Any]], str]:
     return _parse_csv(text), "csv"
 
 
+def _ofx_tag(block: str, tag: str) -> str:
+    match = re.search(r"<%s>([^<\n]*)" % tag, block, flags=re.I)
+    return match.group(1).strip() if match else ""
+
+
 def _parse_ofx(text: str) -> list[dict[str, Any]]:
     rows = []
-    import re
     for block in re.findall(r"<STMTTRN>(.*?)</STMTTRN>", text, flags=re.S | re.I):
-        def grab(tag: str) -> str:
-            match = re.search(r"<%s>([^<\n]*)" % tag, block, flags=re.I)
-            return match.group(1).strip() if match else ""
-        rows.append({"date": grab("DTPOSTED") or grab("DTUSER"), "amount": grab("TRNAMT"),
-                     "label": grab("NAME") or grab("MEMO"), "reference": grab("FITID"),
-                     "mode": grab("SIC") or ""})
+        rows.append({"date": _ofx_tag(block, "DTPOSTED") or _ofx_tag(block, "DTUSER"),
+                     "amount": _ofx_tag(block, "TRNAMT"),
+                     "label": _ofx_tag(block, "NAME") or _ofx_tag(block, "MEMO"),
+                     "reference": _ofx_tag(block, "FITID"),
+                     "mode": _ofx_tag(block, "SIC")})
     return rows
 
 
@@ -599,6 +613,7 @@ def generate_balance(year, up_to: date | None = None, actor=None, auto: bool = F
         from io import BytesIO
 
         from django.core.files.base import File
+
         from documents.models import Document
         with transaction.atomic():
             document, created = Document.objects.get_or_create(

@@ -2,18 +2,17 @@
 from __future__ import annotations
 
 import hashlib
-import os
 from pathlib import Path
 
-from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from core import permissions
 from core.models import Setting
-from documents.models import ACCEPTED, REFUSED, Category, CategoryAccess, Document, DocumentFile
+from documents.models import ACCEPTED, REFUSED, Category, Document, DocumentFile
 
 
 class UploadError(Exception):
@@ -41,6 +40,8 @@ def validate_upload(name: str, size: int) -> str:
             _("Le format « .%(ext)s » n'est pas autorisé. Formats acceptés : %(liste)s.")
             % {"ext": ext or "?", "liste": ", ".join("." + item for item in ACCEPTED)}
         )
+    if not size:
+        raise UploadError(_("Le fichier est vide : choisissez un document non vide."))
     limit = max_file_bytes()
     if size > limit:
         raise UploadError(
@@ -74,7 +75,8 @@ def store_version(document: Document, upload, user, comment: str = "") -> Docume
     ext = validate_upload(upload.name, len(content))
     check_quota(len(content))
     digest = sha256_of(content)
-    version_number = (document.versions.count() + 1)
+    highest = document.versions.aggregate(highest=models.Max("version"))["highest"] or 0
+    version_number = highest + 1
     record = DocumentFile(
         document=document, original_name=upload.name[:240], ext=ext, size=len(content),
         sha256=digest, version=version_number, comment=comment[:240], uploaded_by=user,
@@ -110,17 +112,30 @@ def purge_old_versions(kept: int, document: Document | None = None, dry_run: boo
 
 
 def soft_delete(document: Document, user, reason: str = "") -> None:
+    """Mise à la corbeille : le motif est obligatoire et l'action est tracée."""
+    if not (reason or "").strip():
+        raise UploadError(_("Un motif est obligatoire pour supprimer un document."))
     document.deleted_at = timezone.now()
     document.deleted_by = user
-    document.delete_reason = reason[:240]
+    document.delete_reason = reason.strip()[:240]
     document.save(update_fields=["deleted_at", "deleted_by", "delete_reason"])
+    from audit import services as audit
+
+    audit.log(user, "document.deleted", "documents", document,
+              "Document mis à la corbeille : %s — %s" % (document.title, document.delete_reason),
+              level="warn")
 
 
-def restore(document: Document) -> None:
+def restore(document: Document, user=None) -> None:
     document.deleted_at = None
     document.deleted_by = None
     document.delete_reason = ""
     document.save(update_fields=["deleted_at", "deleted_by", "delete_reason"])
+    if user is not None:
+        from audit import services as audit
+
+        audit.log(user, "document.restored", "documents", document,
+                  "Document restauré : %s" % document.title)
 
 
 def purge_trash(days: int = 30, dry_run: bool = False) -> int:
@@ -188,6 +203,9 @@ def can_view_category(user, category: Category) -> bool:
 
 
 def can_edit_category(user, category: Category) -> bool:
+    if getattr(category, "locked_read", False) and not permissions.fine(user, "documents.categories"):
+        # Catégorie verrouillée après diffusion : seul le droit fin « gestion des catégories » force.
+        return False
     if permissions.is_administrator(user):
         return True
     restrictions = category.accesses.select_related("role")

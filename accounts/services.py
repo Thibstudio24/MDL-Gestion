@@ -6,18 +6,23 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import login as django_login
-from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from accounts.models import (
-    AccountSession, Invitation, LoginAttempt, Role, RoleMembership, RolePermission, User,
+    AccountSession,
+    Invitation,
+    LoginAttempt,
+    Role,
+    RoleMembership,
+    RolePermission,
+    User,
 )
-from accounts.twofa import generate_recovery_codes, verify
+from accounts.twofa import verify
 from audit.services import log
-from core.models import Setting
 from core import permissions
+from core.models import Setting
 from core.permissions import BOARD_TEMPLATE, DEFAULT_LEVELS
 
 
@@ -25,6 +30,8 @@ from core.permissions import BOARD_TEMPLATE, DEFAULT_LEVELS
 # Authentification
 # --------------------------------------------------------------------------- #
 def client_ip(request) -> str:
+    if request is None:
+        return ""
     return getattr(request, "client_ip", None) or request.META.get("REMOTE_ADDR", "")
 
 

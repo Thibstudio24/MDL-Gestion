@@ -1,12 +1,12 @@
 """Middlewares : mur de connexion, en-têtes de sécurité, maintenance, contexte d'audit."""
 from __future__ import annotations
 
-from django.conf import settings
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
-from django.urls import resolve, Resolver404
 from datetime import timedelta
 
+from django.conf import settings
+from django.http import HttpResponse
+from django.shortcuts import redirect, render, resolve_url
+from django.urls import Resolver404, resolve
 from django.utils import timezone
 
 from core.models import Setting
@@ -32,9 +32,6 @@ PERMISSIONS_POLICY = (
 )
 # URL accessibles sans session (mur de connexion strict partout ailleurs)
 PUBLIC_URLS = getattr(settings, "MDL_PUBLIC_URLS", ())
-PUBLIC_NAMES = {"login", "password_reset", "password_reset_confirm", "invitation_accept",
-                "invitation_code", "health", "theme_css", "manifest", "service_worker",
-                "offline", "favicon", "robots", "installer_root"}
 
 
 class RequireLoginMiddleware:
@@ -50,7 +47,7 @@ class RequireLoginMiddleware:
             if user is None or not user.is_authenticated:
                 if path.startswith("/api/") or request.headers.get("x-requested-with") == "fetch":
                     return HttpResponse("{}", status=401, content_type="application/json")
-                return redirect("%s?next=%s" % (settings.LOGIN_URL, path))
+                return redirect("%s?next=%s" % (resolve_url(settings.LOGIN_URL), path))
             if getattr(user, "must_change_password", False) and path != "/connexion/bienvenue/":
                 try:
                     match = resolve(path)
@@ -58,7 +55,7 @@ class RequireLoginMiddleware:
                     match = None
                 if match is None or match.url_name not in {"welcome", "logout", "theme_css", "manifest",
                                                             "service_worker", "offline"}:
-                    return redirect("welcome")
+                    return redirect("auth:welcome")
             if getattr(user, "must_accept_charte", False) and path != "/connexion/bienvenue/":
                 try:
                     match = resolve(path)
@@ -66,7 +63,7 @@ class RequireLoginMiddleware:
                     match = None
                 if match is None or match.url_name not in {"welcome", "logout", "theme_css", "manifest",
                                                             "service_worker", "offline"}:
-                    return redirect("welcome")
+                    return redirect("auth:welcome")
             now = timezone.now()
             previous = user.last_seen
             if previous is None or (now - previous) > timedelta(minutes=5):

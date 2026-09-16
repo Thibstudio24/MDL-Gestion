@@ -4,7 +4,7 @@ from __future__ import annotations
 from django import forms
 from django.utils.translation import gettext as _
 
-from documents.models import ACCEPTED, Category, CategoryAccess, Document, Folder
+from documents.models import Category, CategoryAccess, Document, Folder
 from documents.services import UploadError, validate_upload
 
 

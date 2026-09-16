@@ -8,7 +8,6 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -17,9 +16,14 @@ from django.views.decorators.http import require_POST
 
 from accounts import services, twofa
 from accounts.forms import (
-    AnonymizeForm, AppearanceForm, EmailChangeForm, PasswordChangeForm, ProfileForm, QuietHoursForm,
+    AnonymizeForm,
+    AppearanceForm,
+    EmailChangeForm,
+    PasswordChangeForm,
+    ProfileForm,
+    QuietHoursForm,
 )
-from accounts.models import AccountSession, LoginAttempt, Role
+from accounts.models import AccountSession, LoginAttempt
 from audit.services import log
 from core import permissions, theme
 from core.decorators import reauth_required
@@ -273,7 +277,7 @@ def anonymize(request):
 
     django_logout(request)
     messages.info(request, _("Votre compte a été anonymisé. L'historique reste lisible sous un nom pseudonymisé."))
-    return redirect("login")
+    return redirect("auth:login")
 
 
 @login_required

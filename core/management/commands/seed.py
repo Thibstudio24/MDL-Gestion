@@ -10,8 +10,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from accounts.services import create_board_roles, ensure_base_roles
         from documents.services import ensure_default_categories
-        from finance.services import ensure_accounts, ensure_default_categories as finance_categories
-        from finance.services import ensure_gap_category
+        from finance.services import ensure_accounts, ensure_gap_category
+        from finance.services import ensure_default_categories as finance_categories
 
         ensure_base_roles()
         created = create_board_roles()
@@ -21,7 +21,8 @@ class Command(BaseCommand):
         ensure_accounts()
         from accounts.models import Role
         from documents.models import Category as DocCategory
-        from finance.models import Account, Category as FinCategory
+        from finance.models import Account
+        from finance.models import Category as FinCategory
 
         self.stdout.write("rôles : %s (%d créés par la trame du bureau)" % (Role.objects.count(), len(created)))
         self.stdout.write("catégories de documents : %s" % DocCategory.objects.count())

@@ -15,7 +15,12 @@ from django.views.decorators.http import require_http_methods
 
 from accounts import services, twofa
 from accounts.forms import (
-    LoginForm, PasswordResetForm, PasswordResetRequestForm, ReauthForm, SecondFactorForm, WelcomeForm,
+    LoginForm,
+    PasswordResetForm,
+    PasswordResetRequestForm,
+    ReauthForm,
+    SecondFactorForm,
+    WelcomeForm,
 )
 from accounts.models import Invitation, User
 from audit.services import log
@@ -27,9 +32,17 @@ RESET_MAX_AGE = 3 * 3600
 
 
 def _installer_open() -> bool:
+    """L'assistant ne prend la main que sur une installation vierge (aucun compte)."""
     from config.settings import installed
 
-    return not installed()
+    if installed():
+        return False
+    try:
+        from accounts.models import User
+
+        return not User.objects.exists()
+    except Exception:  # noqa: BLE001 - base non migrée : on laisse l'assistant guider
+        return True
 
 
 @require_http_methods(["GET", "POST"])
@@ -37,7 +50,7 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect(request.user.home_url())
     if _installer_open() and request.path.startswith("/connexion/"):
-        return redirect("installer_root")
+        return redirect("installer:welcome")
     form = LoginForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user, error = services.authenticate(
@@ -68,7 +81,7 @@ def login_view(request):
 def second_factor(request):
     user_id = request.session.get("pre_2fa_user")
     if not user_id:
-        return redirect("login")
+        return redirect("auth:login")
     user = get_object_or_404(User, pk=user_id)
     form = SecondFactorForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -128,7 +141,7 @@ def twofa_disable(request):
 @require_http_methods(["GET", "POST"])
 def welcome(request):
     if not request.user.is_authenticated:
-        return redirect("login")
+        return redirect("auth:login")
     user = request.user
     charte = LegalDocument.objects.filter(kind="charte", requires_acceptance=True, published=True).first()
     form = WelcomeForm(request.POST or None, charte_required=bool(charte))
@@ -153,7 +166,7 @@ def logout_view(request):
         log(request.user, "auth.logout", "members", request.user, "Déconnexion", request=request)
         django_logout(request)
     messages.info(request, _("Vous êtes déconnecté."))
-    return redirect("login")
+    return redirect("auth:login")
 
 
 @require_http_methods(["GET", "POST"])
@@ -194,7 +207,7 @@ def password_reset_request(request):
             except Exception:
                 pass
         messages.info(request, _("Si un compte correspond à cette adresse, un lien vient d'être envoyé."))
-        return redirect("login")
+        return redirect("auth:login")
     return render(request, "accounts/password_reset.html", {"form": form, "page_title": "Mot de passe oublié"})
 
 
@@ -228,7 +241,7 @@ def password_reset_confirm(request, token: str):
             services.revoke_all_sessions(user)
             log(user, "auth.password_changed", "members", user, "Mot de passe réinitialisé par lien", level="warn")
             messages.success(request, _("Mot de passe mis à jour : vous pouvez vous connecter."))
-            return redirect("login")
+            return redirect("auth:login")
     return render(request, "accounts/password_reset_confirm.html", {
         "form": form, "user": user, "page_title": "Nouveau mot de passe",
     })

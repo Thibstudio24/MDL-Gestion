@@ -4,6 +4,7 @@ from __future__ import annotations
 from django import forms
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
@@ -104,6 +105,12 @@ def administrator(request):
             form.add_error("email", str(exc))
             return render(request, "installer/admin.html", {
                 "page_title": _("Administrateur"), "form": form, "step": 3})
+        config = instance.read_instance()
+        meta = dict(config.get("meta") or {})
+        meta["installed"] = True
+        meta["installed_at"] = timezone.now().isoformat()
+        config["meta"] = meta
+        instance.write_instance(config)
         request.session["install_admin"] = user.email
         messages.success(request, _("Compte administrateur créé."))
         return redirect("installer:done")
@@ -130,8 +137,8 @@ def seed_defaults(request):
     """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
     from accounts.services import ensure_base_roles
     from documents.services import ensure_default_categories
-    from finance.services import ensure_accounts, ensure_default_categories as finance_categories
-    from finance.services import ensure_gap_category
+    from finance.services import ensure_accounts, ensure_gap_category
+    from finance.services import ensure_default_categories as finance_categories
 
     ensure_base_roles()
     ensure_default_categories()

@@ -7,19 +7,23 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from audit.services import log
 from core import permissions
 from core.decorators import fine_required, module_required, reauth_required
-from core.models import Setting
 from documents import services
 from documents.forms import (
-    CategoryAccessForm, CategoryDeleteForm, CategoryForm, DocumentForm, FolderForm, ReplaceForm, UploadForm,
+    CategoryAccessForm,
+    CategoryDeleteForm,
+    CategoryForm,
+    DocumentForm,
+    FolderForm,
+    ReplaceForm,
+    UploadForm,
 )
 from documents.models import ACCEPTED, Category, Document, DocumentFile, Folder
 
@@ -81,7 +85,7 @@ def list_view(request):
 def upload(request):
     form = UploadForm(request.POST, request.FILES)
     if not form.is_valid():
-        for field, errors in form.errors.items():
+        for _field, errors in form.errors.items():
             for error in errors:
                 messages.error(request, "%s" % error)
         return redirect("documents:documents_list")
@@ -197,8 +201,6 @@ def soft_delete(request, pk: int):
         messages.error(request, _("Un motif est obligatoire pour supprimer un document."))
         return redirect("documents:detail", pk=pk)
     services.soft_delete(document, request.user, reason)
-    log(request.user, "document.deleted", "documents", document, "Document mis à la corbeille : %s" % reason,
-        level="warn", request=request)
     messages.success(request, _("Document mis à la corbeille (30 jours avant purge)."))
     return redirect("documents:documents_list")
 
@@ -207,9 +209,7 @@ def soft_delete(request, pk: int):
 @require_POST
 def restore_document(request, pk: int):
     document = get_object_or_404(Document, pk=pk)
-    services.restore(document)
-    log(request.user, "document.restored", "documents", document, "Document restauré depuis la corbeille",
-        request=request)
+    services.restore(document, request.user)
     messages.success(request, _("Document restauré."))
     return redirect("documents:trash")
 

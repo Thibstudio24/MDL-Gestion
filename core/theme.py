@@ -7,7 +7,7 @@ from __future__ import annotations
 import colorsys
 from collections import OrderedDict
 
-PALETTES: "OrderedDict[str, dict]" = OrderedDict(
+PALETTES: OrderedDict[str, dict] = OrderedDict(
     [
         (
             "ardoise",
@@ -105,13 +105,13 @@ def rgb_to_hex(rgb) -> str:
 
 def hex_to_hsl(value: str):
     r, g, b = (c / 255 for c in hex_to_rgb(value))
-    h, l, s = colorsys.rgb_to_hls(r, g, b)
-    return h, s, l
+    h, lightness, s = colorsys.rgb_to_hls(r, g, b)
+    return h, s, lightness
 
 
-def hsl_to_hex(h: float, s: float, l: float) -> str:
+def hsl_to_hex(h: float, s: float, lightness: float) -> str:
     h = (h % 1.0 + 1.0) % 1.0
-    r, g, b = colorsys.hls_to_rgb(h, max(0.0, min(1.0, l)), max(0.0, min(1.0, s)))
+    r, g, b = colorsys.hls_to_rgb(h, max(0.0, min(1.0, lightness)), max(0.0, min(1.0, s)))
     return rgb_to_hex((r * 255, g * 255, b * 255))
 
 
@@ -143,12 +143,12 @@ def soften(color: str, ratio: float = 0.88) -> str:
 
 def chart_colors(primary: str) -> list[str]:
     """8 teintes espacées de 54° (0,15) à partir de la couleur primaire."""
-    h, s, l = hex_to_hsl(primary)
+    h, s, lightness = hex_to_hsl(primary)
     s = max(0.28, min(0.72, s))
     out = []
     for i in range(8):
         hue = h + i * (54 / 360)
-        lum = l + (0.06 if i % 2 else -0.04) * (1 if i < 4 else -1)
+        lum = lightness + (0.06 if i % 2 else -0.04) * (1 if i < 4 else -1)
         out.append(hsl_to_hex(hue, s, max(0.22, min(0.62, lum))))
     return out
 
@@ -159,9 +159,9 @@ def derive(color: str) -> dict:
     luminance primaire bornée 0.22-0.42, accent = teinte + 0.42,
     surfaces mélangées à blanc à 2,5-14 %, texte teinté, 8 teintes pour les graphiques.
     """
-    h, s, l = hex_to_hsl(color)
+    h, s, lightness = hex_to_hsl(color)
     s = max(0.22, min(0.68, s))
-    lum = max(0.22, min(0.42, l))
+    lum = max(0.22, min(0.42, lightness))
     primary = hsl_to_hex(h, s, lum)
     accent = hsl_to_hex(h + 0.42, min(0.72, s + 0.12), min(0.52, lum + 0.14))
     light = {

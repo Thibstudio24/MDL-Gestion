@@ -6,7 +6,6 @@ import string
 import uuid
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.validators import FileExtensionValidator
@@ -17,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.managers import UserManager
 from core.permissions import LEVEL_CHOICES, MODULES
+
 
 def new_token():
     return uuid.uuid4()

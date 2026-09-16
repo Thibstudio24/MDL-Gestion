@@ -116,12 +116,13 @@ def schedule(request, pk):
     raw = request.POST.get("scheduled_at", "")
     try:
         when = timezone.datetime.fromisoformat(raw)
-        if timezone.is_naive(when):
-            when = timezone.make_aware(when)
-        services.schedule(broadcast, when, request.user)
     except (ValueError, TypeError):
         messages.error(request, _("Date programmée invalide."))
         return redirect("mail:admin_detail", pk=pk)
+    if timezone.is_naive(when):
+        when = timezone.make_aware(when)
+    try:
+        services.schedule(broadcast, when, request.user)
     except ValueError as exc:
         messages.error(request, str(exc))
         return redirect("mail:admin_detail", pk=pk)

@@ -42,7 +42,7 @@ def campaign_progress(campaign) -> dict[str, Any]:
 
 def generate_assignments(campaign, actor, seed: int | None = None) -> int:
     """Attribue les tâches types en tournant entre les membres volontaires."""
-    from chores.models import Assignment, Response, DEFAULT_TASKS
+    from chores.models import DEFAULT_TASKS, Assignment, Response
 
     volunteers = [item.member for item in Response.objects.filter(campaign=campaign, choice="accept")
                   .select_related("member")]
@@ -87,7 +87,6 @@ def publish(campaign, actor) -> int:
 
 def mark_done(member, assignment, proof=None, note: str = ""):
     """Le membre déclare sa tâche faite, photo à l'appui."""
-    from chores.models import Assignment
 
     if assignment.member_id != member.pk:
         raise ValueError("Cette tâche ne vous est pas attribuée.")

@@ -111,7 +111,7 @@ class UpdateForm(forms.Form):
 
 class TelemetryForm(forms.Form):
     telemetry = forms.BooleanField(label="Envoyer des compteurs anonymes à l'éditeur (opt-in)", required=False)
-    hub_url = forms.URLField(label="Adresse du hub éditeur", required=False)
+    hub_url = forms.URLField(label="Adresse du hub éditeur", required=False, assume_scheme="https")
 
 
 class LegalForm(forms.ModelForm):

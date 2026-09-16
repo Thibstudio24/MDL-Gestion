@@ -25,7 +25,7 @@ def provisioning_uri(secret: str, email: str) -> str:
 
 def qr_svg(uri: str) -> str:
     """QR en SVG inline (segno, sans Pillow)."""
-    return segno.make(uri, error="m").svg_inline(compact=True)
+    return segno.make(uri, error="m").svg_inline(scale=6)
 
 
 def verify(secret: str, code: str, user=None) -> bool:

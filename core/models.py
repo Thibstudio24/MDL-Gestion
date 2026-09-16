@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import calendar
-import json
 import uuid
 from datetime import date, datetime, time, timedelta
 
@@ -112,7 +111,7 @@ class Setting(models.Model):
 
     # -- accès ------------------------------------------------------------- #
     @classmethod
-    def instance(cls) -> "Setting":
+    def instance(cls) -> Setting:
         obj = cls.objects.first()
         if obj is None:
             obj = cls.objects.create(values={})
@@ -205,7 +204,7 @@ class SchoolYear(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def current(cls) -> "SchoolYear | None":
+    def current(cls) -> SchoolYear | None:
         return cls.objects.filter(is_current=True).first() or cls.objects.order_by("-start_date").first()
 
     @classmethod
@@ -312,7 +311,7 @@ class Installation(models.Model):
         return "%s (%s)" % (self.install_id[:8], self.version or "?")
 
     @classmethod
-    def get(cls) -> "Installation":
+    def get(cls) -> Installation:
         obj = cls.objects.first()
         if obj is None:
             from .crypto import generate_keypair

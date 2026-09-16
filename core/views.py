@@ -1,7 +1,6 @@
 """Vues de service : tableau de bord, thème, PWA, médias privés, erreurs, textes légaux."""
 from __future__ import annotations
 
-import json
 import mimetypes
 from pathlib import Path
 
@@ -9,11 +8,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.clickjacking import xframe_options_sameorigin
-from django.views.decorators.http import require_GET
 
 from core import permissions, theme
 from core.dashboard import build_sections
@@ -86,7 +82,8 @@ def manifest(request):
         "icons": icons,
         "shortcuts": shortcuts,
     }
-    return JsonResponse(payload, json_dumps_params={"ensure_ascii": False, "indent": 2})
+    return JsonResponse(payload, content_type="application/manifest+json; charset=utf-8",
+                        json_dumps_params={"ensure_ascii": False, "indent": 2})
 
 
 SERVICE_WORKER = r"""/* MDL Gestion — service worker (coquille + lecture hors ligne) */

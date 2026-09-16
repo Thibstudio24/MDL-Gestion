@@ -26,10 +26,7 @@
 <div>{% for lock in locked_months %}{{ lock.0 }}/{{ lock.1 }}{% if not forloop.last %}, {% endif %}{% endfor %} — mois clôturé(s). Aucune écriture ne peut y être ajoutée, modifiée ou supprimée.</div></div>{% endif %}
 <div class="card"><div class="card-head"><h3>Évolution mensuelle</h3><span class="grow"></span>
 <span class="small muted">Recettes en vert, dépenses en rouge</span></div>
-<div class="card-body"><canvas id="chart-histogram" height="120" data-chart="histogram"
-  data-labels="{{ histogram|mapfield:'label'|as_json }}"
-  data-income="{{ histogram|mapfield:'income_value'|as_json }}"
-  data-expense="{{ histogram|mapfield:'expense_value'|as_json }}"></canvas></div></div>
+<div class="card-body">{% histogram_chart histogram as chart_spec %}<canvas id="chart-histogram" height="120" data-chart="{{ chart_spec|as_json }}"></canvas></div></div>
 <div class="grid-2">
   <div class="card"><div class="card-head"><h3>Comptes</h3><span class="grow"></span>
     <a class="btn btn-ghost btn-sm" href="{% url 'finance:accounts' %}">Gérer</a></div>
@@ -41,10 +38,7 @@
     {% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun compte actif." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
   <div class="card"><div class="card-head"><h3>Dépenses par catégorie</h3><span class="grow"></span>
     <a class="btn btn-ghost btn-sm" href="{% url 'finance:categories' %}">Catégories</a></div>
-  <div class="card-body"><canvas id="chart-categories" height="200" data-chart="donut"
-    data-labels="{{ expenses_by_category|mapfield:'label'|as_json }}"
-    data-values="{{ expenses_by_category|mapfield:'total'|as_json }}"
-    data-colors="{{ expenses_by_category|mapfield:'color'|as_json }}"></canvas>
+  <div class="card-body">{% donut_chart expenses_by_category as donut_spec %}<canvas id="chart-categories" height="200" data-chart="{{ donut_spec|as_json }}"></canvas>
   {% if not expenses_by_category %}{% include "partials/_empty.html" with text="Aucune dépense enregistrée cette année." %}{% endif %}</div></div>
 </div>
 <div class="card"><div class="card-head"><h3>Dernières écritures</h3><span class="grow"></span>

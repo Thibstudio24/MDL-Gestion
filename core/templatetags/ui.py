@@ -85,7 +85,8 @@ def get_item(d, key):
 
 @register.filter
 def as_json(value) -> str:
-    return mark_safe(json.dumps(value, ensure_ascii=False, default=str))
+    """JSON pour un attribut HTML : renvoyé non marqué sûr, Django l'échappe à l'affichage."""
+    return json.dumps(value, ensure_ascii=False, default=str)
 
 
 @register.filter
@@ -157,7 +158,8 @@ def kb(size) -> str:
 def icon(name: str, size: int = 16) -> str:
     from core.icons import svg_icon
 
-    return mark_safe(svg_icon(name, size))
+    # Le nom vient des gabarits (jeu d'icônes interne), jamais d'une saisie utilisateur.
+    return mark_safe(svg_icon(name, size))  # nosec B308 B703
 
 
 @register.simple_tag(takes_context=False)
@@ -192,15 +194,50 @@ def mapfield(items, key: str):
 
 @register.filter
 def markdown(value):
-    """Rendu Markdown léger (titres, gras, listes, liens) pour les messages du bureau."""
+    """Rendu Markdown léger (titres, gras, listes, liens) pour les messages du bureau.
+
+    Le HTML brut est échappé avant conversion : une balise saisie dans un message
+    reste du texte, jamais du code exécuté (XSS).
+    """
     if not value:
-        return mark_safe("")
+        return mark_safe("")  # nosec B308 B703 - chaîne vide
+    from django.utils.html import escape
+
+    source = escape(str(value))
     try:
         import markdown as _markdown
 
-        html = _markdown.markdown(str(value), extensions=["nl2br", "sane_lists"], output_format="html5")
+        html = _markdown.markdown(source, extensions=["nl2br", "sane_lists"], output_format="html5")
     except Exception:  # pragma: no cover - repli texte brut si la lib manque
-        from django.utils.html import escape
+        html = "<p>%s</p>" % source.replace("\n", "<br>")
+    # La source est échappée ci-dessus : aucune balise brute ne survit.
+    return mark_safe(html)  # nosec B308 B703
 
-        html = "<p>%s</p>" % escape(str(value)).replace("\n", "<br>")
-    return mark_safe(html)
+
+@register.simple_tag
+def histogram_chart(rows, income_label="Recettes", expense_label="Dépenses"):
+    """Spécification Chart.js de l'histogramme mensuel (recettes positives, dépenses négatives)."""
+    rows = rows or []
+    return {
+        "type": "bar",
+        "labels": [row.get("label", "") for row in rows],
+        "series": [
+            {"label": income_label, "data": [row.get("income_value", 0) for row in rows], "css": "success"},
+            {"label": expense_label, "data": [row.get("expense_value", 0) for row in rows], "css": "danger"},
+        ],
+    }
+
+
+@register.simple_tag
+def donut_chart(rows, label_key="label", value_key="total"):
+    """Spécification Chart.js d'un anneau (répartition par catégorie)."""
+    rows = rows or []
+    values = []
+    for row in rows:
+        value = row.get(value_key, 0)
+        values.append(float(value) if hasattr(value, "quantize") else value)
+    return {
+        "type": "doughnut",
+        "labels": [row.get(label_key, "") for row in rows],
+        "series": [{"label": "Total", "data": values}],
+    }

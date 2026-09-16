@@ -81,7 +81,8 @@ def render(text: str) -> str:
         extensions=["extra", "sane_lists", "nl2br"],
         output_format="html5",
     )
-    return mark_safe(sanitize(html))
+    # Sortie passée par sanitize() : balises et attributs non autorisés retirés.
+    return mark_safe(sanitize(html))  # nosec B308 B703
 
 
 def plain(text: str) -> str:
