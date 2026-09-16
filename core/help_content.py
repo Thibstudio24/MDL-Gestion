@@ -51,25 +51,42 @@ La logique est inversée par rapport à un hébergeur classique : la boîte doit
 « envoi autorisé ». Testez depuis Réglages → Envois (SMTP) → **Envoyer un e-mail de test**.
 """),
     ("6", "Monter le ZIP sur le serveur", """
-En SFTP (FileZilla, WinSCP…), envoyez `MDL-Gestion-v1.0.0.zip` dans `~/apps/mdl/` puis décompressez-le,
-ou bien :
+Le code va dans `~/www/`. **N'utilisez pas `~/admin/`** : ce répertoire appartient à
+alwaysdata (configurations en lecture seule, journaux, temporaires, sauvegardes) et n'est
+pas destiné à recevoir vos fichiers.
+
+En SFTP (FileZilla, WinSCP…), envoyez `MDL-Gestion-v1.0.0.zip` dans `~/www/` puis
+décompressez-le, ou bien en SSH :
 
 ```bash
-cd ~ && mkdir -p apps && cd apps
-git clone https://github.com/Thibstudio24/MDL-Gestion.git mdl
+cd ~/www && unzip MDL-Gestion-v1.0.0.zip
 ```
+
+Le ZIP contient un dossier `mdl/` : le projet se retrouve dans `~/www/mdl/`.
 """),
     ("7", "Créer l'application Python", """
+Chez alwaysdata, on lance toujours `python`, jamais `python3`. La version se choisit dans
+le panneau **Environnement → Python** (3.11 ou plus récent convient) ; `PYTHON_VERSION`
+permet d'en forcer une autre ponctuellement.
+
 ```bash
-cd ~/apps/mdl
-python3.11 -m venv .venv
+cd ~/www/mdl
+python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py collectstatic --noinput
 ```
-Puis panneau → **Applications** → *Ajouter* : type **Python (uWSGI)**, dossier `~/apps/mdl`,
-module `config.wsgi`, 1 processus. Dans « Variables d'environnement », collez les `MDL_*`
-(ou laissez l'assistant écrire `config/instance.json`).
+Puis panneau → **Web → Sites** → *Ajouter* : type **Python WSGI**, et
+
+* **chemin de l'application** : `/www/mdl/config/wsgi.py` — c'est un chemin de fichier,
+  pas un nom de module ;
+* **répertoire de travail** : `/www/mdl/` ;
+* **répertoire du virtualenv** : `/www/mdl/.venv/` ;
+* **version de Python** : 3.11 ou plus.
+
+Dans « Variables d'environnement », collez les `MDL_*`, ou laissez l'assistant écrire
+`config/instance.json`. Les erreurs uWSGI s'inscrivent dans
+`~/admin/logs/uwsgi/<id>.log`, l'identifiant du site étant affiché dans **Web → Sites**.
 """),
     ("8", "Lancer l'assistant d'installation", """
 Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les quatre étapes :
@@ -84,7 +101,7 @@ comptes, ce qui n'est pas une opération courante.
 Panneau → **Tâches planifiées** → type *bash*. Une seule ligne suffit :
 
 ```
-0 * * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_cron >> ~/cron.log 2>&1
+0 * * * * cd ~/www/mdl && .venv/bin/python manage.py mdl_cron >> ~/cron.log 2>&1
 ```
 
 `mdl_cron` enchaîne toutes les tâches horaires dans cet ordre : vidage de la file SMTP,
@@ -95,7 +112,7 @@ est indépendante : un échec n'interrompt pas les suivantes.
 Ajoutez une sauvegarde quotidienne si vous le souhaitez :
 
 ```
-45 3 * * * cd ~/apps/mdl && .venv/bin/python manage.py mdl_backup >> ~/backup.log 2>&1
+45 3 * * * cd ~/www/mdl && .venv/bin/python manage.py mdl_backup >> ~/backup.log 2>&1
 ```
 
 En diagnostic, `manage.py mdl_health` affiche l'état de l'installation et
@@ -229,8 +246,8 @@ peut pas redémarrer le service web : cliquez sur *Redémarrer* dans le panneau 
 - [ ] Compte alwaysdata créé, sous-domaine choisi, limites vérifiées
 - [ ] Base PostgreSQL (ou MariaDB) créée, identifiants recopiés
 - [ ] Boîte `mdl@…` créée et testée (envoi autorisé)
-- [ ] Code monté dans `~/apps/mdl`, environnement virtuel installé, migrations jouées
-- [ ] Application Python (uWSGI) créée et démarrée
+- [ ] Code monté dans `~/www/mdl`, environnement virtuel installé, migrations jouées
+- [ ] Site **Python WSGI** créé et démarré
 - [ ] Assistant d'installation terminé (administrateur + bureau invités)
 - [ ] Ligne de cron `mdl_cron` collée
 - [ ] Clés VAPID générées, PWA installée sur au moins un téléphone

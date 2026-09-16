@@ -168,8 +168,8 @@ voir la page Glossaire
 - [ ] Compte alwaysdata créé, sous-domaine choisi, limites vérifiées
 - [ ] Base PostgreSQL (ou MariaDB) créée, identifiants recopiés
 - [ ] Boîte `mdl@…` créée et testée (envoi autorisé)
-- [ ] Code monté dans `~/apps/mdl`, environnement virtuel installé, migrations jouées
-- [ ] Application Python (uWSGI) créée et démarrée
+- [ ] Code monté dans `~/www/mdl`, environnement virtuel installé, migrations jouées
+- [ ] Site **Python WSGI** créé et démarré
 - [ ] Assistant d'installation terminé (administrateur + bureau invités)
 - [ ] Ligne de cron `mdl_cron` collée
 - [ ] Clés VAPID générées, PWA installée sur au moins un téléphone
