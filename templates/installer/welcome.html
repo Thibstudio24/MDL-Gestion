@@ -1,0 +1,19 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<div class="install-card">
+  <h2 class="page-heading">Installation de MDL Gestion</h2>
+  <p class="page-help">Quatre étapes, aucune donnée de démonstration. Vérifions d'abord que l'hébergement est prêt.</p>
+  {% include "installer/_steps.html" %}
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Contrôle</th><th>État</th><th>Détail</th></tr></thead>
+    <tbody>{% for item in checks %}<tr>
+      <td>{{ item.label }}</td>
+      <td>{% if item.ok %}{% status_badge "success" "prêt" %}{% else %}{% status_badge "closed" "à corriger" %}{% endif %}</td>
+      <td class="small">{{ item.detail }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if ready %}<a class="btn btn-primary" href="{% url 'installer:identity' %}">Continuer vers l'identité</a>
+  {% else %}<div class="alert alert-warning"><span>{% icon 'warning' 18 %}</span>
+  <div>Corrigez au minimum la base de données et les migrations avant de continuer : <code>python manage.py migrate</code>.</div></div>{% endif %}
+</div>
+{% endblock %}

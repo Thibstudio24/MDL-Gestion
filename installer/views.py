@@ -1,0 +1,142 @@
+"""Assistant de première installation (quatre étapes, sans compte de démonstration)."""
+from __future__ import annotations
+
+from django import forms
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
+
+from config import settings as instance
+from installer import services
+
+
+def _guard(view):
+    """L'assistant disparaît dès qu'un compte existe."""
+
+    def wrapper(request, *args, **kwargs):
+        if services.is_installed():
+            messages.info(request, _("L'application est déjà installée."))
+            return redirect("auth:login")
+        return view(request, *args, **kwargs)
+
+    wrapper.__name__ = view.__name__
+    return wrapper
+
+
+class IdentityForm(forms.Form):
+    nom = forms.CharField(label=_("Nom de l'association"), max_length=120, initial="MDL du lycée")
+    sigle = forms.CharField(label=_("Sigle"), max_length=20, required=False, initial="MDL")
+    lycee = forms.CharField(label=_("Établissement"), max_length=160, required=False)
+    ville = forms.CharField(label=_("Ville"), max_length=80, required=False)
+    contact = forms.EmailField(label=_("Courriel de contact"), required=False)
+    couleur_principale = forms.CharField(label=_("Couleur principale"), max_length=9,
+                                         widget=forms.TextInput(attrs={"type": "color"}),
+                                         initial="#33556e")
+
+
+class AdminForm(forms.Form):
+    first_name = forms.CharField(label=_("Prénom"), max_length=80)
+    last_name = forms.CharField(label=_("Nom"), max_length=80)
+    email = forms.EmailField(label=_("Courriel"), help_text=_("Servira d'identifiant de connexion."))
+    password1 = forms.CharField(label=_("Mot de passe"), widget=forms.PasswordInput,
+                                help_text=_("10 caractères minimum, pas de mot de passe courant."))
+    password2 = forms.CharField(label=_("Confirmation"), widget=forms.PasswordInput)
+
+    def clean(self):
+        data = super().clean()
+        if data.get("password1") and data["password1"] != data.get("password2"):
+            self.add_error("password2", _("Les deux mots de passe ne correspondent pas."))
+        return data
+
+
+@_guard
+def welcome(request):
+    """Étape 1 : prérequis techniques."""
+    return render(request, "installer/welcome.html", {
+        "page_title": _("Installation"), "checks": services.prerequisites(),
+        "ready": services.prerequisites_ok(), "step": 1,
+    })
+
+
+@_guard
+def identity(request):
+    """Étape 2 : identité de l'association (écrite dans config/instance.json et les réglages)."""
+    form = IdentityForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        data = dict(form.cleaned_data)
+        config = instance.read_instance() if hasattr(instance, "read_instance") else {}
+        branding = dict(config.get("branding") or {})
+        branding.update({"association": data["nom"], "sigle": data["sigle"], "school": data["lycee"],
+                         "city": data["ville"], "contact": data["contact"],
+                         "primary_color": data["couleur_principale"]})
+        config["branding"] = branding
+        instance.write_instance(config)
+        request.session["install"] = data
+        try:
+            from core.models import Setting
+
+            Setting.update_section("branding", {
+                "nom": data["nom"], "sigle": data["sigle"], "lycee": data["lycee"],
+                "ville": data["ville"], "contact": data["contact"],
+                "couleur_principale": data["couleur_principale"]})
+        except Exception:  # noqa: BLE001 - base non migrée : on retentera à l'étape 3
+            pass
+        messages.success(request, _("Identité enregistrée."))
+        return redirect("installer:admin")
+    return render(request, "installer/identity.html", {
+        "page_title": _("Identité"), "form": form, "step": 2,
+    })
+
+
+@_guard
+def administrator(request):
+    """Étape 3 : création du premier compte administrateur."""
+    from accounts.services import create_administrator
+
+    form = AdminForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        try:
+            user = create_administrator(email=data["email"], password=data["password1"],
+                                        first_name=data["first_name"], last_name=data["last_name"])
+        except Exception as exc:  # noqa: BLE001 - message lisible pour l'installateur
+            form.add_error("email", str(exc))
+            return render(request, "installer/admin.html", {
+                "page_title": _("Administrateur"), "form": form, "step": 3})
+        request.session["install_admin"] = user.email
+        messages.success(request, _("Compte administrateur créé."))
+        return redirect("installer:done")
+    return render(request, "installer/admin.html", {
+        "page_title": _("Administrateur"), "form": form, "step": 3,
+    })
+
+
+@_guard
+def done(request):
+    """Étape 4 : récapitulatif et prochaines étapes."""
+    from core import services
+
+    return render(request, "installer/done.html", {
+        "page_title": _("Installation terminée"), "step": 4,
+        "email": request.session.get("install_admin", ""),
+        "health": services.health(),
+    })
+
+
+@_guard
+@require_POST
+def seed_defaults(request):
+    """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
+    from accounts.services import ensure_base_roles
+    from documents.services import ensure_default_categories
+    from finance.services import ensure_accounts, ensure_default_categories as finance_categories
+    from finance.services import ensure_gap_category
+
+    ensure_base_roles()
+    ensure_default_categories()
+    finance_categories()
+    ensure_gap_category()
+    ensure_accounts()
+    messages.success(request, _("Référentiels par défaut créés."))
+    return redirect("installer:done")

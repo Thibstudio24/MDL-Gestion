@@ -1,0 +1,24 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<div class="install-card">
+  <h2 class="page-heading">Installation terminée</h2>
+  <p class="page-help">Vous pouvez vous connecter avec {{ email }}. Pensez à configurer le cron et le SMTP.</p>
+  {% include "installer/_steps.html" %}
+  <ol class="checklist">
+    <li>Configurer le cron alwaysdata : <code>python manage.py mdl_cron</code> toutes les heures.</li>
+    <li>Renseigner le SMTP dans Réglages → Envois, puis envoyer un courriel de test.</li>
+    <li>Vérifier les quotas dans Réglages → Quotas &amp; purges (1 Go de disque sur l'offre gratuite).</li>
+    <li>Générer les clés VAPID dans Réglages → PWA &amp; push si vous voulez les notifications push.</li>
+  </ol>
+  <form method="post" action="{% url 'installer:seed_defaults' %}">{% csrf_token %}
+  <button class="btn btn-ghost">Créer les référentiels par défaut</button></form>
+  <p class="small muted">Rôles, catégories de documents et de trésorerie, comptes bancaires : aucune écriture ni document n'est créé.</p>
+  <a class="btn btn-primary" href="{% url 'auth:login' %}">Aller à la connexion</a>
+  <h3>État de santé</h3>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Indicateur</th><th>Valeur</th></tr></thead>
+    <tbody>{% for key, value in health.items %}<tr><td>{{ key }}</td><td>{{ value }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}

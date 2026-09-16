@@ -16,6 +16,7 @@ from accounts.models import (
 )
 from accounts.twofa import generate_recovery_codes, verify
 from audit.services import log
+from core.models import Setting
 from core import permissions
 from core.permissions import BOARD_TEMPLATE, DEFAULT_LEVELS
 
@@ -207,6 +208,27 @@ def create_member(*, email: str, first_name: str, last_name: str, role: Role,
     log(actor, "member.invited", "members", user,
         "Invitation envoyée à %(email)s (valable %(n)s jours)" % {"email": email, "n": days}, request=None)
     return user, invitation
+
+
+def create_administrator(*, email: str, password: str, first_name: str, last_name: str) -> User:
+    """Premier compte de l'installation : administrateur actif, sans invitation ni démo."""
+    email = (email or "").strip().lower()
+    if User.objects.filter(email__iexact=email).exists():
+        raise ValueError(_("Un compte existe déjà avec ce courriel."))
+    if len(password or "") < int(Setting.value("securite", "password_min_length", 10)):
+        raise ValueError(_("Le mot de passe doit comporter au moins %(n)s caractères.")
+                         % {"n": Setting.value("securite", "password_min_length", 10)})
+    ensure_base_roles()
+    role = Role.objects.get(name="Administrateur")
+    with transaction.atomic():
+        user = User.objects.create_user(
+            email=email, password=password, first_name=first_name, last_name=last_name,
+            display_function="Administrateur", role=role, status="active",
+            receive_personal_email=True, email_choice_made=True,
+        )
+        RoleMembership.objects.create(user=user, role=role)
+    log(None, "member.created", "members", user, "Premier administrateur créé : %s" % email)
+    return user
 
 
 def accept_invitation(invitation: Invitation, password: str, *, accept_charte: bool = False,

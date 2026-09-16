@@ -26,6 +26,11 @@ def _read_instance() -> dict:
 
 
 _INSTANCE = _read_instance()
+
+
+def read_instance() -> dict:
+    """Contenu courant de config/instance.json (lecture publique pour l'assistant)."""
+    return dict(_read_instance())
 _TRUE = {"1", "true", "oui", "yes", "on"}
 _FALSE = {"0", "false", "non", "no", "off"}
 

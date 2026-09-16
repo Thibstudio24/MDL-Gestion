@@ -465,3 +465,17 @@ table.matrix td:first-child, table.matrix th:first-child { text-align: left; }
 .is-expense { color: var(--danger); font-variant-numeric: tabular-nums; }
 tr.is-warning td { background: color-mix(in srgb, var(--warning) 12%, transparent); }
 tr.is-error td { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+/* ------------------------------------------------------------- installation */
+.install-card { max-width: 780px; margin: 0 auto; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0 0 16px; counter-reset: step; }
+.steps li {
+  padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); font-size: .84rem;
+  color: color-mix(in srgb, var(--text) 66%, transparent);
+}
+.steps li.is-current { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--text); font-weight: 600; }
+.steps li.is-done { border-color: var(--success); color: var(--success); }
+.checklist { padding-left: 20px; margin: 0 0 14px; }
+.checklist li { margin-bottom: 6px; }
+tr.is-unread td { background: color-mix(in srgb, var(--primary) 7%, transparent); font-weight: 600; }
