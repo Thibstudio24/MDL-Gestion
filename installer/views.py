@@ -25,6 +25,24 @@ def _guard(view):
     return wrapper
 
 
+def _guard_close(view):
+    """Étapes de clôture : réservées à la session qui vient de créer le premier compte.
+
+    L'étape 3 crée le compte puis redirige vers le récapitulatif : à ce moment un
+    compte existe déjà, donc le gardien ordinaire renverrait vers la connexion et
+    l'utilisateur ne verrait jamais l'étape 4 ni le bouton des référentiels.
+    """
+
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get("install_admin"):
+            messages.info(request, _("L'application est déjà installée."))
+            return redirect("auth:login")
+        return view(request, *args, **kwargs)
+
+    wrapper.__name__ = view.__name__
+    return wrapper
+
+
 class IdentityForm(forms.Form):
     nom = forms.CharField(label=_("Nom de l'association"), max_length=120, initial="MDL du lycée")
     sigle = forms.CharField(label=_("Sigle"), max_length=20, required=False, initial="MDL")
@@ -119,7 +137,7 @@ def administrator(request):
     })
 
 
-@_guard
+@_guard_close
 def done(request):
     """Étape 4 : récapitulatif et prochaines étapes."""
     from core import services
@@ -131,16 +149,17 @@ def done(request):
     })
 
 
-@_guard
+@_guard_close
 @require_POST
 def seed_defaults(request):
     """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
-    from accounts.services import ensure_base_roles
+    from accounts.services import create_board_roles, ensure_base_roles
     from documents.services import ensure_default_categories
     from finance.services import ensure_accounts, ensure_gap_category
     from finance.services import ensure_default_categories as finance_categories
 
     ensure_base_roles()
+    create_board_roles()
     ensure_default_categories()
     finance_categories()
     ensure_gap_category()

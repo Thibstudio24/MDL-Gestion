@@ -228,10 +228,12 @@ def create_administrator(*, email: str, password: str, first_name: str, last_nam
     ensure_base_roles()
     role = Role.objects.get(name="Administrateur")
     with transaction.atomic():
+        # receive_personal_email et email_choice_made sont des propriétés en lecture
+        # seule adossées au champ JSON « prefs » : elles s'écrivent par ce champ.
         user = User.objects.create_user(
             email=email, password=password, first_name=first_name, last_name=last_name,
             display_function="Administrateur", role=role, status="active",
-            receive_personal_email=True, email_choice_made=True,
+            prefs={"receive_personal_email": True, "email_choice_made": True},
         )
         RoleMembership.objects.create(user=user, role=role)
     log(None, "member.created", "members", user, "Premier administrateur créé : %s" % email)
