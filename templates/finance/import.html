@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Import bancaire</h2>
+<p class="page-help">Formats CSV, QIF et OFX. Rien n'est écrit avant vérification : l'aperçu affiche chaque ligne, les doublons sont signalés, et un import lancé reste annulable.</p></div></div>
+<div class="card"><div class="card-head"><h3>1. Choisir le fichier</h3></div><div class="card-body">
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary">Analyser le fichier</button></form>
+<p class="small muted">Colonnes reconnues automatiquement : date, libellé, montant, référence.</p></div></div>
+{% if prepared %}
+<div class="card"><div class="card-head"><h3>2. Vérifier avant d'écrire</h3><span class="grow"></span>
+<span class="small muted">{{ prepared|length }} ligne(s) — {{ batch.file_name }}</span></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Ligne</th><th>Date</th><th>Libellé</th><th>Référence</th><th class="num">Montant</th><th>Sens</th><th>État</th></tr></thead>
+<tbody>{% for item in prepared %}<tr class="{% if item.duplicate %}is-warning{% endif %}{% if item.error %}is-error{% endif %}">
+<td>{{ item.row }}</td><td class="nowrap">{% if item.day %}{{ item.day|date_fr }}{% else %}—{% endif %}</td>
+<td>{{ item.label|default:"—" }}</td><td class="small">{{ item.reference|default:"—" }}</td>
+<td class="num">{{ item.amount|money }}</td><td>{% if item.kind == 'R' %}recette{% elif item.kind == 'D' %}dépense{% else %}—{% endif %}</td>
+<td>{% if item.error %}{% status_badge "closed" item.error %}{% elif item.duplicate %}{% status_badge "pending" "doublon" %}{% else %}{% status_badge "active" "importable" %}{% endif %}</td></tr>
+{% endfor %}</tbody></table></div></div>
+<div class="card-foot"><form method="post" action="{% url 'finance:import_run' %}">{% csrf_token %}
+<label class="field checkbox-line"><input type="checkbox" name="skip_duplicates" value="1" checked><span class="field-label">Ignorer les doublons</span></label>
+<button type="submit" class="btn btn-primary" data-confirm-click="Écrire ces écritures dans le grand livre ?">Importer maintenant</button>
+<a class="btn btn-ghost" href="{% url 'finance:import' %}">Annuler</a></form></div></div>
+{% endif %}
+<div class="card"><div class="card-head"><h3>Imports précédents</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Fichier</th><th class="num">Lignes</th><th class="num">Créées</th><th class="num">Doublons</th><th class="num">Erreurs</th><th></th></tr></thead>
+<tbody>{% for item in history %}<tr>
+<td class="nowrap">{{ item.created_at|date_fr }}</td><td>{{ item.file_name }}</td>
+<td class="num">{{ item.rows_total }}</td><td class="num">{{ item.rows_created }}</td>
+<td class="num">{{ item.rows_skipped }}</td><td class="num">{{ item.rows_error }}</td>
+<td class="right">{% if item.reverted_at %}{% status_badge "inactive" "annulé" %}{% else %}<form method="post" action="{% url 'finance:import_revert' item.pk %}">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" data-confirm-click="Annuler cet import ? Toutes ses écritures seront supprimées.">Annuler l'import</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun import pour l'instant." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

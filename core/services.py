@@ -466,13 +466,13 @@ def _chores_reminders() -> int:
 
 
 def _auto_balance() -> str:
-    from finance.services import should_generate_today, generate_balance
+    from finance.services import generate_balance, should_generate_today
 
-    if not should_generate_today():
-        return "hors échéance"
     year = SchoolYear.current()
     if year is None:
         return "aucune année scolaire"
+    if not should_generate_today(year=year):
+        return "hors échéance"
     run = generate_balance(year, auto=True)
     return "généré (%s)" % run.status
 

@@ -36,8 +36,16 @@ def _tabs(active: str) -> list[dict]:
         ("update", "Mises à jour", "settings_update"),
         ("audit", "Journal & télémétrie", "settings_telemetry"),
     ]
-    return [{"key": key, "label": label, "url": "/reglages/%s/" % key if key != "brand" else "/reglages/",
-             "active": key == active} for key, label, _name in entries]
+    from django.urls import reverse
+
+    tabs = []
+    for key, label, name in entries:
+        try:
+            url = reverse("settings:%s" % name)
+        except Exception:  # onglet non monté : on l'ignore plutôt que d'afficher un lien mort
+            continue
+        tabs.append({"key": key, "label": label, "url": url, "active": key == active})
+    return tabs
 
 
 @module_required("settings_global")

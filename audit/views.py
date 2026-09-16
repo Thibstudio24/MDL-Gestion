@@ -49,7 +49,8 @@ def _filters(request):
 def list_view(request):
     queryset, params = _filters(request)
     page = Paginator(queryset, 25).get_page(request.GET.get("page"))
-    modules = sorted({entry.module for entry in AuditEntry.objects.values_list("module", flat=True).distinct() if entry})
+    modules = sorted({value for value in AuditEntry.objects.values_list("module", flat=True)
+                      .distinct() if value})
     return render(request, "audit/list.html", {
         "page_obj": page,
         "params": params,

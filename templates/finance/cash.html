@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Coffre-fort</h2>
+<p class="page-help">Le théorique est calculé à partir des mouvements. En cas d'écart, le motif est obligatoire et une régularisation « Écart de caisse » est créée automatiquement.</p></div>
+<div class="page-actions"><span class="badge badge-primary">Solde théorique : {{ safe_balance|money }}</span></div></div>
+<div class="card"><div class="card-head"><h3>Comptage de caisse</h3></div><div class="card-body">
+<form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer le comptage</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Historique des comptages</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Compte</th><th class="num">Théorique</th><th class="num">Compté</th><th class="num">Écart</th><th>Motif</th><th>Régularisation</th></tr></thead>
+<tbody>{% for count in counts %}<tr>
+<td class="nowrap">{{ count.day|date_fr }}</td><td>{{ count.account.name }}</td>
+<td class="num">{{ count.expected|money }}</td><td class="num">{{ count.counted|money }}</td>
+<td class="num {% if count.delta < 0 %}is-expense{% else %}is-income{% endif %}">{{ count.delta|signed_money }}</td>
+<td class="small">{{ count.reason|default:"—" }}</td>
+<td>{% if count.adjustment %}<a href="{% url 'finance:entry_detail' count.adjustment.pk %}">{{ count.adjustment.amount|money }}</a>{% else %}—{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun comptage enregistré." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

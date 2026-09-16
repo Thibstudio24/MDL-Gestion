@@ -169,3 +169,22 @@ def static_path(relative: str) -> str:
         return static(relative)
     except Exception:  # staticfiles non collecté (premier lancement)
         return "%s%s" % (settings.STATIC_URL, relative)
+
+
+@register.filter
+def mapfield(items, key: str):
+    """Extrait une clé d'une liste de dictionnaires (valeurs JSON-friendly pour les graphiques)."""
+    from decimal import Decimal as _Decimal
+
+    if not items:
+        return []
+    values = []
+    for item in items:
+        try:
+            value = item[key] if isinstance(item, dict) else getattr(item, key, "")
+        except (KeyError, TypeError):
+            value = ""
+        if isinstance(value, _Decimal):
+            value = float(value)
+        values.append(value)
+    return values

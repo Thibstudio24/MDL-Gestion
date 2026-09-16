@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Catégories d'écritures</h2>
+<p class="page-help">Les catégories structurent le bilan mensuel. Désactivez une catégorie plutôt que de la supprimer si elle porte des écritures.</p></div></div>
+<div class="card"><div class="card-head"><h3>Nouvelle catégorie</h3></div><div class="card-body">
+<form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary">Créer la catégorie</button></form></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Catégorie</th><th>Code</th><th>Sens</th><th>Parente</th><th class="num">Dépenses</th><th class="num">Recettes</th><th class="num">Écritures</th><th>État</th></tr></thead>
+<tbody>{% for row in rows %}<tr>
+<td><span class="chip-dot" style="background:{{ row.category.color }}"></span> <strong>{{ row.category.label }}</strong></td>
+<td class="small">{{ row.category.code|default:"—" }}</td>
+<td>{% if row.category.kind == 'D' %}dépense{% else %}recette{% endif %}</td>
+<td>{{ row.category.parent|default:"—" }}</td>
+<td class="num">{{ row.expenses|money }}</td><td class="num">{{ row.incomes|money }}</td><td class="num">{{ row.count }}</td>
+<td>{% if row.category.active %}{% status_badge "active" "active" %}{% else %}{% status_badge "inactive" "désactivée" %}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8">{% include "partials/_empty.html" with text="Aucune catégorie : créez-en une, ou lancez la commande seed." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}
