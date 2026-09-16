@@ -188,3 +188,19 @@ def mapfield(items, key: str):
             value = float(value)
         values.append(value)
     return values
+
+
+@register.filter
+def markdown(value):
+    """Rendu Markdown léger (titres, gras, listes, liens) pour les messages du bureau."""
+    if not value:
+        return mark_safe("")
+    try:
+        import markdown as _markdown
+
+        html = _markdown.markdown(str(value), extensions=["nl2br", "sane_lists"], output_format="html5")
+    except Exception:  # pragma: no cover - repli texte brut si la lib manque
+        from django.utils.html import escape
+
+        html = "<p>%s</p>" % escape(str(value)).replace("\n", "<br>")
+    return mark_safe(html)

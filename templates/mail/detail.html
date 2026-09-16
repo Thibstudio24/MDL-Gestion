@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ broadcast.subject }}</h2>
+<p class="page-help">{{ broadcast.get_kind_display }} · de {{ broadcast.created_by|default:"Bureau" }} · {{ broadcast.sent_at|date_fr|default:"brouillon" }}</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'mail:mail_inbox' %}">Retour</a></div></div>
+<div class="card"><div class="card-body"><div class="prose">{{ broadcast.body|markdown }}</div>
+{% if broadcast.requires_ack %}<form method="post" class="form-row">{% csrf_token %}
+<button class="btn btn-primary" {% if recipient.ack_at %}disabled{% endif %}>
+{% if recipient.ack_at %}Accusé envoyé le {{ recipient.ack_at|date_fr }}{% else %}Confirmer la lecture{% endif %}</button></form>{% endif %}
+</div></div>
+{% endblock %}

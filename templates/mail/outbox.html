@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">File d'attente SMTP</h2>
+<p class="page-help">{{ stats.file }} courriel(s) en attente, {{ stats.echecs }} échec(s). Le cron vide la file toutes les heures ; un courriel est abandonné après 5 tentatives.</p></div>
+<div class="page-actions"><form method="post" action="{% url 'mail:send_test' %}">{% csrf_token %}
+<button class="btn btn-ghost btn-sm">{% icon 'send' 14 %} Envoyer un test</button></form></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Destinataire</th><th>Objet</th><th>Type</th><th>État</th><th class="num">Tentatives</th><th>Erreur</th><th></th></tr></thead>
+<tbody>{% for item in items %}<tr>
+<td>{{ item.to_email }}</td><td>{{ item.subject|truncatechars:60 }}</td><td>{{ item.kind|default:"—" }}</td>
+<td>{% if item.status == 'sent' %}{% status_badge "success" "envoyé" %}{% elif item.status == 'queued' %}{% status_badge "pending" "en file" %}{% elif item.status == 'failed' %}{% status_badge "closed" "échec" %}{% else %}{% status_badge "inactive" "ignoré" %}{% endif %}</td>
+<td class="num">{{ item.attempts }}</td><td class="small">{{ item.error|default:"—" }}</td>
+<td class="right">{% if item.status == 'failed' %}<form method="post" action="{% url 'mail:outbox_retry' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">Relancer</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="La file est vide." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}
