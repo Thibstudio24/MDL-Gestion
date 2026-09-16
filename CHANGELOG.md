@@ -25,16 +25,21 @@ Première version livrée d'un bloc.
 * Documents : catégories, dossiers (2 niveaux), versions (3 conservées), corbeille 30 jours,
   quota avec alertes 80/95 %, verrouillage en lecture, médias servis par une vue privée.
 * Trésorerie : grand livre unique, transferts neutres, comptage de caisse avec écart justifié,
-  clôtures mensuelles bloquantes, import avec mapping et détection de doublons, bilan annuel Excel.
-* Planning de la salle : campagnes, deux grilles Q1/Q2, plage du soir réservée aux internes,
-  contrôle de couverture, publication PDF 4 pages, demandes d'échange.
-* Planning de ménage : sondage avec plafond de refus, allocation déterministe et équitable,
-  suivi avec preuve photo supprimée à la validation.
-* Messagerie : diffusions, accusés de lecture, relances plafonnées, file `Outbox` lissée à
-  15 e-mails/minute avec 3 essais.
+  clôtures mensuelles bloquantes, import avec mapping et détection de doublons, bilan annuel
+  Excel, export du grand livre en Excel / CSV / PDF.
+* Planning de la salle : une campagne par période (trimestre, semestre ou année), créneaux
+  typés du lundi au dimanche avec capacité, réponses disponible / si besoin / indisponible,
+  contrôle de couverture, relance des non-répondants, clôture, export CSV et PDF A4 paysage
+  (grille + synthèse par membre).
+* Planning de ménage : 5 tâches types, allocation déterministe et équitable, preuve photo
+  exigée, validation ou renvoi motivé, photos purgées 180 jours après validation.
+* Messagerie : diffusions descendantes, accusés de lecture, envoi programmé, file `Outbox`
+  en base vidée par le cron (15 e-mails/minute par défaut, 5 essais avant abandon).
 
 ### Exploitation
-* Assistant d'installation web en 6 étapes + `install.py` / `install.sh`.
-* 25 commandes de gestion idempotentes (`cron:run`, `bilans`, `mail:drain`, `backup`, `devtoken`…).
-* Hub éditeur séparé (`hub/`) : interventions bornées, télémétrie opt-in, mises à jour avec
-  sauvegarde et retour arrière.
+* Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
+  aucun compte de démonstration n'est créé.
+* 5 commandes de gestion idempotentes : `mdl_cron` (file SMTP, diffusions, rappels, bilan,
+  purges), `mdl_backup`, `mdl_health`, `mdl_purge`, `seed` (référentiels seuls).
+* Canal éditeur (`core/views_devhub.py`, monté sur `/aide-intervention/`) : jeton
+  d'intervention borné dans le temps, télémétrie opt-in, contrôle des mises à jour.
