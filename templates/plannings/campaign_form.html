@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Nouvelle campagne</h2>
+<p class="page-help">Les créneaux types (permanences du midi, ouverture du foyer du vendredi) sont créés automatiquement et restent modifiables.</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'plannings:planning_list' %}">Retour</a></div></div>
+<div class="card"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-primary">Créer la campagne</button></form></div></div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Planning de la salle</h2>
+<p class="page-help">Une campagne par période : les membres indiquent leurs disponibilités, la grille montre en rouge les créneaux sans gérant. Semaine du lundi, format français.</p></div>
+<div class="page-actions">{% if can_edit %}<a class="btn btn-primary btn-sm" href="{% url 'plannings:campaign_create' %}">{% icon 'plus' 14 %} Nouvelle campagne</a>{% endif %}
+<a class="btn btn-ghost btn-sm" href="{% url 'plannings:mine' %}">{% icon 'user' 14 %} Mes disponibilités</a></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Campagne</th><th>Période</th><th>Réponses</th><th>Taux</th><th>Créneaux sans gérant</th><th>État</th><th></th></tr></thead>
+<tbody>{% for row in rows %}<tr>
+<td><a href="{% url 'plannings:campaign_detail' row.campaign.pk %}"><strong>{{ row.campaign.label }}</strong></a>
+<br><span class="small muted">{{ row.campaign.start_date|date_fr }} → {{ row.campaign.end_date|date_fr }}</span></td>
+<td>{{ row.campaign.get_week_display }}</td>
+<td>{{ row.stats.answered_members }} / {{ row.stats.members }} membre(s)</td>
+<td><span class="badge badge-{% if row.stats.reponse_pct >= 80 %}success{% elif row.stats.reponse_pct >= 40 %}warning{% else %}danger{% endif %}">{{ row.stats.reponse_pct }} %</span></td>
+<td class="num {% if row.stats.gaps %}is-expense{% endif %}">{{ row.stats.gaps }}</td>
+<td>{% if row.campaign.closed %}{% status_badge "closed" "clôturée" %}{% elif row.campaign.published %}{% status_badge "active" "ouverte" %}{% else %}{% status_badge "pending" "brouillon" %}{% endif %}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="{% url 'plannings:coverage' row.campaign.pk %}">Couverture</a></td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucune campagne : lancez-en une pour la rentrée, les créneaux types sont créés automatiquement." action_url="/planning/creer/" action_label="Nouvelle campagne" %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

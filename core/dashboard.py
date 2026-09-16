@@ -168,7 +168,7 @@ def tile_unclosed(user) -> dict:
         "title": "Mois à clôturer",
         "value": len(pending),
         "subtitle": ", ".join("%s/%s" % (m, str(y)[2:]) for y, m in pending) or "Tous les mois passés sont clôturés",
-        "url": "/tresorerie/periodes/",
+        "url": "/tresorerie/clotures/",
         "alert": bool(pending),
         "level": "warning" if pending else "success",
         "extra": "%s écritures hors période clôturée" % count,

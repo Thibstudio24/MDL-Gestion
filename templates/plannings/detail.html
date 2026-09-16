@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ campaign.label }}</h2>
+<p class="page-help">{{ campaign.get_week_display }} · réponses du {{ campaign.start_date|date_fr }} au {{ campaign.end_date|date_fr }} · {{ stats.reponse_pct }} % de réponses · {{ stats.gaps }} créneau(x) sans gérant</p></div>
+<div class="page-actions">
+  {% if can_edit %}{% if not campaign.published %}<form method="post" action="{% url 'plannings:publish' campaign.pk %}">{% csrf_token %}<button class="btn btn-primary btn-sm">Publier et notifier</button></form>
+  {% else %}{% if not campaign.closed %}<form method="post" action="{% url 'plannings:remind' campaign.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% icon 'bell' 14 %} Relancer</button></form>
+  <form method="post" action="{% url 'plannings:close' campaign.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Clôturer la campagne ?">Clôturer</button></form>{% endif %}{% endif %}{% endif %}
+  <a class="btn btn-ghost btn-sm" href="{% url 'plannings:coverage' campaign.pk %}">{% icon 'chart' 14 %} Couverture</a>
+  <a class="btn btn-ghost btn-sm" href="{% url 'plannings:export' campaign.pk %}">{% icon 'download' 14 %} CSV</a>
+</div></div>
+{% if not campaign.published %}<div class="alert alert-warning"><span>{% icon 'info' 18 %}</span>
+<div><strong>Brouillon.</strong> Les membres ne voient pas encore cette campagne : publiez-la pour ouvrir les réponses.</div></div>{% endif %}
+{% if campaign.closed %}<div class="alert alert-info"><span>{% icon 'lock' 18 %}</span><div><strong>Campagne clôturée.</strong> Les réponses ne sont plus modifiables.</div></div>{% endif %}
+{% for row in days %}
+<div class="card"><div class="card-head"><h3>{{ row.label|capfirst }}</h3><span class="grow"></span>
+<span class="small muted">{{ row.slot.start_time|time:"H:i" }} – {{ row.slot.end_time|time:"H:i" }} · {{ row.slot.label }}</span>
+{% if row.covered %}{% status_badge "active" "couvert" %}{% else %}{% status_badge "closed" "sans gérant" %}{% endif %}</div>
+<div class="card-body">
+  <p><strong>Disponibles :</strong> {% for item in row.yes %}{{ item.member.get_full_name }}{% if not forloop.last %}, {% endif %}{% empty %}personne{% endfor %}</p>
+  <p class="small muted"><strong>Si besoin :</strong> {% for item in row.maybe %}{{ item.member.get_full_name }}{% if not forloop.last %}, {% endif %}{% empty %}personne{% endfor %}</p>
+  {% if campaign.is_open %}{% with current=mine|get_item:row.slot.pk %}
+  <form method="post" action="{% url 'plannings:save_availability' %}" class="form-row">{% csrf_token %}
+    <input type="hidden" name="slot" value="{{ row.slot.pk }}">
+    <label class="field"><span class="field-label">Ma réponse</span>
+      <select name="choice">{% for value, label in choice_options %}<option value="{{ value }}"{% if current.choice == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label class="field"><span class="field-label">Note</span><input type="text" name="note" maxlength="240"
+      value="{{ current.note|default:'' }}" placeholder="Ex. : seulement jusqu'à 12 h 30"></label>
+    <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+  </form>{% endwith %}{% endif %}
+  {% if can_edit %}<form method="post" action="{% url 'plannings:slot_delete' row.slot.pk %}" style="display:inline">{% csrf_token %}
+  <button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer ce créneau ?">Supprimer le créneau</button></form>{% endif %}
+</div></div>
+{% empty %}{% include "partials/_empty.html" with text="Aucun créneau dans cette campagne." %}{% endfor %}
+{% if can_edit %}
+<div class="card"><div class="card-head"><h3>Ajouter un créneau</h3></div><div class="card-body">
+<form method="post" action="{% url 'plannings:slot_add' campaign.pk %}" class="form-row">{% csrf_token %}
+  <label class="field"><span class="field-label">Jour</span><select name="weekday">
+    <option value="1">lundi</option><option value="2">mardi</option><option value="3">mercredi</option>
+    <option value="4">jeudi</option><option value="5">vendredi</option><option value="6">samedi</option>
+    <option value="0">dimanche</option></select></label>
+  <label class="field"><span class="field-label">Début</span><input type="time" name="start_time" value="12:00" required></label>
+  <label class="field"><span class="field-label">Fin</span><input type="time" name="end_time" value="13:00" required></label>
+  <label class="field"><span class="field-label">Gérants nécessaires</span><input type="number" name="capacity" value="2" min="1" max="10"></label>
+  <label class="field"><span class="field-label">Intitulé</span><input type="text" name="label" maxlength="140" placeholder="Permanence du midi"></label>
+  <button type="submit" class="btn btn-primary">Ajouter</button>
+</form></div></div>
+{% endif %}
+{% endblock %}
