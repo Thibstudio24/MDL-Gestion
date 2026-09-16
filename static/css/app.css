@@ -431,3 +431,20 @@ table.matrix td:first-child, table.matrix th:first-child { text-align: left; }
 .codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; list-style: none; padding: 0; }
 .codes li { border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 8px 10px; }
 @media (max-width: 700px) { .twofa-grid { grid-template-columns: 1fr; } }
+
+/* ----------------------------------------------------------------- documents */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: .84rem;
+}
+.chip:hover { border-color: var(--primary); text-decoration: none; }
+.chip.is-active { background: color-mix(in srgb, var(--primary) 14%, transparent); border-color: var(--primary); font-weight: 600; }
+.chip-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dropzone {
+  border: 2px dashed var(--border); border-radius: var(--radius); padding: 22px; text-align: center;
+  margin-bottom: 14px; color: color-mix(in srgb, var(--text) 66%, transparent); background: var(--bg);
+}
+.dropzone.is-over { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.pdf-viewer { width: 100%; height: 78vh; border: 0; }
+.image-viewer { max-width: 100%; height: auto; display: block; margin: 0 auto; }

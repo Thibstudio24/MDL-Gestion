@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Catégories et dossiers</h2>
+<p class="page-help">Catégories par défaut : Comptes rendus, Fiches clubs (un sous-dossier par club), Documents administratifs, Bilans. La suppression est ré-authentifiée et tracée.</p></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Catégorie</th><th>Description</th><th class="num">Documents</th><th>Verrou</th><th></th></tr></thead>
+<tbody>{% for category in categories %}<tr>
+<td><span class="chip-dot" style="background:{{ category.color }}"></span> <strong>{{ category.name }}</strong>{% if category.archived %} {% status_badge "inactive" "archivée" %}{% endif %}</td>
+<td class="small">{{ category.description|default:"—" }}</td><td class="num">{{ category.document_count }}</td>
+<td>{% if category.locked_read %}{% status_badge "closed" "lecture verrouillée" %}{% else %}—{% endif %}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="/documents/categories/{{ category.pk }}/">Gérer</a></td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucune catégorie : lancez la commande seed pour créer les quatre catégories par défaut." %}</td></tr>{% endfor %}</tbody>
+</table></div></div>
+<div class="card-foot"><form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
+<input type="hidden" name="save" value="1"><button type="submit" class="btn btn-primary">Créer la catégorie</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Dossiers</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Nom</th><th>Catégorie</th><th>Parent</th><th>Verrou</th><th></th></tr></thead>
+<tbody>{% for folder in folders %}<tr><td>{{ folder.name }}</td><td>{{ folder.category.name }}</td>
+<td>{{ folder.parent.name|default:"—" }}</td><td>{% if folder.locked_read %}oui{% else %}—{% endif %}</td>
+<td class="right"><form method="post" action="/documents/dossiers/{{ folder.pk }}/supprimer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Supprimer</button></form></td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucun dossier. Créez-en un par club dans « Fiches clubs »." %}</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card-foot"><form method="post" action="/documents/dossiers/creer/" class="form-row">{% csrf_token %}
+<label class="field"><span class="field-label">Catégorie</span><select name="category">{% for category in categories %}<option value="{{ category.pk }}">{{ category.name }}</option>{% endfor %}</select></label>
+<label class="field"><span class="field-label">Nom</span><input type="text" name="name" required maxlength="140"></label>
+<label class="field"><span class="field-label">Description</span><input type="text" name="description" maxlength="240"></label>
+<button type="submit" class="btn btn-primary">Créer le dossier</button></form></div></div>
+{% endblock %}

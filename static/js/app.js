@@ -373,3 +373,26 @@
     }
   });
 })();
+
+/* ---------------------------------------------------------------- glisser-déposer */
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('form[data-dropzone]');
+    var zone = document.querySelector('[data-dropzone-target]');
+    if (!form || !zone) { return; }
+    var input = form.querySelector('input[type=file]');
+    ['dragenter', 'dragover'].forEach(function (name) {
+      zone.addEventListener(name, function (event) { event.preventDefault(); zone.classList.add('is-over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (name) {
+      zone.addEventListener(name, function (event) { event.preventDefault(); zone.classList.remove('is-over'); });
+    });
+    zone.addEventListener('drop', function (event) {
+      if (!input || !event.dataTransfer) { return; }
+      input.files = event.dataTransfer.files;
+      var label = zone.querySelector('p');
+      if (label) { label.textContent = event.dataTransfer.files.length + ' fichier(s) prêt(s) à être déposé(s).'; }
+    });
+  });
+})();
