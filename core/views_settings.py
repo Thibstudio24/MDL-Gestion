@@ -6,6 +6,7 @@ import json
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -47,6 +48,53 @@ def _safe(payload) -> dict:
     }
 
 
+def _save_logo(uploaded, retirer, actuel: str) -> str:
+    """Range le logo téléversé dans media/branding/ et renvoie son chemin relatif.
+
+    Renvoie une chaîne vide si le membre demande à retirer le logo, et le
+    chemin déjà enregistré quand aucun fichier n'est fourni.
+    """
+    if retirer:
+        _delete_logo(actuel)
+        return ""
+    # Un FileField non requis renvoie le chemin déjà enregistré (une chaîne)
+    # quand rien n'est téléversé : ce n'est pas un nouveau fichier.
+    if not uploaded or isinstance(uploaded, str):
+        return actuel
+    import re as _re
+    from pathlib import Path as _Path
+
+    from django.conf import settings as django_settings
+    from django.utils.text import get_valid_filename
+
+    cible = _Path(django_settings.MEDIA_ROOT) / "branding"
+    cible.mkdir(parents=True, exist_ok=True)
+    racine, _, extension = get_valid_filename(uploaded.name).rpartition(".")
+    nom = "logo-%s.%s" % (timezone.now().strftime("%Y%m%d%H%M%S"),
+                          _re.sub(r"[^A-Za-z0-9]", "", extension)[:5].lower() or "png")
+    for ancien in cible.glob("logo-*"):
+        ancien.unlink(missing_ok=True)
+    with (cible / nom).open("wb") as handle:
+        for bloc in uploaded.chunks():
+            handle.write(bloc)
+    _delete_logo(actuel)
+    return "branding/%s" % nom
+
+
+def _delete_logo(relatif: str) -> None:
+    """Supprime l'ancien logo s'il vivait bien dans media/branding/."""
+    from pathlib import Path as _Path
+
+    from django.conf import settings as django_settings
+
+    if not relatif or not relatif.startswith("branding/"):
+        return
+    racine = _Path(django_settings.MEDIA_ROOT).resolve()
+    cible = (racine / relatif).resolve()
+    if racine in cible.parents and cible.is_file():
+        cible.unlink(missing_ok=True)
+
+
 def _tabs(active: str) -> list[dict]:
     entries = [
         ("brand", "Marque & textes", "settings_brand"),
@@ -79,13 +127,22 @@ def brand(request):
     current = Setting.brand()
     form = BrandForm(initial=current)
     if request.method == "POST":
-        form = BrandForm(request.POST)
+        form = BrandForm(request.POST, request.FILES, initial=current)
         if form.is_valid():
             previous = Setting.brand()
-            Setting.update_section("branding", form.cleaned_data)
+            payload = dict(form.cleaned_data)
+            # Le logo se téléverse : on range le fichier dans media/branding/ et
+            # on ne conserve en base que son chemin relatif, sérialisable.
+            payload.pop("logo_retirer", None)
+            payload["logo"] = _save_logo(
+                form.cleaned_data.get("logo"),
+                form.cleaned_data.get("logo_retirer"),
+                previous.get("logo") or "",
+            )
+            Setting.update_section("branding", payload)
             audit.log(request.user, "settings.brand_updated", "settings", None,
                       "Réglages de marque enregistrés", previous=_safe(previous),
-                      current=_safe(form.cleaned_data), request=request)
+                      current=_safe(payload), request=request)
             messages.success(request, _("Marque enregistrée."))
             return redirect("settings:settings_brand")
     previews = [{"key": key, "label": label, "light": theme.preview_svg(key, "light"),

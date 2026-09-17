@@ -16,13 +16,32 @@ class BrandForm(forms.Form):
     lycee = forms.CharField(label="Lycée", max_length=160, required=False)
     ville = forms.CharField(label="Ville", max_length=80, required=False)
     contact = forms.EmailField(label="Adresse de contact", required=False)
-    logo = forms.CharField(label="Logo (URL ou chemin dans media/)", required=False,
-                           widget=forms.TextInput(attrs={"placeholder": "media/branding/logo.png"}))
+    logo = forms.FileField(
+        label="Logo de l'association", required=False,
+        help_text="PNG, JPG, WEBP, GIF ou SVG — 1 Mo au plus. Le fichier est "
+                  "téléversé depuis votre ordinateur ou votre téléphone.",
+        widget=forms.ClearableFileInput(attrs={"accept": ".png,.jpg,.jpeg,.webp,.gif,.svg"}),
+    )
+    logo_retirer = forms.BooleanField(label="Retirer le logo actuel", required=False)
     couleur_principale = forms.CharField(label="Couleur principale", max_length=9,
                                          widget=forms.TextInput(attrs={"type": "color"}))
     palette_imposee = forms.ChoiceField(label="Palette imposée", choices=[("", "— aucune —")] + PALETTE_CHOICES,
                                         required=False)
     mode_impose = forms.ChoiceField(label="Mode imposé", choices=MODE_CHOICES, required=False)
+
+    def clean_logo(self):
+        fichier = self.cleaned_data.get("logo")
+        # Sans nouveau téléversement, un FileField non requis renvoie sa valeur
+        # initiale — ici le chemin déjà enregistré, donc une chaîne. Rien à
+        # valider dans ce cas, et surtout pas comme un fichier.
+        if not fichier or isinstance(fichier, str):
+            return None if not fichier else fichier
+        from django.core.validators import FileExtensionValidator
+
+        FileExtensionValidator(["png", "jpg", "jpeg", "webp", "gif", "svg"])(fichier)
+        if fichier.size > 1024 * 1024:
+            raise forms.ValidationError("Le logo doit peser moins de 1 Mo.")
+        return fichier
 
     def clean_couleur_principale(self):
         value = (self.cleaned_data.get("couleur_principale") or "#33556e").strip()

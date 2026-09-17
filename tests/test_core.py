@@ -183,3 +183,54 @@ class TestRedirectionHttps:
     def test_la_suite_de_tests_desactive_la_redirection(self):
         assert settings.TESTING is True
         assert settings.SECURE_SSL_REDIRECT is False
+
+
+def test_logo_se_televerse_et_non_plus_un_chemin(admin_client):
+    """Le logo se téléverse depuis l'ordinateur ou le téléphone : plus de
+    chemin saisi à la main. Le fichier va dans media/branding/ et seule son
+    adresse relative est conservée en base."""
+    from pathlib import Path
+
+    from django.conf import settings as dj
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from django.urls import reverse
+
+    from core.models import Setting
+
+    base = {
+        "nom": "MDL du lycée Hugo", "sigle": "MDL", "lycee": "Lycée Hugo",
+        "ville": "Paris", "contact": "mdl@lycee.fr",
+        "couleur_principale": "#33556e", "palette_imposee": "", "mode_impose": "",
+    }
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 256
+
+    response = admin_client.post(
+        reverse("settings:settings_brand"),
+        {**base, "logo": SimpleUploadedFile("mon logo.png", png, content_type="image/png")},
+        follow=True,
+    )
+    assert response.status_code == 200
+
+    logo = Setting.brand().get("logo")
+    assert logo and logo.startswith("branding/logo-"), logo
+    assert (Path(dj.MEDIA_ROOT) / logo).exists()
+
+    # Le gabarit sert le logo par /fichiers/ : media/ n'est monté qu'en DEBUG.
+    html = admin_client.get("/").content.decode()
+    assert 'src="/fichiers/%s"' % logo in html
+
+    # Une extension hors liste est refusée.
+    refus = admin_client.post(
+        reverse("settings:settings_brand"),
+        {**base, "logo": SimpleUploadedFile("l.exe", b"MZ" + b"0" * 100)},
+    )
+    assert refus.status_code == 200
+    assert Setting.brand()["logo"] == logo, "un .exe a remplacé le logo"
+
+    # Enregistrer sans re-téléverser conserve le logo existant.
+    admin_client.post(reverse("settings:settings_brand"), base, follow=True)
+    assert Setting.brand()["logo"] == logo
+
+    # « Retirer le logo actuel » le supprime.
+    admin_client.post(reverse("settings:settings_brand"), {**base, "logo_retirer": "on"}, follow=True)
+    assert Setting.brand().get("logo") == ""

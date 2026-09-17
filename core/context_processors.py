@@ -33,6 +33,21 @@ def _brand() -> dict:
         return settings._INSTANCE.get("branding", {}) if hasattr(settings, "_INSTANCE") else {}
 
 
+def _logo_url(valeur: str) -> str:
+    """Transforme le logo enregistré en URL servable.
+
+    Le logo est téléversé dans media/branding/ et seul son chemin relatif est
+    conservé en base. Or media/ n'est monté qu'en DEBUG : en production, c'est
+    la route /fichiers/ qui sert les médias. Une URL absolue saisie avant
+    l'arrivée du téléversement reste utilisable telle quelle.
+    """
+    if not valeur:
+        return ""
+    if valeur.startswith(("http://", "https://", "/")):
+        return valeur
+    return "/fichiers/%s" % valeur.lstrip("/")
+
+
 def association(request):
     brand = _brand()
     nom = brand.get("nom") or "MDL"
@@ -43,7 +58,7 @@ def association(request):
         "asso_lycee": lycee,
         "asso_ville": brand.get("ville") or "",
         "asso_contact": brand.get("contact") or "",
-        "asso_logo": brand.get("logo") or "",
+        "asso_logo": _logo_url(brand.get("logo") or ""),
         "asso_couleur": brand.get("couleur_principale") or "#33556e",
         "asso_titre": ("%s — %s" % (nom, lycee)) if lycee else nom,
         "version": getattr(settings, "VERSION", ""),
