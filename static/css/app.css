@@ -4,6 +4,12 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* L'attribut HTML « hidden » est appliqué par la feuille utilisateur du navigateur
+   (display: none), donc n'importe quelle règle « display » du présent fichier
+   l'écrase. Sans ceci, masquer le bandeau d'installation ou la bannière hors-ligne
+   via element.hidden = true ne produisait aucun effet visible. */
+[hidden] { display: none !important; }
+
 html {
   --row-pad: 8px;
   --cell-pad: 9px 12px;
@@ -56,7 +62,13 @@ pre { background: var(--surface); border: 1px solid var(--border); border-radius
 .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .content { padding: 18px 22px 32px; flex: 1 1 auto; }
 body.bare .content { display: flex; align-items: flex-start; justify-content: center; padding-top: 6vh; }
-body.sidebar-collapsed .sidebar { width: var(--sidebar-w-collapsed); }
+/* .sidebar pose « flex: 0 0 var(--sidebar-w) » : en contexte flex, flex-basis
+   l'emporte sur width. Ne changer que width laissait donc la colonne à 236 px
+   alors que les libellés, eux, disparaissaient. */
+body.sidebar-collapsed .sidebar {
+  width: var(--sidebar-w-collapsed);
+  flex-basis: var(--sidebar-w-collapsed);
+}
 body.sidebar-collapsed .brand-text,
 body.sidebar-collapsed .nav-label,
 body.sidebar-collapsed .profile-text,
@@ -112,7 +124,9 @@ body.sidebar-collapsed .sidebar-head { justify-content: center; }
 .avatar {
   display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
   background: var(--accent); color: #fff; font-size: .74rem; font-weight: 700; flex: 0 0 auto;
+  overflow: hidden;
 }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .profile-text { display: flex; flex-direction: column; min-width: 0; }
 .profile-text strong { font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-text small { font-size: .72rem; color: color-mix(in srgb, var(--text) 60%, transparent); }
@@ -127,7 +141,10 @@ body.sidebar-collapsed .sidebar-head { justify-content: center; }
 .topbar-actions { display: flex; align-items: center; gap: 4px; }
 .year-filter select { padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
 .search { position: relative; flex: 0 1 340px; }
-.search input {
+/* Sélecteur plus spécifique que la règle globale « input[type=search] » plus bas :
+   à spécificité égale c'est la dernière qui gagne, et elle écraserait le retrait
+   réservé à la loupe. Le texte chevauchait donc l'icône. */
+.search input[type=search] {
   width: 100%; padding: 6px 10px 6px 30px; border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: .9rem;
 }

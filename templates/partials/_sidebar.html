@@ -24,7 +24,11 @@
   {% endfor %}
   <div class="sidebar-foot">
     <a class="profile" href="/parametres/">
-      <span class="avatar">{{ user|initials }}</span>
+      {% if user.photo %}
+        <span class="avatar"><img src="{% url 'serve_media' user.photo.name %}" alt=""></span>
+      {% else %}
+        <span class="avatar">{{ user|initials }}</span>
+      {% endif %}
       <span class="profile-text">
         <strong>{{ user.get_short_name|default:user.email }}</strong>
         <small>{{ user.display_function|default:user.role.name|default:'Membre' }}</small>

@@ -153,13 +153,14 @@ def done(request):
 @require_POST
 def seed_defaults(request):
     """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
-    from accounts.services import create_board_roles, ensure_base_roles
+    from accounts.services import ensure_admin_role
     from documents.services import ensure_default_categories
     from finance.services import ensure_accounts, ensure_gap_category
     from finance.services import ensure_default_categories as finance_categories
 
-    ensure_base_roles()
-    create_board_roles()
+    # Un seul rôle à l'installation : l'association crée ensuite les siens.
+    # La trame du bureau reste disponible via `manage.py seed`.
+    ensure_admin_role()
     ensure_default_categories()
     finance_categories()
     ensure_gap_category()

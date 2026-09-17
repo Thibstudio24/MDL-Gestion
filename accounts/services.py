@@ -225,8 +225,7 @@ def create_administrator(*, email: str, password: str, first_name: str, last_nam
     if len(password or "") < int(Setting.value("securite", "password_min_length", 10)):
         raise ValueError(_("Le mot de passe doit comporter au moins %(n)s caractères.")
                          % {"n": Setting.value("securite", "password_min_length", 10)})
-    ensure_base_roles()
-    role = Role.objects.get(name="Administrateur")
+    role = ensure_admin_role()
     with transaction.atomic():
         # receive_personal_email et email_choice_made sont des propriétés en lecture
         # seule adossées au champ JSON « prefs » : elles s'écrivent par ce champ.
@@ -343,8 +342,8 @@ def render_invitation_email(invitation, reminder: bool = False) -> str:
 # --------------------------------------------------------------------------- #
 # Rôles
 # --------------------------------------------------------------------------- #
-def ensure_base_roles() -> None:
-    """Administrateur + Utilisateur avec des droits réels (jamais « tout à zéro »)."""
+def ensure_admin_role() -> Role:
+    """Le seul rôle créé à l'installation : l'association compose ensuite les siens."""
     admin, _created = Role.objects.get_or_create(
         name="Administrateur",
         defaults={"slug": "administrateur", "is_administrator": True, "is_system": True, "order": 1,
@@ -355,6 +354,16 @@ def ensure_base_roles() -> None:
         admin.is_system = True
         admin.save(update_fields=["is_administrator", "is_system"])
     _apply_levels(admin, DEFAULT_LEVELS["Administrateur"], [])
+    return admin
+
+
+def ensure_base_roles() -> None:
+    """Administrateur + Utilisateur avec des droits réels (jamais « tout à zéro »).
+
+    Réservé à `manage.py seed`, qui est un choix explicite : l'assistant
+    d'installation ne crée que le rôle administrateur.
+    """
+    ensure_admin_role()
 
     user_role, _created = Role.objects.get_or_create(
         name="Utilisateur",

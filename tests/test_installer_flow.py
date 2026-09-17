@@ -79,8 +79,8 @@ def test_les_referentiels_sont_crees_depuis_l_etape_4(client):
     assert Account.objects.count() > 0, "les comptes doivent être créés"
 
 
-def test_le_bureau_est_cree_avec_les_referentiels(client):
-    """L'assistant doit livrer la trame du bureau, comme le fait manage.py seed."""
+def test_seul_le_role_administrateur_est_cree(client):
+    """L'installation ne pose qu'un rôle : l'association crée ensuite les siens."""
     from accounts.models import Role
     from core.permissions import BOARD_ROLES
 
@@ -92,8 +92,23 @@ def test_le_bureau_est_cree_avec_les_referentiels(client):
     client.post(reverse("installer:seed_defaults"), follow=True)
 
     noms = set(Role.objects.values_list("name", flat=True))
+    assert noms == {"Administrateur"}, "rôles créés à l'installation : %s" % sorted(noms)
+    for refusé in BOARD_ROLES:
+        assert refusé not in noms, "le rôle du bureau %r ne doit pas être pré-créé" % refusé
+
+
+def test_seed_cree_la_trame_du_bureau(db):
+    """`manage.py seed` reste le moyen explicite d'obtenir la trame complète."""
+    from django.core.management import call_command
+
+    from accounts.models import Role
+    from core.permissions import BOARD_ROLES
+
+    call_command("seed", verbosity=0)
+
+    noms = set(Role.objects.values_list("name", flat=True))
     for attendu in BOARD_ROLES:
-        assert attendu in noms, "le rôle du bureau %r manque" % attendu
+        assert attendu in noms, "le rôle du bureau %r manque après seed" % attendu
 
 
 def test_etape_4_inaccessible_avec_une_session_fraiche(client):
