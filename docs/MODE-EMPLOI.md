@@ -48,6 +48,10 @@ Rôles & droits → **Créer un rôle**. Pour chaque module : *Aucun* (module ab
 Un rôle ne peut jamais recevoir un niveau supérieur au vôtre, et « Rôles & droits » n'est
 modifiable que par un Administrateur.
 
+L'installation ne crée qu'un seul rôle, **Administrateur** : c'est à vous de composer ceux de
+votre bureau. Un rôle peut **imposer l'A2F** à ses membres, avec un délai d'activation ;
+passé ce délai, la connexion reste sur l'écran d'activation.
+
 ## 13. Saisir une écriture de trésorerie
 
 Trésorerie → **Nouvelle écriture** : date, libellé, catégorie, montant, sens (Recette / Dépense /
@@ -74,6 +78,10 @@ une ligne d'audit en rouge.
 Un **seul classeur par année scolaire**, régénéré à chaque échéance :
 onglet *Synthèse annuelle*, un onglet par mois, *Coffre & comptages*, *Écritures*.
 Il est rangé dans Documents → **Bilans** et notifié aux ayants droit.
+
+Les destinataires ne se choisissent pas : le bilan va aux seuls membres qui peuvent
+**consulter la trésorerie**, et ce même droit ouvre la catégorie « Bilans ». Retirer le droit
+trésorerie retire aussitôt l'accès au classeur.
 
 Boutons : *Générer maintenant*, *Choisir le mois d'arrêt*, *Télécharger le classeur*,
 *Ouvrir l'aperçu*, *Exporter ce mois*.
@@ -149,7 +157,11 @@ L'onglet de suivi liste nominativement qui a lu, avec le compteur « 8/12 lus »
 ## 23. Sauvegarder, restaurer, mettre à jour
 
 Réglages → **Sauvegarde** : le ZIP contient le dump JSON, la configuration (mots de passe masqués)
-et les fichiers. La restauration exige une ré-authentification.
+et les fichiers. La restauration exige une ré-authentification. Chaque archive peut être
+supprimée du serveur ; téléchargez-la d'abord, le serveur ne doit pas être votre seul exemplaire.
+
+Réglages → **Journal d'audit** : le journal ne se modifie jamais ligne à ligne. L'administrateur
+peut le vider entièrement ; le vidage lui-même y est tracé.
 
 Réglages → **Mises à jour** : vérification depuis les Releases GitHub, application en un clic
 (sauvegarde automatique, vérification SHA-256, retour arrière en cas d'échec). L'application ne

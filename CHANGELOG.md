@@ -11,22 +11,29 @@ Première version livrée d'un bloc.
   mode maintenance, contexte d'audit.
 * Thème généré dynamiquement par `/theme.css` : 6 palettes × clair/sombre/auto + palette dérivée
   « couleurs du lycée », densité confort/compacte, feuille d'impression dédiée.
+* Marque de l'association : nom, sigle, lycée, ville, contact, couleur, et logo téléversé
+  depuis l'ordinateur ou le téléphone (1 Mo, rangé dans `media/branding/`).
 * PWA : `manifest.webmanifest` dynamique, service worker (coquille + repli hors ligne),
   page `/hors-ligne/`, icônes générées sans Pillow.
 
 ### Comptes, droits, sécurité
 * E-mail comme identifiant, invitation à usage unique (lien + code court 6 caractères),
   verrouillage 5 tentatives / 15 minutes, sessions 14 jours révocables, ré-authentification.
-* A2F TOTP (RFC 6238) avec QR SVG inline et 10 codes de récupération hachés.
+* A2F TOTP (RFC 6238) avec QR SVG inline et 10 codes de récupération hachés. Un rôle peut
+  l'imposer (`force_2fa`) : l'inscription est alors demandée dès la première connexion,
+  reportable jusqu'au délai fixé, obligatoire ensuite.
 * Droits par module × niveau + 10 droits fins, cache 300 s invalidé à chaque changement de rôle.
 * RGPD : anonymisation, export JSON des données d'un compte, textes légaux versionnés.
 
 ### Modules métier
 * Documents : catégories, dossiers (2 niveaux), versions (3 conservées), corbeille 30 jours,
   quota avec alertes 80/95 %, verrouillage en lecture, médias servis par une vue privée.
+  Une catégorie peut exiger un module en plus de Documents (`module_gate`) : « Bilans »
+  exige la trésorerie.
 * Trésorerie : grand livre unique, transferts neutres, comptage de caisse avec écart justifié,
   clôtures mensuelles bloquantes, import avec mapping et détection de doublons, bilan annuel
-  Excel, export du grand livre en Excel / CSV / PDF.
+  Excel, export du grand livre en Excel / CSV / PDF. Les destinataires du bilan ne se
+  choisissent pas : ils découlent du droit de consulter la trésorerie.
 * Planning de la salle : une campagne par période (trimestre, semestre ou année), créneaux
   typés du lundi au dimanche avec capacité, réponses disponible / si besoin / indisponible,
   contrôle de couverture, relance des non-répondants, clôture, export CSV et PDF A4 paysage
@@ -41,5 +48,10 @@ Première version livrée d'un bloc.
   aucun compte de démonstration n'est créé.
 * 5 commandes de gestion idempotentes : `mdl_cron` (file SMTP, diffusions, rappels, bilan,
   purges), `mdl_backup`, `mdl_health`, `mdl_purge`, `seed` (référentiels seuls).
+* Journal d'audit : 97 actions déclarées, jamais modifiable ligne à ligne, purge automatique
+  après N années et vidage complet par l'administrateur.
+* Suppressions disponibles partout où l'on peut créer : rôles, membres (désactivation et
+  anonymisation), sauvegardes, campagnes de planning de salle et de ménage, écritures,
+  dossiers, documents, créneaux, fermetures exceptionnelles.
 * Canal éditeur (`core/views_devhub.py`, monté sur `/aide-intervention/`) : jeton
   d'intervention borné dans le temps, télémétrie opt-in, contrôle des mises à jour.
