@@ -64,6 +64,20 @@ class RequireLoginMiddleware:
                 if match is None or match.url_name not in {"welcome", "logout", "theme_css", "manifest",
                                                             "service_worker", "offline"}:
                     return redirect("auth:welcome")
+            # Le rôle peut imposer l'A2F : l'inscription est demandée dès la
+            # première connexion. Tant que le délai court, le membre peut
+            # reporter ; passé le délai, l'écran d'activation est obligatoire.
+            if getattr(user, "two_factor_pending", False):
+                exemptes = {"twofa_setup", "twofa", "twofa_disable", "logout", "welcome",
+                            "theme_css", "manifest", "service_worker", "offline"}
+                try:
+                    match = resolve(path)
+                except Resolver404:
+                    match = None
+                if match is None or match.url_name not in exemptes:
+                    report = request.session.get("twofa_deferred")
+                    if user.two_factor_overdue or not report:
+                        return redirect("auth:twofa_setup")
             now = timezone.now()
             previous = user.last_seen
             if previous is None or (now - previous) > timedelta(minutes=5):

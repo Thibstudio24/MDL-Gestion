@@ -14,6 +14,9 @@
     <p class="small muted">URI : <code>{{ uri }}</code></p>
     <form method="post">{% csrf_token %}{% include "partials/_form.html" %}
     <button type="submit" class="btn btn-primary">Activer l'A2F</button></form>
+    {% if not overdue %}<form method="post" action="{% url 'auth:twofa_defer' %}">{% csrf_token %}
+    <input type="hidden" name="next" value="/">
+    <button type="submit" class="btn btn-ghost btn-sm">Plus tard</button></form>{% endif %}
   </div>
 </div>
 </div></div>

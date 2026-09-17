@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts import services, twofa
 from accounts.forms import (
@@ -97,6 +97,23 @@ def second_factor(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_POST
+def twofa_defer(request):
+    """Reporte l'inscription A2F — uniquement tant que le délai court.
+
+    Passé le délai, ``two_factor_overdue`` rend l'écran d'activation
+    obligatoire et le report est refusé.
+    """
+    if request.user.two_factor_overdue:
+        messages.error(request, _("Délai dépassé : l'A2F doit être activée maintenant."))
+        return redirect("auth:twofa_setup")
+    request.session["twofa_deferred"] = True
+    deadline = request.user.two_factor_deadline()
+    messages.info(request, _("Inscription A2F reportée. À faire avant le %(date)s.")
+                  % {"date": deadline.strftime("%d/%m/%Y") if deadline else "—"})
+    return redirect(request.POST.get("next") or "/")
+
+
 def twofa_setup(request):
     user = request.user
     secret = request.session.get("totp_pending") or twofa.generate_secret()

@@ -217,6 +217,15 @@ class User(AbstractBaseUser):
         return base + timedelta(days=int(self.role.force_2fa_deadline_days or 0))
 
     @property
+    def two_factor_pending(self) -> bool:
+        """Vrai quand le rôle impose l'A2F et qu'elle n'est pas encore activée.
+
+        C'est l'état d'un compte freshly créé dont le rôle exige l'A2F :
+        l'inscription doit être demandée dès la première connexion.
+        """
+        return bool(self.role and self.role.force_2fa and not self.two_factor_on)
+
+    @property
     def two_factor_overdue(self) -> bool:
         deadline = self.two_factor_deadline()
         return bool(deadline and not self.two_factor_on and deadline < timezone.now())
