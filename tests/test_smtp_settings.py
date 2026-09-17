@@ -68,7 +68,7 @@ def test_e_mail_de_test_part_immediatement(admin_client):
     assert boite_aux_lettres.outbox[0].to == ["cible@example.test"]
 
 
-def test_courriel_unitaire_part_immediatement(settings):
+def test_courriel_unitaire_part_immediatement(db, settings):
     settings.MAIL_ENABLED = True
     settings.TESTING = False
     item = queue_email(to_email="invite@example.test", subject="Invitation",
@@ -77,7 +77,7 @@ def test_courriel_unitaire_part_immediatement(settings):
     assert len(boite_aux_lettres.outbox) == 1
 
 
-def test_courriel_unitaire_en_echec_reste_en_file(settings, monkeypatch):
+def test_courriel_unitaire_en_echec_reste_en_file(db, settings, monkeypatch):
     settings.MAIL_ENABLED = True
     settings.TESTING = False
 
