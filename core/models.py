@@ -230,8 +230,25 @@ class SchoolYear(models.Model):
         return cls.objects.filter(is_current=True).first() or cls.objects.order_by("-start_date").first()
 
     @classmethod
-    def get_or_current(cls):
-        return cls.current()
+    def ensure_current(cls) -> SchoolYear:
+        """Crée l'année scolaire couvrant la date du jour si aucune n'existe.
+
+        Sans année, la trésorerie et les plannings n'ont rien à quoi rattacher
+        leurs données : une installation neuve doit donc en avoir une.
+        L'année scolaire française court du 1er septembre au 31 août.
+        """
+        today = timezone.localdate()
+        start_year = today.year if today.month >= 9 else today.year - 1
+        return cls.objects.create(
+            label="%d-%d" % (start_year, start_year + 1),
+            start_date=date(start_year, 9, 1),
+            end_date=date(start_year + 1, 8, 31),
+            is_current=True,
+        )
+
+    @classmethod
+    def get_or_current(cls) -> SchoolYear:
+        return cls.current() or cls.ensure_current()
 
     def months(self) -> list[tuple[int, int]]:
         """Liste des (année, mois) couverts, de septembre à août."""

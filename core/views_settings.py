@@ -320,12 +320,18 @@ def pwa(request):
 @administrator_required
 @require_POST
 def pwa_generate_keys(request):
-    from py_vapid import Vapid02  # pywebpush fournit py_vapid
+    from cryptography.hazmat.primitives import serialization
+    from py_vapid import Vapid02, b64urlencode  # pywebpush fournit py_vapid
 
     vapid = Vapid02()
     vapid.generate_keys()
-    public = vapid.public_key_b64urlencode()
-    private = vapid.private_key_b64urlencode()
+    # Format Web Push (RFC 8292) : clé publique = point non compressé X9.62
+    # (65 octets), clé privée = entier brut de 32 octets, les deux en base64url.
+    # C'est ce qu'attend le navigateur pour applicationServerKey et ce que
+    # pywebpush relit via Vapid.from_string().
+    public = b64urlencode(vapid.public_key.public_bytes(
+        serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint))
+    private = b64urlencode(vapid.private_key.private_numbers().private_value.to_bytes(32, "big"))
     Setting.update_section("push", {"public_key": public, "private_key": private, "enabled": True,
                                     "claims_email": Setting.brand().get("contact") or "mdl@localhost"})
     messages.success(request, _("Clés VAPID générées. Redémarrez le service web, puis réabonnez les appareils."))
