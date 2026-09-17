@@ -50,7 +50,9 @@ En SFTP (FileZilla, WinSCP…), envoyez `MDL-Gestion-v1.0.0.zip` dans `~/www/` p
 décompressez-le, ou bien en SSH :
 
 ```bash
-cd ~/www && unzip MDL-Gestion-v1.0.0.zip
+cd ~/www
+git clone -b arena/01a0a9db-mdl-gestion https://github.com/Thibstudio24/MDL-Gestion.git mdl
+cd mdl
 ```
 
 Le ZIP contient un dossier `mdl/` : le projet se retrouve dans `~/www/mdl/`.
