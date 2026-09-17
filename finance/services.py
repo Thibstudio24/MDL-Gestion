@@ -576,6 +576,20 @@ def should_generate_today(today: date | None = None, year=None) -> bool:
     return candidate == today
 
 
+def finance_viewers():
+    """Membres actifs autorisés à consulter la trésorerie.
+
+    Ce sont eux, et eux seuls, qui reçoivent le bilan et peuvent l'ouvrir :
+    la catégorie de documents « Bilans » exige le module « finance »
+    (``Category.module_gate``) et la notification suit la même règle.
+    """
+    from accounts.models import User
+    from core import permissions
+
+    return [user for user in User.objects.filter(status="active").select_related("role")
+            if permissions.can_view(user, "finance")]
+
+
 def generate_balance(year, up_to: date | None = None, actor=None, auto: bool = False) -> BalanceRun:
     """Génère le classeur Excel (4 types de feuilles) et l'enregistre dans Documents → Bilans."""
     from finance import excel
@@ -638,7 +652,37 @@ def generate_balance(year, up_to: date | None = None, actor=None, auto: bool = F
         return run
     audit.log(actor, "finance.balance_generated", "finance", run, "Bilan %s généré" % year.label,
               current=stats, level="warn" if auto else "info")
+    _notify_viewers(run, year, document.pk)
     return run
+
+
+def _notify_viewers(run, year, document_pk: int) -> int:
+    """Notifie les ayants droit du module Trésorerie, personne d'autre.
+
+    Les destinataires ne se choisissent pas : ils découlent du droit de
+    consulter la trésorerie, le même droit qui ouvre la catégorie de
+    documents « Bilans » (``Category.module_gate``).
+    """
+    from decimal import Decimal as _Decimal
+
+    from core.templatetags.ui import money
+    from notifications.services import notify_many
+
+    viewers = finance_viewers()
+    if not viewers:
+        return 0
+    try:
+        solde = money(_Decimal(str(run.stats.get("solde") or 0)))
+    except Exception:  # noqa: BLE001 - un solde illisible ne doit pas bloquer
+        solde = str(run.stats.get("solde") or "—")
+    when = run.generated_at.strftime("%d/%m/%Y") if run.generated_at else ""
+    return notify_many(
+        viewers, "bilan_generated",
+        "Bilan %s disponible" % year.label,
+        "Solde au %s : %s — %s écritures." % (
+            when, solde, int(run.stats.get("ecritures") or 0)),
+        url="/documents/%s/" % document_pk,
+    )
 
 
 def cron_run(today: date | None = None) -> dict[str, Any]:

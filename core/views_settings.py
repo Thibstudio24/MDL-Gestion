@@ -345,6 +345,8 @@ def bilan_settings(request):
     if request.method == "POST" and form.is_valid():
         payload = dict(form.cleaned_data)
         payload["heure"] = payload["heure"].strftime("%H:%M") if hasattr(payload["heure"], "strftime") else str(payload["heure"])
+        # Non négociable : le bilan va aux ayants droit du module Trésorerie.
+        payload["destinataires"] = "module"
         Setting.update_section("bilan", payload)
         messages.success(request, _("Planification du bilan enregistrée."))
         return redirect("settings:settings_bilan")

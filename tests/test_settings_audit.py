@@ -173,12 +173,25 @@ def test_action_declaree_dans_le_vocabulaire(action):
 
 
 def test_aucune_action_settings_sans_emetteur():
-    """Les 14 actions settings.* déclarées doivent toutes avoir un émetteur."""
+    """Chaque action « settings.* » déclarée doit avoir un émetteur.
+
+    Le balayage couvre tout le projet et non le seul module des Réglages :
+    le vidage du journal, par exemple, est émis depuis audit/views.py.
+    """
     import pathlib
     import re
 
     declared = {code for code, _label in AuditEntry._meta.get_field("action").choices
                 if code.startswith("settings.")}
-    source = pathlib.Path("core/views_settings.py").read_text(encoding="utf-8")
-    emitted = set(re.findall(r"audit\.log\([^,]+,\s*[\"']([^\"']+)[\"']", source))
+    root = pathlib.Path(__file__).resolve().parent.parent
+    # « audit.log(...) » mais aussi « log(...) » quand la fonction est importée directement.
+    motif = re.compile(r"""(?:audit\.)?\blog\(\s*[^,]+,\s*["']([^"']+)["']""")
+    emitted: set[str] = set()
+    for path in root.rglob("*.py"):
+        parts = set(path.parts)
+        if "migrations" in parts or "tests" in parts or ".venv" in parts:
+            continue
+        if path.name == "models.py" and "audit" in parts:
+            continue  # la déclaration elle-même n'est pas un émetteur
+        emitted.update(motif.findall(path.read_text(encoding="utf-8")))
     assert declared - emitted == set(), "actions déclarées sans émetteur : %s" % sorted(declared - emitted)

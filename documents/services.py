@@ -172,13 +172,20 @@ def restore_version(document: Document, version: DocumentFile, user) -> Document
 
 def ensure_default_categories(user=None) -> list[Category]:
     created = []
+    # Les bilans de trésorerie ne sont lisibles que par qui peut consulter
+    # la trésorerie : la catégorie exige donc le module « finance ».
     for index, (name, description, color, icon) in enumerate(
         __import__("documents.models", fromlist=["DEFAULT_CATEGORIES"]).DEFAULT_CATEGORIES
     ):
+        gate = "finance" if name == "Bilans" else ""
         category, was_created = Category.objects.get_or_create(
             name=name, defaults={"description": description, "color": color, "icon": icon,
-                                 "order": 10 + index * 10, "created_by": user},
+                                 "order": 10 + index * 10, "created_by": user,
+                                 "module_gate": gate},
         )
+        if category.module_gate != gate:
+            category.module_gate = gate
+            category.save(update_fields=["module_gate"])
         if was_created:
             created.append(category)
     return created
@@ -186,6 +193,10 @@ def ensure_default_categories(user=None) -> list[Category]:
 
 def can_view_category(user, category: Category) -> bool:
     if not permissions.can_view(user, "documents"):
+        return False
+    # Une catégorie peut exiger un module supplémentaire : les bilans de
+    # trésorerie ne se consultent qu'avec le droit de consulter la trésorerie.
+    if category.module_gate and not permissions.can_view(user, category.module_gate):
         return False
     restrictions = category.accesses.select_related("role")
     if not restrictions.exists():

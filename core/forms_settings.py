@@ -133,7 +133,6 @@ class BalanceScheduleForm(forms.Form):
     jour = forms.IntegerField(label="Jour du mois (1-28)", min_value=1, max_value=28)
     heure = forms.TimeField(label="Heure", input_formats=["%H:%M"])
     categorie = forms.CharField(label="Catégorie Documents de rangement", max_length=80)
-    destinataires = forms.ChoiceField(
-        label="Destinataires",
-        choices=[("module", "Ayants droit du module Trésorerie"), ("roles", "Rôles choisis"), ("users", "Personnes choisies")],
-    )
+    # Les destinataires ne se choisissent plus : le bilan va aux seuls membres
+    # qui peuvent consulter la trésorerie, et la catégorie de documents
+    # « Bilans » exige ce même droit (Category.module_gate = "finance").

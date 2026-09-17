@@ -33,6 +33,11 @@ class Category(models.Model):
     locked_read = models.BooleanField(_("verrouillée en lecture"), default=False)
     archived = models.BooleanField(_("archivée"), default=False)
     allow_download = models.BooleanField(_("téléchargement autorisé"), default=True)
+    module_gate = models.CharField(
+        _("module requis"), max_length=30, blank=True,
+        help_text="Laisse vide pour n'exiger que le module Documents. Renseigner « finance » "
+                  "restreint la catégorie aux membres qui peuvent consulter la trésorerie.",
+    )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                                    on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
