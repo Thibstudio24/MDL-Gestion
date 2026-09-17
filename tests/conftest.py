@@ -58,3 +58,39 @@ def chore_campaign(db, year):
 @pytest.fixture
 def today():
     return timezone.localdate()
+
+
+# --------------------------------------------------------------------------- #
+# Garde-fous globaux : aucun test ne doit toucher au vrai config/instance.json
+# ni laisser fuir les réglages mail appliqués à chaud dans django.conf.settings.
+# --------------------------------------------------------------------------- #
+_CLES_MAIL = ["MAIL_ENABLED", "EMAIL_BACKEND", "EMAIL_HOST", "EMAIL_PORT",
+              "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "EMAIL_USE_SSL",
+              "EMAIL_USE_TLS", "DEFAULT_FROM_EMAIL", "SERVER_EMAIL",
+              "MAIL_RATE_PER_MINUTE"]
+
+
+@pytest.fixture(autouse=True)
+def _instance_json_en_memoire(monkeypatch):
+    """write_instance capture en mémoire au lieu d'écrire config/instance.json."""
+    from config import settings as instance
+
+    store = {}
+
+    def fake_write(data, **kwargs):
+        store.clear()
+        store.update(data)
+
+    monkeypatch.setattr(instance, "write_instance", fake_write)
+    return store
+
+
+@pytest.fixture(autouse=True)
+def _restaure_reglages_mail():
+    """Les vues appliquent le SMTP à chaud : on restaure après chaque test."""
+    from django.conf import settings as s
+
+    avant = {cle: getattr(s, cle, None) for cle in _CLES_MAIL}
+    yield
+    for cle, valeur in avant.items():
+        setattr(s, cle, valeur)

@@ -3,17 +3,21 @@
 {% block settings_content %}
 <div class="card"><div class="card-head"><h3>Serveur d'envoi</h3></div>
 <div class="card-body"><form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
-<p class="small muted">alwaysdata : serveur <code>smtp.alwaysdata.com</code>, port 465 (SSL) ou 587 (TLS), identifiant = l'adresse complète. Le mot de passe est masqué{% if masked %} (déjà enregistré){% endif %}.</p>
+<p class="small muted">alwaysdata : serveur <code>smtp.alwaysdata.com</code>, port 465 (SSL) ou 587 (STARTTLS), identifiant = l'adresse complète. Le mot de passe est masqué{% if masked %} (déjà enregistré){% endif %}.</p>
+<p class="small muted">L'enregistrement écrit la section <code>mail</code> de <code>config/instance.json</code> et applique les réglages immédiatement, sans redémarrage.</p>
 <button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
 <div class="card"><div class="card-head"><h3>Test d'envoi</h3></div>
-<div class="card-body"><form method="post" action="/reglages/smtp/test/" class="form-row">{% csrf_token %}
+<div class="card-body"><form method="post" action="{% url 'settings:settings_smtp_test' %}" class="form-row">{% csrf_token %}
 <label class="field"><span class="field-label">Adresse de destination</span><input type="email" name="email" required></label>
-<button type="submit" class="btn btn-primary">Envoyer un e-mail de test</button></form></div></div>
-<div class="card"><div class="card-head"><h3>File d'attente (15 dernières)</h3></div>
+<button type="submit" class="btn btn-primary">Envoyer un e-mail de test</button></form>
+<p class="small muted">Le test part immédiatement par SMTP : en cas d'erreur, le message exact du serveur s'affiche en haut de page.</p></div></div>
+<div class="card"><div class="card-head"><h3>File d'attente (15 dernières)</h3><span class="grow"></span>
+<form method="post" action="{% url 'settings:settings_smtp_drain' %}">{% csrf_token %}
+<button type="submit" class="btn btn-ghost btn-sm">Vider la file maintenant</button></form></div>
 <div class="card-body tight"><div class="table-wrap"><table class="data">
-<thead><tr><th>Destinataire</th><th>Objet</th><th>Type</th><th>État</th><th>Essais</th><th>Créé le</th></tr></thead>
+<thead><tr><th>Destinataire</th><th>Objet</th><th>Type</th><th>État</th><th>Essais</th><th>Erreur</th><th>Créé le</th></tr></thead>
 <tbody>{% for item in queue %}<tr><td>{{ item.to_email }}</td><td>{{ item.subject }}</td><td>{{ item.kind }}</td>
-<td>{% status_badge item.state item.get_state_display %}</td><td>{{ item.tries }}</td><td>{{ item.created_at|date_fr:"%d/%m %H:%M" }}</td></tr>
-{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucun e-mail en file. La file est vidée toutes les 10 minutes par le cron (mail:drain)." %}</td></tr>{% endfor %}</tbody>
+<td>{% status_badge item.status item.get_status_display %}</td><td>{{ item.attempts }}</td><td class="small">{{ item.error }}</td><td>{{ item.queued_at|date_fr:"%d/%m %H:%M" }}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun e-mail en file. Les courriels partent par le bouton « Vider la file maintenant » ou par la tâche planifiée mdl_cron." %}</td></tr>{% endfor %}</tbody>
 </table></div></div></div>
 {% endblock %}

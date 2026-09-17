@@ -42,6 +42,10 @@ Première version livrée d'un bloc.
   exigée, validation ou renvoi motivé, photos purgées 180 jours après validation.
 * Messagerie : diffusions descendantes, accusés de lecture, envoi programmé, file `Outbox`
   en base vidée par le cron (15 e-mails/minute par défaut, 5 essais avant abandon).
+  Les réglages SMTP saisis à l'écran sont écrits dans `config/instance.json` (section
+  `mail`, fichier en droits 600) et appliqués immédiatement, sans redémarrage ; le
+  formulaire réaligne le port sur le mode coché (SSL 465 / STARTTLS 587) ; bouton
+  « Vider la file maintenant » et erreur exacte du serveur affichée dans la file.
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
@@ -50,7 +54,7 @@ Première version livrée d'un bloc.
   bloquants à l'étape 1, et l'alerte nomme le contrôle en échec au lieu d'un conseil figé.
 * 5 commandes de gestion idempotentes : `mdl_cron` (file SMTP, diffusions, rappels, bilan,
   purges), `mdl_backup`, `mdl_health`, `mdl_purge`, `seed` (référentiels seuls).
-* Journal d'audit : 97 actions déclarées, jamais modifiable ligne à ligne, purge automatique
+* Journal d'audit : 98 actions déclarées, jamais modifiable ligne à ligne, purge automatique
   après N années et vidage complet par l'administrateur.
 * Suppressions disponibles partout où l'on peut créer : rôles, membres (désactivation et
   anonymisation), sauvegardes, campagnes de planning de salle et de ménage, écritures,

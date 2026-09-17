@@ -40,6 +40,13 @@ Panneau → **Adresses e-mails** → créer `mdl@votredomaine.alwaysdata.net`.
 La logique est inversée par rapport à un hébergeur classique : la boîte doit être marquée
 « envoi autorisé ». Testez depuis Réglages → Envois (SMTP) → **Envoyer un e-mail de test**.
 
+Dans l'application, l'enregistrement du formulaire écrit la section `mail` de
+`config/instance.json` (mot de passe compris, fichier en droits 600) et applique les
+réglages immédiatement, sans redémarrage. SSL = port 465, STARTTLS = port 587 : le
+formulaire réaligne tout seul un port incohérent avec la case cochée. Les courriels mis
+en file partent avec la tâche planifiée `mdl_cron` ou par le bouton « Vider la file
+maintenant » ; en cas d'échec, l'erreur exacte du serveur s'affiche dans la file.
+
 ## 6. Monter le ZIP sur le serveur
 
 Le code va dans `~/www/`. **N'utilisez pas `~/admin/`** : ce répertoire appartient à

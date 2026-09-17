@@ -299,19 +299,60 @@ def smtp(request):
         if form.is_valid():
             payload = dict(form.cleaned_data)
             payload["from"] = payload.pop("mail_from", "")
+            mot_de_passe = payload.get("password") or data.get("password") or ""
             if not payload.get("password"):
                 payload.pop("password", None)
             Setting.update_section("mail", payload)
+            _apply_mail_settings(payload, mot_de_passe)
             audit.log(request.user, "settings.smtp_updated", "settings", None,
                       "Réglages SMTP enregistrés", previous=_safe(data), current=_safe(payload),
                       level="warn", request=request)
-            messages.success(request, _("Réglages SMTP enregistrés. Redémarrez le service web pour les appliquer."))
+            messages.success(request, _("Réglages SMTP enregistrés et appliqués immédiatement."))
             return redirect("settings:settings_smtp")
     return render(request, "core/settings/smtp.html", {
         "form": form, "page_title": "Envois (SMTP)", "tab": "smtp", "tabs": _tabs("smtp"),
         "queue": _outbox_preview(),
         "masked": "***" if data.get("password") else "",
     })
+
+
+def _apply_mail_settings(payload: dict, mot_de_passe: str = "") -> None:
+    """Écrit la section mail dans config/instance.json et l'applique au processus.
+
+    L'envoi (drain_outbox, send_test_email) lit settings.EMAIL_*, valeurs chargées
+    depuis config/instance.json au démarrage. Enregistrer le formulaire seulement
+    en base laissait donc l'envoi sur « SMTP désactivé » quoi qu'on saisisse à
+    l'écran. On écrit le fichier (droits 600, survit au redémarrage) et on
+    applique les valeurs au processus courant : le test d'envoi fonctionne sans
+    redémarrer. Les variables MDL_* restent prioritaires au prochain démarrage.
+    """
+    from config import settings as instance
+
+    config = instance.read_instance()
+    mail = dict(config.get("mail") or {})
+    mail.update({cle: val for cle, val in payload.items() if cle != "password"})
+    if mot_de_passe:
+        mail["password"] = mot_de_passe
+    config["mail"] = mail
+    instance.write_instance(config)
+    settings.MAIL_ENABLED = bool(mail.get("enabled"))
+    settings.EMAIL_HOST = mail.get("host") or "localhost"
+    settings.EMAIL_PORT = int(mail.get("port") or 587)
+    settings.EMAIL_HOST_USER = mail.get("user") or ""
+    settings.EMAIL_HOST_PASSWORD = mail.get("password") or ""
+    settings.EMAIL_USE_SSL = bool(mail.get("use_ssl"))
+    settings.EMAIL_USE_TLS = bool(mail.get("use_tls"))
+    if mail.get("from"):
+        settings.DEFAULT_FROM_EMAIL = mail["from"]
+        settings.SERVER_EMAIL = mail["from"]
+    if mail.get("rate_per_minute"):
+        settings.MAIL_RATE_PER_MINUTE = int(mail["rate_per_minute"])
+    if not getattr(settings, "TESTING", False):
+        settings.EMAIL_BACKEND = (
+            "django.core.mail.backends.smtp.EmailBackend"
+            if settings.MAIL_ENABLED and not settings.DEBUG
+            else "django.core.mail.backends.console.EmailBackend"
+        )
 
 
 def _outbox_preview():
@@ -335,9 +376,23 @@ def smtp_test(request):
 
         send_test_email(target)
         Setting.set("app", "smtp_tested", True)
-        messages.success(request, _("E-mail de test mis en file vers %(email)s.") % {"email": target})
+        messages.success(request, _("E-mail de test envoyé à %(email)s.") % {"email": target})
     except Exception as exc:
         messages.error(request, _("Envoi impossible : %(erreur)s") % {"erreur": exc})
+    return redirect("settings:settings_smtp")
+
+
+@administrator_required
+@require_POST
+def smtp_drain(request):
+    """Vide la file d'attente SMTP immédiatement, sans attendre le cron."""
+    from mail.services import drain_outbox
+
+    rapport = drain_outbox()
+    resume = ", ".join("%s : %s" % (cle, val) for cle, val in rapport.items())
+    audit.log(request.user, "mail.outbox_drained", "mail", None,
+              "File SMTP vidée manuellement (%s)" % resume, request=request)
+    messages.success(request, _("File d'attente traitée (%(resume)s).") % {"resume": resume})
     return redirect("settings:settings_smtp")
 
 

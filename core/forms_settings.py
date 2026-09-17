@@ -108,6 +108,33 @@ class SmtpForm(forms.Form):
                                  choices=[("inapp", "Seulement dans l'app"), ("email", "Réessayer par e-mail")],
                                  required=False)
 
+    def clean(self):
+        """Aligne le port et le mode : SSL = 465, STARTTLS = 587.
+
+        Sur alwaysdata (et partout ailleurs) un SSL sur le port 587 échoue à
+        coup sûr : le serveur y parle STARTTLS, pas TLS implicite. Plutôt que
+        laisser passer un couple impossible, on realigne le port sur la case
+        cochée, et à défaut de case on déduit le mode du port.
+        """
+        data = super().clean()
+        ssl = bool(data.get("use_ssl"))
+        tls = bool(data.get("use_tls"))
+        port = data.get("port")
+        if ssl and tls:
+            self.add_error("use_tls", "Choisissez SSL ou STARTTLS, pas les deux.")
+            return data
+        if ssl and port == 587:
+            data["port"] = 465
+        elif tls and port == 465:
+            data["port"] = 587
+        elif not ssl and not tls:
+            port = data["port"] = port or 587
+            data["use_ssl"] = port == 465
+            data["use_tls"] = port != 465
+        elif port is None:
+            data["port"] = 465 if ssl else 587
+        return data
+
 
 class PushForm(forms.Form):
     enabled = forms.BooleanField(label="Notifications push activées", required=False)
