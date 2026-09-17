@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import pytest
+from django.db.utils import OperationalError
 from django.urls import reverse
 
 from accounts.models import User
+from config import settings as instance
 from finance.models import Account
 from finance.models import Category as FinCategory
 from installer import services
@@ -170,14 +172,118 @@ def test_cle_secrete_existante_conservee(client, monkeypatch):
     assert (écrit.get("security") or {}).get("secret_key") == "ma-clé-déjà-en-place-assez-longue"
 
 
-def test_cle_par_defaut_bloque_l_assistant(monkeypatch):
+def test_cle_par_defaut_ne_verrouille_pas_l_etape_1(client, monkeypatch):
+    """Une clé par défaut ne doit PAS bloquer l'étape 1.
+
+    C'est l'étape 2 qui génère la clé : la rendre bloquante à l'étape 1
+    verrouillait l'assistant sur un serveur neuf, avec un message invitant à
+    lancer `manage.py migrate` alors que la base était déjà à jour.
+    """
     from django.conf import settings as dj
 
     from installer import services
 
-    monkeypatch.setattr(dj, "SECRET_KEY", "dev-insecure-change-me", raising=False)
+    monkeypatch.setattr(dj, "SECRET_KEY", instance.DEFAULT_SECRET_KEY, raising=False)
+
+    assert services.prerequisites_ok() is True, "une clé par défaut ne bloque pas l'installation"
+    contrôle = next(c for c in services.prerequisites() if c["label"] == "Clé secrète changée")
+    assert contrôle["ok"] is False
+    assert contrôle["blocking"] is False
+    assert "générée" in contrôle["detail"]
+
+    réponse = client.get(reverse("installer:welcome"))
+    assert réponse.context["ready"] is True
+    assert "Continuer vers l'identité".encode() in réponse.content
+    # Le point reste signalé, en non bloquant.
+    assert [c["label"] for c in réponse.context["recommandes"]] == ["Clé secrète changée"]
+
+
+def test_etape_3_pose_la_cle_meme_sans_etape_2(client, monkeypatch):
+    """L'étape 3 ouvre la première session : la clé du dépôt ne doit jamais la signer."""
+    from django.conf import settings as dj
+
+    # Faux instance.json, avec état : comme le vrai, il est relu après écriture.
+    fichier: dict = {}
+    écrit = {}
+
+    def écrire(data, chmod=0o600):
+        fichier.clear()
+        fichier.update(data)
+        écrit.clear()
+        écrit.update(data)
+
+    monkeypatch.setattr(dj, "SECRET_KEY", instance.DEFAULT_SECRET_KEY, raising=False)
+    monkeypatch.setattr(instance, "read_instance", lambda: dict(fichier))
+    monkeypatch.setattr(instance, "write_instance", écrire)
+
+    # Accès direct à l'étape 3, sans passer par « identité ».
+    réponse = client.post(reverse("installer:admin"), ADMIN, follow=True)
+
+    assert User.objects.filter(email="camille.durand@lycee.fr").exists()
+    assert réponse.status_code == 200
+    clé = (écrit.get("security") or {}).get("secret_key")
+    assert clé and clé != instance.DEFAULT_SECRET_KEY
+    assert len(clé) >= 50
+    assert dj.SECRET_KEY == clé
+    # Le drapeau « installé » ne doit pas écraser la clé posée juste avant.
+    assert (fichier.get("meta") or {}).get("installed") is True
+    assert (fichier.get("security") or {}).get("secret_key") == clé
+
+
+def test_une_base_injoignable_est_un_blocage(monkeypatch):
+    """Le contrôle « base de données » capte l'erreur réelle et la restitue."""
+    from django.db import connection
+
+    def injoignable(*args, **kwargs):
+        raise OperationalError("accès refusé pour mdl@localhost")
+
+    monkeypatch.setattr(connection, "ensure_connection", injoignable)
+
+    échecs = services.blocking_failures()
+
+    # Casser la connexion fait tomber les deux contrôles bloquants, dans l'ordre.
+    assert [c["label"] for c in échecs] == ["Base de données joignable", "Migrations appliquées"]
+    assert "accès refusé pour mdl@localhost" in échecs[0]["detail"]
+    assert "python manage.py migrate" in échecs[1]["detail"]
     assert services.prerequisites_ok() is False
 
-    monkeypatch.setattr(dj, "SECRET_KEY", "une-vraie-clé-secrète-assez-longue-pour-être-crédible",
-                        raising=False)
-    assert services.prerequisites_ok() is True
+
+def test_le_message_nomme_le_vrai_blocage(client, monkeypatch):
+    """L'alerte doit citer le contrôle qui bloque, pas un conseil générique.
+
+    Avant, le texte était figé sur « base de données et migrations » et invitait
+    à `manage.py migrate` même quand la base était déjà à jour.
+    """
+    def contrôles():
+        return [
+            {"label": "Base de données joignable", "ok": True, "blocking": True, "detail": "mdl"},
+            {"label": "Migrations appliquées", "ok": True, "blocking": True, "detail": "tables en place"},
+            {"label": "Clé secrète changée", "ok": False, "blocking": False,
+             "detail": "générée à l'étape suivante"},
+        ]
+
+    monkeypatch.setattr(services, "prerequisites", contrôles)
+
+    réponse = client.get(reverse("installer:welcome"))
+
+    assert réponse.context["ready"] is True, "rien ne bloque ici : le bouton doit rester"
+    assert réponse.context["bloquants"] == []
+    assert [c["label"] for c in réponse.context["recommandes"]] == ["Clé secrète changée"]
+    assert b"Corrigez" not in réponse.content
+
+    # Même écran, cette fois avec un vrai contrôle bloquant en échec.
+    def contrôles_bloqués():
+        base = contrôles()
+        base[1] = {"label": "Migrations appliquées", "ok": False, "blocking": True,
+                   "detail": "no such table: accounts_user — lancez python manage.py migrate."}
+        return base
+
+    monkeypatch.setattr(services, "prerequisites", contrôles_bloqués)
+
+    réponse = client.get(reverse("installer:welcome"))
+
+    assert réponse.context["ready"] is False
+    assert [c["label"] for c in réponse.context["bloquants"]] == ["Migrations appliquées"]
+    assert b"Corrigez ce point pour continuer" in réponse.content
+    assert b"no such table: accounts_user" in réponse.content
+    assert "Continuer vers l'identité".encode() not in réponse.content

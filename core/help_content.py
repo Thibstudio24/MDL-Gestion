@@ -95,6 +95,19 @@ Ouvrez `https://votre-sous-domaine.alwaysdata.net/installation/` et suivez les q
 prérequis techniques, identité de l'association, création du premier compte administrateur,
 récapitulatif.
 
+L'étape 1 liste huit contrôles. Seuls deux sont bloquants : **base de données joignable** et
+**migrations appliquées**. Quand l'un des deux échoue, l'alerte le nomme et donne l'erreur
+telle quelle — elle ne propose plus `python manage.py migrate` à l'aveugle. Les autres
+contrôles (clé secrète, `DEBUG`, hôtes autorisés, dossiers accessibles en écriture, fuseau
+horaire) sont signalés sans empêcher d'avancer.
+
+La **clé secrète** est générée automatiquement à l'étape 2 : 50 caractères aléatoires écrits
+dans `config/instance.json` (section `security.secret_key`, droits 600). Vous pouvez la poser
+vous-même avant, via la variable `MDL_SECRET_KEY` ou ce même fichier ; une clé déjà en place
+n'est jamais écrasée. Si vous servez l'application avec plusieurs processus, relancez le site
+après l'installation pour que tous lisent la clé du fichier. Changer la clé invalide les
+sessions ouvertes.
+
 L'assistant disparaît dès qu'un compte existe : il redirige alors vers la page de connexion.
 Il n'y a pas de commande de réinitialisation — pour le revoir, il faut supprimer tous les
 comptes, ce qui n'est pas une opération courante.

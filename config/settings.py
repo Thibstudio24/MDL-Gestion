@@ -86,7 +86,11 @@ def write_instance(data: dict, chmod: int = 0o600) -> None:
 # --------------------------------------------------------------------------- #
 # Identité
 # --------------------------------------------------------------------------- #
-SECRET_KEY = cfg("security", "secret_key", "dev-insecure-change-me", "MDL_SECRET_KEY")
+#: Valeur publique du dépôt. Elle n'est acceptable que le temps de l'installation :
+#: l'assistant la remplace dès l'étape 2 (« identité »). Quiconque la connaît peut
+#: forger un cookie de session, donc aucune session ne doit être ouverte avec.
+DEFAULT_SECRET_KEY = "dev-insecure-change-me"
+SECRET_KEY = cfg("security", "secret_key", DEFAULT_SECRET_KEY, "MDL_SECRET_KEY")
 DEBUG = cfg("app", "debug", False, "MDL_DEBUG")
 ALLOWED_HOSTS = cfg("app", "allowed_hosts", ["*"], "MDL_ALLOWED_HOSTS")
 if isinstance(ALLOWED_HOSTS, str):

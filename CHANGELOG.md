@@ -45,7 +45,9 @@ Première version livrée d'un bloc.
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
-  aucun compte de démonstration n'est créé.
+  aucun compte de démonstration n'est créé. La clé secrète est générée à l'étape 2
+  (50 caractères, `config/instance.json` en 600) ; seuls la base et les migrations sont
+  bloquants à l'étape 1, et l'alerte nomme le contrôle en échec au lieu d'un conseil figé.
 * 5 commandes de gestion idempotentes : `mdl_cron` (file SMTP, diffusions, rappels, bilan,
   purges), `mdl_backup`, `mdl_health`, `mdl_purge`, `seed` (référentiels seuls).
 * Journal d'audit : 97 actions déclarées, jamais modifiable ligne à ligne, purge automatique

@@ -75,7 +75,10 @@ def welcome(request):
     """Étape 1 : prérequis techniques."""
     return render(request, "installer/welcome.html", {
         "page_title": _("Installation"), "checks": services.prerequisites(),
-        "ready": services.prerequisites_ok(), "step": 1,
+        "ready": services.prerequisites_ok(),
+        "bloquants": services.blocking_failures(),
+        "recommandes": services.recommended_failures(),
+        "step": 1,
     })
 
 
@@ -92,13 +95,28 @@ def _ensure_secret_key(config: dict) -> str:
 
     security = dict(config.get("security") or {})
     actuelle = security.get("secret_key") or ""
-    if actuelle and actuelle != "dev-insecure-change-me":
+    if actuelle and actuelle != instance.DEFAULT_SECRET_KEY:
         return actuelle
     nouvelle = get_random_secret_key()
     security["secret_key"] = nouvelle
     config["security"] = security
     settings.SECRET_KEY = nouvelle
     return nouvelle
+
+
+def _ensure_secret_key_persisted() -> str:
+    """Pose la clé secrète dans instance.json si elle manque encore.
+
+    L'étape 2 le fait déjà, mais on peut atteindre l'étape 3 directement par son
+    URL. Comme l'étape 3 ouvre la première session, la clé doit être sûre avant.
+    Idempotent : une clé déjà en place n'est ni régénérée ni réécrite.
+    """
+    config = instance.read_instance()
+    avant = (config.get("security") or {}).get("secret_key") or ""
+    clé = _ensure_secret_key(config)
+    if clé != avant:
+        instance.write_instance(config)
+    return clé
 
 
 @_guard
@@ -140,6 +158,9 @@ def administrator(request):
     form = AdminForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
+        # C'est ici que la première session est ouverte : la clé secrète ne doit
+        # plus être celle du dépôt, même si l'étape 2 a été court-circuitée.
+        _ensure_secret_key_persisted()
         try:
             user = create_administrator(email=data["email"], password=data["password1"],
                                         first_name=data["first_name"], last_name=data["last_name"])
