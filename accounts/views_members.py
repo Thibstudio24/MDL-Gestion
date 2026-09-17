@@ -100,7 +100,8 @@ def _send_invitation(user, invitation) -> bool:
 
         queue_email(to_email=user.email, recipient_user=user,
                     subject="Invitation à rejoindre l'association",
-                    text_body=services.render_invitation_email(invitation), kind="invitation")
+                    text_body=services.render_invitation_email(invitation), kind="invitation",
+                    immediat=True)
         notify(user, "invitation", "Vous êtes invité·e à rejoindre l'association",
                "Ouvrez le lien reçu pour choisir votre mot de passe.", url=invitation.accept_url())
         invitation.delivered = True

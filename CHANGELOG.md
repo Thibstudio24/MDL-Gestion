@@ -46,6 +46,9 @@ Première version livrée d'un bloc.
   `mail`, fichier en droits 600) et appliqués immédiatement, sans redémarrage ; le
   formulaire réaligne le port sur le mode coché (SSL 465 / STARTTLS 587) ; bouton
   « Vider la file maintenant » et erreur exacte du serveur affichée dans la file.
+  Les courriels unitaires (invitation, réinitialisation, alerte de sécurité, rappel
+  d'expiration) tentent un envoi immédiat et restent en file en cas d'échec ; les
+  diffusions en nombre restent différées (cron ou vidage manuel).
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;

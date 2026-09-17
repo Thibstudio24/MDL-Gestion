@@ -46,6 +46,9 @@ réglages immédiatement, sans redémarrage. SSL = port 465, STARTTLS = port 587
 formulaire réaligne tout seul un port incohérent avec la case cochée. Les courriels mis
 en file partent avec la tâche planifiée `mdl_cron` ou par le bouton « Vider la file
 maintenant » ; en cas d'échec, l'erreur exacte du serveur s'affiche dans la file.
+Les courriels unitaires (invitation, mot de passe, alerte) tentent un envoi immédiat
+et restent en file si le serveur refuse ; les diffusions en nombre, elles, partent
+avec le cron ou le bouton.
 
 ## 6. Monter le ZIP sur le serveur
 

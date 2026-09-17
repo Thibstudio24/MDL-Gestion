@@ -12,6 +12,7 @@ from django.urls import reverse
 from audit.models import AuditEntry
 from core.models import Setting
 from mail.models import Outbox
+from mail.services import queue_email
 
 POST_SMTP = {
     "enabled": "on", "host": "smtp.example.test", "port": "587", "use_tls": "on",
@@ -65,6 +66,30 @@ def test_e_mail_de_test_part_immediatement(admin_client):
     assert reponse.status_code == 302
     assert len(boite_aux_lettres.outbox) == 1
     assert boite_aux_lettres.outbox[0].to == ["cible@example.test"]
+
+
+def test_courriel_unitaire_part_immediatement(settings):
+    settings.MAIL_ENABLED = True
+    settings.TESTING = False
+    item = queue_email(to_email="invite@example.test", subject="Invitation",
+                       text_body="Viens nous rejoindre.", kind="invitation", immediat=True)
+    assert item.status == "sent"
+    assert len(boite_aux_lettres.outbox) == 1
+
+
+def test_courriel_unitaire_en_echec_reste_en_file(settings, monkeypatch):
+    settings.MAIL_ENABLED = True
+    settings.TESTING = False
+
+    def echec(self, *args, **kwargs):
+        raise OSError("connexion refusée")
+
+    monkeypatch.setattr(boite_aux_lettres.EmailMultiAlternatives, "send", echec)
+    item = queue_email(to_email="invite@example.test", subject="Invitation",
+                       text_body="Viens nous rejoindre.", kind="invitation", immediat=True)
+    assert item.status == "queued"
+    assert item.attempts == 1
+    assert "connexion refusée" in item.error
 
 
 def test_drain_sans_smtp_marque_ignores(admin_client):

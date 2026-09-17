@@ -77,7 +77,7 @@ def profile(request):
                         queue_email(to_email=address, recipient_user=request.user,
                                     subject="Votre adresse de connexion a changé",
                                     text_body="La nouvelle adresse de connexion du compte %s est %s." % (old, new_email),
-                                    kind="security", urgent=True)
+                                    kind="security", urgent=True, immediat=True)
                 except Exception:
                     pass
                 messages.success(request, _("Adresse mise à jour : un e-mail de confirmation part sur les deux boîtes."))
@@ -185,7 +185,7 @@ def security(request):
 
                     queue_email(to_email=user.email, recipient_user=user, subject="Un mot de passe a été changé",
                                 text_body="Le mot de passe de votre compte %s vient d'être modifié." % user.email,
-                                kind="security", urgent=True)
+                                kind="security", urgent=True, immediat=True)
                 except Exception:
                     pass
                 messages.success(request, _("Mot de passe mis à jour."))

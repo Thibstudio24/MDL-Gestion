@@ -219,7 +219,7 @@ def password_reset_request(request):
                         "Bonjour %s,\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 3 heures) :\n%s\n\n"
                         "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\n— MDL Gestion"
                     ) % (user.first_name or "Bonjour", link),
-                    kind="password_reset", urgent=True,
+                    kind="password_reset", urgent=True, immediat=True,
                 )
             except Exception:
                 pass

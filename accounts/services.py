@@ -298,6 +298,7 @@ def remind_invitations() -> int:
                 subject="Ton invitation expire demain",
                 text_body=render_invitation_email(invitation, reminder=True),
                 kind="invitation",
+                immediat=True,
             )
             notify(invitation.user, "invitation", "Ton invitation expire demain",
                    "Ouvre le lien reçu pour choisir ton mot de passe.", url=invitation.accept_url())
@@ -463,7 +464,7 @@ def apply_remote_action(action: str, target: str, actor=None) -> dict:
                     "%(email)s :\n\n%(password)s\n\nConnectez-vous puis changez-le immédiatement.\n\n— %(nom)s"
                 ) % {"prenom": user.first_name or "Bonjour", "email": user.email, "password": password,
                      "nom": "MDL Gestion"},
-                kind="security", urgent=True,
+                kind="security", urgent=True, immediat=True,
             )
         except Exception as exc:
             return {"ok": False, "error": "mot de passe changé mais e-mail impossible : %s" % exc}
@@ -492,7 +493,8 @@ def apply_remote_action(action: str, target: str, actor=None) -> dict:
 
             queue_email(to_email=user.email, recipient_user=user,
                         subject="Invitation à rejoindre l'association",
-                        text_body=render_invitation_email(invitation), kind="invitation")
+                        text_body=render_invitation_email(invitation), kind="invitation",
+                        immediat=True)
         except Exception:
             pass
         log(actor, "member.invitation_resent", "members", user, "Invitation renvoyée à distance", level="warn")
@@ -512,7 +514,8 @@ def set_password_by_admin(user: User, actor=None) -> str:
         queue_email(to_email=user.email, recipient_user=user,
                     subject="Réinitialisation de votre mot de passe",
                     text_body="Bonjour %s,\n\nVotre nouveau mot de passe provisoire : %s\n\nChangez-le dès la connexion."
-                    % (user.first_name or "Bonjour", password), kind="security", urgent=True)
+                    % (user.first_name or "Bonjour", password), kind="security", urgent=True,
+                    immediat=True)
     except Exception:
         pass
     revoke_all_sessions(user)

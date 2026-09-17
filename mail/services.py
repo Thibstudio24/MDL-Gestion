@@ -20,13 +20,48 @@ READ_RETENTION_DAYS = 180
 
 
 def queue_email(*, to_email: str, recipient_user=None, subject: str, text_body: str,
-                kind: str = "", urgent: bool = False, notification=None) -> Outbox:
-    """Met un courriel en file. Jamais d'envoi synchrone dans une requête web."""
+                kind: str = "", urgent: bool = False, notification=None,
+                immediat: bool = False) -> Outbox:
+    """Met un courriel en file.
+
+    Avec ``immediat`` (courriels unitaires : invitation, réinitialisation de mot
+    de passe, rappel d'expiration), un envoi est tenté sur-le-champ : l'attente
+    d'un cron ne retarde plus un message que l'émetteur croit parti. En cas
+    d'échec SMTP le courriel reste en file pour le cron ou le vidage manuel.
+    Sans ``immediat`` (diffusions en nombre, notifications), jamais d'envoi
+    synchrone dans une requête web.
+    """
     from mail.models import Outbox
 
-    return Outbox.objects.create(to_email=to_email[:254], recipient_user=recipient_user,
+    item = Outbox.objects.create(to_email=to_email[:254], recipient_user=recipient_user,
                                  subject=subject[:200], text_body=text_body or subject,
                                  kind=kind[:20], urgent=bool(urgent))
+    if immediat and getattr(settings, "MAIL_ENABLED", False) and not getattr(settings, "TESTING", False):
+        _try_send(item)
+    return item
+
+
+def _try_send(item) -> bool:
+    """Tente d'envoyer un courriel de la file ; en cas d'échec il y reste.
+
+    Au-delà de ``MAX_ATTEMPTS`` tentatives il passe en échec définitif.
+    """
+    item.attempts += 1
+    try:
+        message = EmailMultiAlternatives(subject=item.subject, body=item.text_body,
+                                         from_email=_from_email(), to=[item.to_email])
+        message.send(fail_silently=False)
+        item.status = "sent"
+        item.sent_at = timezone.now()
+        item.error = ""
+        ok = True
+    except Exception as exc:  # noqa: BLE001 - on ne bloque pas la file sur un échec SMTP
+        item.error = str(exc)[:400]
+        ok = False
+        if item.attempts >= MAX_ATTEMPTS:
+            item.status = "failed"
+    item.save(update_fields=["status", "attempts", "error", "sent_at"])
+    return ok
 
 
 def drain_outbox(limit: int = 30) -> dict[str, int]:
@@ -40,23 +75,12 @@ def drain_outbox(limit: int = 30) -> dict[str, int]:
         queued.update(status="skipped", error="SMTP désactivé")
         return report
     for item in Outbox.objects.filter(status="queued").order_by("-urgent", "queued_at")[:limit]:
-        item.attempts += 1
-        try:
-            message = EmailMultiAlternatives(subject=item.subject, body=item.text_body,
-                                             from_email=_from_email(), to=[item.to_email])
-            message.send(fail_silently=False)
-            item.status = "sent"
-            item.sent_at = timezone.now()
-            item.error = ""
+        if _try_send(item):
             report["envoyes"] += 1
-        except Exception as exc:  # noqa: BLE001 - on ne bloque pas la file sur un échec SMTP
-            item.error = str(exc)[:400]
-            if item.attempts >= MAX_ATTEMPTS:
-                item.status = "failed"
-                report["abandons"] += 1
-            else:
-                report["echecs"] += 1
-        item.save(update_fields=["status", "attempts", "error", "sent_at"])
+        elif item.status == "failed":
+            report["abandons"] += 1
+        else:
+            report["echecs"] += 1
     return report
 
 
