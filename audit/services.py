@@ -79,6 +79,27 @@ def purge_audit(years: int, dry_run: bool = False) -> int:
     return count
 
 
+def empty_log(dry_run: bool = False) -> int:
+    """Vide entièrement le journal d'audit.
+
+    La suppression passe par le queryset : ``AuditEntry.delete()`` lève une
+    ``ValueError`` pour empêcher la suppression ligne à ligne depuis
+    l'interface, mais un vidage explicite de l'administrateur doit rester
+    possible. Le travail se fait par lots pour ménager la mémoire.
+    """
+    queryset = AuditEntry.objects.all()
+    count = queryset.count()
+    if dry_run or not count:
+        return count
+    deleted = 0
+    while True:
+        ids = list(queryset.values_list("pk", flat=True)[:500])
+        if not ids:
+            break
+        deleted += AuditEntry.objects.filter(pk__in=ids).delete()[0]
+    return deleted
+
+
 def export_rows(queryset):
     for entry in queryset.iterator(chunk_size=500):
         yield [

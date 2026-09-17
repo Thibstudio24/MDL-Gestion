@@ -34,7 +34,7 @@ ACTIONS = [
     "settings.brand_updated", "settings.quota_updated", "settings.security_updated", "settings.smtp_updated",
     "settings.push_updated", "settings.matrix_updated", "settings.year_created", "settings.year_locked",
     "settings.year_unlocked", "settings.legal_updated", "settings.maintenance", "settings.backup_created",
-    "settings.backup_restored", "settings.update_applied",
+    "settings.backup_restored", "settings.update_applied", "settings.audit_cleared",
     "devhub.intervention_applied", "devhub.intervention_revoked", "devhub.token_applied", "devhub.ping",
 ]
 
