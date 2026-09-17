@@ -16,6 +16,7 @@ urlpatterns = [
     path("campagnes/creer/", views.campaign_create, name="campaign_create"),
     path("campagnes/<int:pk>/", views.campaign_detail, name="campaign_detail"),
     path("campagnes/<int:pk>/publier/", views.publish, name="publish"),
+    path("campagnes/<int:pk>/supprimer/", views.delete, name="campaign_delete"),
     path("campagnes/<int:pk>/cloturer/", views.close, name="close"),
     path("campagnes/<int:pk>/rappel/", views.remind, name="remind"),
 ]

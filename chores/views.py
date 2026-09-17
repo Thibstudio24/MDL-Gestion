@@ -132,6 +132,19 @@ def campaign_detail(request, pk):
 
 @module_required(MODULE, edit=True)
 @require_POST
+def delete(request, pk):
+    """Supprime une campagne de ménage et les tâches qui en découlent."""
+    campaign = get_object_or_404(Campaign, pk=pk)
+    label = str(campaign)
+    campaign.delete()
+    audit.log(request.user, "chores.campaign_deleted", MODULE, None,
+              "Campagne de ménage supprimée : %s" % label, level="warn", request=request)
+    messages.success(request, _("Campagne « %(label)s » supprimée.") % {"label": label})
+    return redirect("chores:campaigns")
+
+
+@module_required(MODULE, edit=True)
+@require_POST
 def publish(request, pk):
     campaign = get_object_or_404(Campaign, pk=pk)
     count = services.publish(campaign, request.user)

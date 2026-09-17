@@ -117,6 +117,19 @@ def close(request, pk):
 
 @module_required(MODULE, edit=True)
 @require_POST
+def delete(request, pk):
+    """Supprime une campagne de planning de salle et ses créneaux."""
+    campaign = get_object_or_404(Campaign, pk=pk)
+    label = str(campaign)
+    campaign.delete()
+    audit.log(request.user, "planning.campaign_deleted", MODULE, None,
+              "Campagne de planning supprimée : %s" % label, level="warn", request=request)
+    messages.success(request, _("Campagne « %(label)s » supprimée.") % {"label": label})
+    return redirect("plannings:planning_list")
+
+
+@module_required(MODULE, edit=True)
+@require_POST
 def remind(request, pk):
     campaign = get_object_or_404(Campaign, pk=pk)
     count = services.send_reminder(campaign, request.user)

@@ -14,6 +14,7 @@ urlpatterns = [
     path("<int:pk>/publier/", views.publish, name="publish"),
     path("<int:pk>/cloturer/", views.close, name="close"),
     path("<int:pk>/rappel/", views.remind, name="remind"),
+    path("<int:pk>/supprimer/", views.delete, name="campaign_delete"),
     path("<int:pk>/creneaux/ajouter/", views.slot_add, name="slot_add"),
     path("<int:pk>/export/", views.export, name="export"),
     path("creneaux/<int:pk>/supprimer/", views.slot_delete, name="slot_delete"),

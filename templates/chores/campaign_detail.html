@@ -5,7 +5,9 @@
 <p class="page-help">{{ campaign.get_week_display }} · {{ campaign.start_date|date_fr }} → {{ campaign.end_date|date_fr }} · {{ progress.done }}/{{ progress.total }} tâche(s) validée(s)</p></div>
 <div class="page-actions">{% if not campaign.published %}<form method="post" action="{% url 'chores:publish' campaign.pk %}">{% csrf_token %}<button class="btn btn-primary btn-sm">Publier et attribuer</button></form>
 {% else %}{% if not campaign.closed %}<form method="post" action="{% url 'chores:close' campaign.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Clôturer la campagne ?">Clôturer</button></form>{% endif %}{% endif %}
-<a class="btn btn-ghost btn-sm" href="{% url 'chores:admin_tracking' %}?campagne={{ campaign.pk }}">{% icon 'check' 14 %} Suivi</a></div></div>
+<a class="btn btn-ghost btn-sm" href="{% url 'chores:admin_tracking' %}?campagne={{ campaign.pk }}">{% icon 'check' 14 %} Suivi</a>
+<form method="post" action="{% url 'chores:campaign_delete' campaign.pk %}" style="display:inline">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer cette campagne et les tâches attribuées ?">{% icon 'trash' 14 %} Supprimer</button></form></div></div>
 <div class="card"><div class="card-head"><h3>Tâches attribuées</h3></div>
 <div class="card-body tight"><div class="table-wrap"><table class="data">
 <thead><tr><th>Membre</th><th>Jour</th><th>Tâche</th><th>État</th><th>Fait le</th></tr></thead>

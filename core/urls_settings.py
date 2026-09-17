@@ -21,6 +21,7 @@ urlpatterns = [
     path("bilan/", views.bilan_settings, name="settings_bilan"),
     path("sauvegarde/", views.backup_view, name="settings_backup"),
     path("sauvegarde/creer/", views.backup_create, name="settings_backup_create"),
+    path("sauvegarde/supprimer/", views.backup_delete, name="settings_backup_delete"),
     path("sauvegarde/restaurer/", views.backup_restore, name="settings_backup_restore"),
     path("interventions/", views.interventions, name="settings_interventions"),
     path("interventions/<int:pk>/", views.intervention_action, name="settings_intervention_action"),

@@ -10,6 +10,8 @@
   <a class="btn btn-ghost btn-sm" href="{% url 'plannings:coverage' campaign.pk %}">{% icon 'chart' 14 %} Couverture</a>
   <a class="btn btn-ghost btn-sm" href="{% url 'plannings:export' campaign.pk %}">{% icon 'download' 14 %} CSV</a>
   <a class="btn btn-ghost btn-sm" href="{% url 'plannings:export' campaign.pk %}?format=pdf">{% icon 'download' 14 %} PDF</a>
+  {% if can_edit %}<form method="post" action="{% url 'plannings:campaign_delete' campaign.pk %}" style="display:inline">{% csrf_token %}
+  <button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer cette campagne et tous ses créneaux ?">{% icon 'trash' 14 %} Supprimer</button></form>{% endif %}
 </div></div>
 {% if not campaign.published %}<div class="alert alert-warning"><span>{% icon 'info' 18 %}</span>
 <div><strong>Brouillon.</strong> Les membres ne voient pas encore cette campagne : publiez-la pour ouvrir les réponses.</div></div>{% endif %}

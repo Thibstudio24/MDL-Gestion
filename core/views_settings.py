@@ -435,6 +435,24 @@ def backup_view(request):
 
 @module_required("backup", edit=True)
 @require_POST
+def backup_delete(request):
+    """Supprime une archive du serveur. Le nom vient du formulaire, jamais de l'URL."""
+    name = request.POST.get("archive") or ""
+    directory = (settings.BASE_DIR / "backups").resolve()
+    target = (directory / name).resolve() if name else None
+    # Le nom saisi ne doit pas permettre de sortir du dossier de sauvegardes.
+    if target is None or directory not in target.parents or not target.is_file():
+        messages.error(request, _("Sauvegarde introuvable."))
+        return redirect("settings:settings_backup")
+    target.unlink(missing_ok=True)
+    audit.log(request.user, "settings.backup_deleted", "settings", None,
+              "Sauvegarde supprimée : %s" % name, level="warn", request=request)
+    messages.success(request, _("Sauvegarde « %(name)s » supprimée.") % {"name": name})
+    return redirect("settings:settings_backup")
+
+
+@module_required("backup", edit=True)
+@require_POST
 def backup_create(request):
     try:
         path = services.backup(with_media=request.POST.get("media") != "0")
