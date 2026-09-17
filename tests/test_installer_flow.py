@@ -124,3 +124,60 @@ def test_etape_4_inaccessible_avec_une_session_fraiche(client):
 
     assert response.status_code == 302
     assert response["Location"] == reverse("auth:login")
+
+
+def test_cle_secrete_generee_a_l_installation(client, monkeypatch):
+    """Sans génération, l'installation aboutissait avec « dev-insecure-change-me »,
+    valeur publique du dépôt : quiconque la connaît peut forger un cookie de session."""
+    from django.conf import settings as dj
+    from django.urls import reverse
+
+    from config import settings as instance
+
+    écrit = {}
+    monkeypatch.setattr(instance, "write_instance",
+                        lambda data, chmod=0o600: écrit.update(data))
+
+    client.post(reverse("installer:identity"), {
+        "nom": "MDL du lycée Hugo", "sigle": "MDL", "lycee": "Lycée Hugo",
+        "ville": "Paris", "contact": "mdl@lycee.fr", "couleur_principale": "#33556e",
+    })
+
+    clé = (écrit.get("security") or {}).get("secret_key")
+    assert clé and clé != "dev-insecure-change-me"
+    assert len(clé) >= 50
+    # Appliquée au processus courant, pour que la session d'installation survive.
+    assert dj.SECRET_KEY == clé
+
+
+def test_cle_secrete_existante_conservee(client, monkeypatch):
+    from django.urls import reverse
+
+    from config import settings as instance
+
+    écrit = {}
+    # read_instance() relit le fichier à chaque appel : il faut le bouchonner.
+    monkeypatch.setattr(instance, "read_instance",
+                        lambda: {"security": {"secret_key": "ma-clé-déjà-en-place-assez-longue"}})
+    monkeypatch.setattr(instance, "write_instance",
+                        lambda data, chmod=0o600: écrit.update(data))
+
+    client.post(reverse("installer:identity"), {
+        "nom": "MDL", "sigle": "MDL", "lycee": "", "ville": "", "contact": "",
+        "couleur_principale": "#33556e",
+    })
+
+    assert (écrit.get("security") or {}).get("secret_key") == "ma-clé-déjà-en-place-assez-longue"
+
+
+def test_cle_par_defaut_bloque_l_assistant(monkeypatch):
+    from django.conf import settings as dj
+
+    from installer import services
+
+    monkeypatch.setattr(dj, "SECRET_KEY", "dev-insecure-change-me", raising=False)
+    assert services.prerequisites_ok() is False
+
+    monkeypatch.setattr(dj, "SECRET_KEY", "une-vraie-clé-secrète-assez-longue-pour-être-crédible",
+                        raising=False)
+    assert services.prerequisites_ok() is True

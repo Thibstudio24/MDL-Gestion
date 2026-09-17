@@ -72,5 +72,7 @@ def prerequisites() -> list[dict[str, Any]]:
 
 
 def prerequisites_ok() -> bool:
-    blocking = ("Base de données joignable", "Migrations appliquées")
+    # La clé secrète est bloquante : « dev-insecure-change-me » est une valeur
+    # publique du dépôt, et permettrait de forger un cookie de session.
+    blocking = ("Base de données joignable", "Migrations appliquées", "Clé secrète changée")
     return all(item["ok"] for item in prerequisites() if item["label"] in blocking)

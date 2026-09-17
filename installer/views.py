@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from django import forms
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -78,6 +79,28 @@ def welcome(request):
     })
 
 
+def _ensure_secret_key(config: dict) -> str:
+    """Garantit une clé secrète propre avant la première écriture de session.
+
+    Sans cela l'installation peut aboutir avec « dev-insecure-change-me »,
+    valeur présente dans le dépôt public : quiconque la connaît peut forger
+    un cookie de session. La clé générée est écrite dans instance.json
+    (droits 600) et appliquée au processus courant, pour que la session
+    d'installation survive au redémarrage qui suivra.
+    """
+    from django.core.management.utils import get_random_secret_key
+
+    security = dict(config.get("security") or {})
+    actuelle = security.get("secret_key") or ""
+    if actuelle and actuelle != "dev-insecure-change-me":
+        return actuelle
+    nouvelle = get_random_secret_key()
+    security["secret_key"] = nouvelle
+    config["security"] = security
+    settings.SECRET_KEY = nouvelle
+    return nouvelle
+
+
 @_guard
 def identity(request):
     """Étape 2 : identité de l'association (écrite dans config/instance.json et les réglages)."""
@@ -90,6 +113,7 @@ def identity(request):
                          "city": data["ville"], "contact": data["contact"],
                          "primary_color": data["couleur_principale"]})
         config["branding"] = branding
+        _ensure_secret_key(config)
         instance.write_instance(config)
         request.session["install"] = data
         try:
