@@ -297,7 +297,11 @@ EMAIL_USE_TLS = cfg("mail", "use_tls", EMAIL_PORT == 587, "MDL_EMAIL_TLS")
 DEFAULT_FROM_EMAIL = cfg("mail", "from", "mdl@localhost", "MDL_EMAIL_FROM")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_SUBJECT_PREFIX = ""
+EMAIL_TIMEOUT = int(cfg("mail", "timeout", 20, "MDL_EMAIL_TIMEOUT"))
 MAIL_RATE_PER_MINUTE = int(cfg("mail", "rate_per_minute", 15, "MDL_EMAIL_RATE"))
+# Pompe de fond : vide la file SMTP toutes les N secondes, sans cron ni bouton.
+MAIL_PUMP = cfg("mail", "pump", True, "MDL_MAIL_PUMP")
+MAIL_PUMP_SECONDS = int(cfg("mail", "pump_seconds", 15, "MDL_MAIL_PUMP_SECONDS"))
 
 # --------------------------------------------------------------------------- #
 # Cache, tests, logs

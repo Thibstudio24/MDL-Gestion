@@ -207,8 +207,9 @@ def password_reset_request(request):
         user = User.objects.filter(email__iexact=email, status="active").first()
         if user:
             token = signing.dumps({"uid": user.pk, "email": user.email}, salt=RESET_SALT)
-            link = "%s%s" % (str(getattr(__import__("django.conf", fromlist=["settings"]).settings, "BASE_URL", "")).rstrip("/"),
-                             reverse("password_reset_confirm", args=[token]))
+            from core.links import absolute_url
+
+            link = absolute_url(reverse("password_reset_confirm", args=[token]))
             try:
                 from mail.services import queue_email
 

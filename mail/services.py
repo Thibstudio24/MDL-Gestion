@@ -41,15 +41,48 @@ def queue_email(*, to_email: str, recipient_user=None, subject: str, text_body: 
     return item
 
 
-def _try_send(item) -> bool:
-    """Tente d'envoyer un courriel de la file ; en cas d'échec il y reste.
+def _connexion_smtp():
+    """Connexion SMTP explicite : mode déduit du port (465 SSL, sinon STARTTLS).
 
-    Au-delà de ``MAX_ATTEMPTS`` tentatives il passe en échec définitif.
+    Un couple « SSL + port 587 » ne peut pas marcher (le serveur parle STARTTLS
+    sur le 587) : en déduisant le mode du port au moment de l'envoi, l'envoi ne
+    dépend plus d'un réglage incohérent. En test, la connexion par défaut
+    (locmem) est utilisée.
     """
+    from django.core.mail import get_connection
+
+    if getattr(settings, "TESTING", False):
+        return get_connection()
+    port = int(getattr(settings, "EMAIL_PORT", 587) or 587)
+    return get_connection(
+        backend="django.core.mail.backends.smtp.EmailBackend",
+        host=getattr(settings, "EMAIL_HOST", "localhost") or "localhost",
+        port=port,
+        username=getattr(settings, "EMAIL_HOST_USER", "") or None,
+        password=getattr(settings, "EMAIL_HOST_PASSWORD", "") or None,
+        use_ssl=port == 465,
+        use_tls=port != 465,
+        timeout=getattr(settings, "EMAIL_TIMEOUT", 20) or 20,
+    )
+
+
+def _try_send(item) -> bool:
+    """Réserve le courriel (« sending ») puis l'envoie ; en cas d'échec il reste en file.
+
+    La réservation rend mutuellement exclusifs la pompe de fond, le cron, le
+    bouton manuel et l'envoi immédiat : chaque courriel part exactement une
+    fois. Au-delà de ``MAX_ATTEMPTS`` tentatives il passe en échec définitif.
+    """
+    from mail.models import Outbox
+
+    if Outbox.objects.filter(pk=item.pk, status="queued").update(status="sending") == 0:
+        return True  # déjà pris en charge par un autre émetteur
+    item.status = "sending"
     item.attempts += 1
     try:
         message = EmailMultiAlternatives(subject=item.subject, body=item.text_body,
-                                         from_email=_from_email(), to=[item.to_email])
+                                         from_email=_from_email(), to=[item.to_email],
+                                         connection=_connexion_smtp())
         message.send(fail_silently=False)
         item.status = "sent"
         item.sent_at = timezone.now()
@@ -58,8 +91,7 @@ def _try_send(item) -> bool:
     except Exception as exc:  # noqa: BLE001 - on ne bloque pas la file sur un échec SMTP
         item.error = str(exc)[:400]
         ok = False
-        if item.attempts >= MAX_ATTEMPTS:
-            item.status = "failed"
+        item.status = "failed" if item.attempts >= MAX_ATTEMPTS else "queued"
     item.save(update_fields=["status", "attempts", "error", "sent_at"])
     return ok
 
@@ -98,10 +130,14 @@ def _from_email() -> str:
 
 
 def send_test_email(to_email: str) -> None:
-    """Test SMTP immédiat depuis Réglages → Envois."""
+    """Test SMTP immédiat depuis Réglages → Envois. Lève une erreur lisible sinon."""
+    if not getattr(settings, "MAIL_ENABLED", False):
+        raise RuntimeError("SMTP désactivé : cochez « Envoyer les e-mails par SMTP » "
+                           "dans Réglages → Envois, puis enregistrez.")
     message = EmailMultiAlternatives(subject="Test de messagerie",
                                      body="Ce message confirme que le SMTP est correctement configuré.",
-                                     from_email=_from_email(), to=[to_email])
+                                     from_email=_from_email(), to=[to_email],
+                                     connection=_connexion_smtp())
     message.send(fail_silently=False)
 
 

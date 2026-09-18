@@ -161,9 +161,13 @@ def notify(user, kind: str, title: str, body: str = "", *, url: str = "", level:
 
     if not quiet and "email" in wanted and (force or allowed.get("email")) and getattr(user, "receive_personal_email", True):
         try:
+            from core.links import absolute_url
             from mail.services import queue_email
 
-            queue_email(to_email=user.email, recipient_user=user, subject=title, text_body=body or title,
+            corps = body or title
+            if url:
+                corps = "%s\n\nLien : %s" % (corps, absolute_url(url))
+            queue_email(to_email=user.email, recipient_user=user, subject=title, text_body=corps,
                         kind=kind, notification=result)
             result["email"] = True
         except Exception:

@@ -12,7 +12,7 @@ from django.urls import reverse
 from audit.models import AuditEntry
 from core.models import Setting
 from mail.models import Outbox
-from mail.services import queue_email
+from mail.services import _try_send, queue_email
 
 POST_SMTP = {
     "enabled": "on", "host": "smtp.example.test", "port": "587", "use_tls": "on",
@@ -61,14 +61,76 @@ def test_mot_de_passe_vide_conserve_l_ancien(admin_client, settings, _instance_j
     assert settings.EMAIL_HOST_PASSWORD == "secret-mdp"
 
 
-def test_e_mail_de_test_part_immediatement(admin_client):
+def test_e_mail_de_test_part_immediatement(admin_client, settings):
+    settings.MAIL_ENABLED = True
     reponse = admin_client.post(reverse("settings:settings_smtp_test"), {"email": "cible@example.test"})
     assert reponse.status_code == 302
     assert len(boite_aux_lettres.outbox) == 1
     assert boite_aux_lettres.outbox[0].to == ["cible@example.test"]
 
 
-def test_courriel_unitaire_part_immediatement(db, settings):
+def test_test_smtp_desactive_affiche_une_erreur(admin_client):
+    reponse = admin_client.post(reverse("settings:settings_smtp_test"),
+                                {"email": "cible@example.test"}, follow=True)
+    assert "SMTP désactivé" in reponse.content.decode()
+    assert len(boite_aux_lettres.outbox) == 0
+
+
+def test_connexion_derive_le_mode_du_port(settings):
+    from mail.services import _connexion_smtp
+
+    settings.TESTING = False
+    settings.EMAIL_PORT = 587
+    connexion = _connexion_smtp()
+    assert connexion.use_tls is True and connexion.use_ssl is False
+    settings.EMAIL_PORT = 465
+    connexion = _connexion_smtp()
+    assert connexion.use_ssl is True and connexion.use_tls is False
+
+
+def test_courriel_deja_pris_n_est_pas_envoye_deux_fois(db, settings, monkeypatch):
+    settings.MAIL_ENABLED = True
+    settings.TESTING = False
+    envois = []
+    monkeypatch.setattr(boite_aux_lettres.EmailMultiAlternatives, "send",
+                        lambda self, *a, **k: envois.append(1))
+    item = Outbox.objects.create(to_email="a@example.test", subject="S", text_body="B")
+    Outbox.objects.filter(pk=item.pk).update(status="sending")
+    assert _try_send(item) is True
+    assert envois == []
+
+
+def test_lien_invitation_est_absolu_sans_base_url(db, settings):
+    from accounts import services as comptes
+    from tests.factories import make_role
+
+    settings.BASE_URL = ""
+    settings.ALLOWED_HOSTS = ["mdl-test.alwaysdata.net"]
+    _user, invitation = comptes.create_member(email="lien@example.test", first_name="Léa",
+                                              last_name="Martin", role=make_role("Invité"))
+    corps = comptes.render_invitation_email(invitation)
+    assert "https://mdl-test.alwaysdata.net/inviter/" in corps
+
+
+def test_lien_notification_est_absolu(db, settings, monkeypatch):
+    import notifications.services as notif
+    from tests.factories import make_role, make_user
+
+    monkeypatch.setattr(notif, "in_quiet_hours", lambda user: False)
+    settings.BASE_URL = ""
+    settings.ALLOWED_HOSTS = ["mdl-test.alwaysdata.net"]
+    user = make_user("notif@example.test", role=make_role("Membre"))
+    notif.notify(user, "bilan_generated", "Bilan disponible", "Solde : 0", url="/documents/1/")
+    item = Outbox.objects.get()
+    assert "Lien : https://mdl-test.alwaysdata.net/documents/1/" in item.text_body
+
+
+def test_courriel_unitaire_part_immediatement(db, settings, monkeypatch):
+    from django.core.mail import get_connection
+
+    import mail.services as ms
+
+    monkeypatch.setattr(ms, "_connexion_smtp", lambda: get_connection())
     settings.MAIL_ENABLED = True
     settings.TESTING = False
     item = queue_email(to_email="invite@example.test", subject="Invitation",

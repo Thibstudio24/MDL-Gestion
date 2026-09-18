@@ -47,8 +47,14 @@ Première version livrée d'un bloc.
   formulaire réaligne le port sur le mode coché (SSL 465 / STARTTLS 587) ; bouton
   « Vider la file maintenant » et erreur exacte du serveur affichée dans la file.
   Les courriels unitaires (invitation, réinitialisation, alerte de sécurité, rappel
-  d'expiration) tentent un envoi immédiat et restent en file en cas d'échec ; les
-  diffusions en nombre restent différées (cron ou vidage manuel).
+  d'expiration) tentent un envoi immédiat et restent en file en cas d'échec ; une
+  pompe de fond vide la file automatiquement toutes les ~15 s, sans cron ni bouton
+  (statut « sending » réservant chaque courriel : aucun double envoi) ; au moment
+  de l'envoi le mode est déduit du port (465 SSL, sinon STARTTLS), donc un vieux
+  réglage incohérent ne bloque plus rien.
+* Liens absolus dans les courriels (`https://site/page`) : invitation,
+  réinitialisation de mot de passe et notifications avec lien (bilan…) ; base
+  `app.base_url` / `MDL_BASE_URL`, à défaut premier hôte de `app.allowed_hosts`.
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;

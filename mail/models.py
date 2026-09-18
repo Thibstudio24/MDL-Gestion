@@ -13,7 +13,8 @@ AUDIENCES = [("all", _("Tous les membres actifs")), ("board", _("Bureau uniqueme
              ("role", _("Rôles choisis")), ("manual", _("Liste manuelle"))]
 STATUSES = [("draft", _("Brouillon")), ("scheduled", _("Programmé")), ("sent", _("Envoyé")),
             ("cancelled", _("Annulé"))]
-OUTBOX_STATUSES = [("queued", _("En attente")), ("sent", _("Envoyé")), ("failed", _("Échec")),
+OUTBOX_STATUSES = [("queued", _("En attente")), ("sending", _("En cours")),
+                   ("sent", _("Envoyé")), ("failed", _("Échec")),
                    ("skipped", _("Ignoré"))]
 
 

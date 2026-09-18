@@ -319,8 +319,9 @@ def render_invitation_email(invitation, reminder: bool = False) -> str:
     nom = brand.get("nom") or "MDL"
     lycee = brand.get("lycee") or ""
     jours = max(0, (invitation.expires_at - timezone.now()).days)
-    base = str(getattr(settings, "BASE_URL", "")).rstrip("/")
-    lien = "%s%s" % (base, invitation.accept_url())
+    from core.links import absolute_url
+
+    lien = absolute_url(invitation.accept_url())
     sujet = "Ton invitation expire demain" if reminder else "Invitation à rejoindre la %s" % nom
     return (
         "%(prenom)s,\n\n"

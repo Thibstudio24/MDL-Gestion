@@ -52,13 +52,21 @@ La logique est inversée par rapport à un hébergeur classique : la boîte doit
 
 Dans l'application, l'enregistrement du formulaire écrit la section `mail` de
 `config/instance.json` (mot de passe compris, fichier en droits 600) et applique les
-réglages immédiatement, sans redémarrage. SSL = port 465, STARTTLS = port 587 : le
-formulaire réaligne tout seul un port incohérent avec la case cochée. Les courriels mis
-en file partent avec la tâche planifiée `mdl_cron` ou par le bouton « Vider la file
-maintenant » ; en cas d'échec, l'erreur exacte du serveur s'affiche dans la file.
-Les courriels unitaires (invitation, mot de passe, alerte) tentent un envoi immédiat
-et restent en file si le serveur refuse ; les diffusions en nombre, elles, partent
-avec le cron ou le bouton.
+réglages immédiatement, sans redémarrage. SSL = port 465, STARTTLS = port 587 ; au
+moment de l'envoi, le mode est déduit du port, donc un vieux réglage incohérent ne
+bloque plus rien.
+
+Une pompe de fond vide la file automatiquement toutes les ~15 secondes, sans cron
+ni bouton (désactivable par `mail.pump = false` ou `MDL_MAIL_PUMP=0`) ; le cron
+`mdl_cron` et le bouton « Vider la file maintenant » restent disponibles en
+secours. En cas d'échec, l'erreur exacte du serveur s'affiche dans la file, et le
+courriel retente sa chance aux passages suivants. Les courriels unitaires
+(invitation, mot de passe, alerte) tentent en plus un envoi immédiat.
+
+Les liens contenus dans les courriels (invitation, réinitialisation, bilan…) sont
+absolus : `https://votre-site/page`. L'application prend `app.base_url` de
+`config/instance.json` (ou `MDL_BASE_URL`) ; à défaut elle déduit l'adresse du
+premier hôte autorisé (`app.allowed_hosts`).
 """),
     ("6", "Monter le ZIP sur le serveur", """
 Le code va dans `~/www/`. **N'utilisez pas `~/admin/`** : ce répertoire appartient à
