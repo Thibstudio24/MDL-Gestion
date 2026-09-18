@@ -39,7 +39,7 @@ Puis ouvrir <http://127.0.0.1:8000/installation/> et suivre l'assistant en quatr
 
 ## Déploiement alwaysdata
 
-Voir [`docs/INSTALL-ALWAYSDATA.md`](docs/INSTALL-ALWAYSDATA.md) : création du compte, base SQL,
+Voir [`../arena/01a0a9db-mdl-gestion/docs/INSTALL-ALWAYSDATA.md`](docs/INSTALL-ALWAYSDATA.md) : création du compte, base SQL,
 boîte SMTP, site Python WSGI, assistant d'installation, ligne de cron, clés VAPID.
 
 ## Tests
@@ -52,10 +52,10 @@ boîte SMTP, site Python WSGI, assistant d'installation, ligne de cron, clés VA
 
 ## Documentation
 
-* [`docs/MODE-EMPLOI.md`](docs/MODE-EMPLOI.md) — 26 sections + FAQ + glossaire + check-list
-* [`docs/INSTALL-ALWAYSDATA.md`](docs/INSTALL-ALWAYSDATA.md) — déploiement pas à pas sur le plan Free
-* [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — applications, modèles, droits, exports
-* [`docs/SECURITE-CONFORMITE.md`](docs/SECURITE-CONFORMITE.md) — sécurité, RGPD, canal éditeur
+* [`../arena/01a0a9db-mdl-gestion/docs/MODE-EMPLOI.md`](docs/MODE-EMPLOI.md) — 26 sections + FAQ + glossaire + check-list
+* [`../arena/01a0a9db-mdl-gestion/docs/INSTALL-ALWAYSDATA.md`](docs/INSTALL-ALWAYSDATA.md) — déploiement pas à pas sur le plan Free
+* [`../arena/01a0a9db-mdl-gestion/docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — applications, modèles, droits, exports
+* [`../arena/01a0a9db-mdl-gestion/docs/SECURITE-CONFORMITE.md`](docs/SECURITE-CONFORMITE.md) — sécurité, RGPD, canal éditeur
 
 `docs/MODE-EMPLOI.md` et `docs/INSTALL-ALWAYSDATA.md` sont générés depuis
 `core/help_content.py` — la même source que l'aide en ligne `/aide/` — par
