@@ -112,6 +112,26 @@ def test_lien_invitation_est_absolu_sans_base_url(db, settings):
     assert "https://mdl-test.alwaysdata.net/inviter/" in corps
 
 
+def test_base_url_auto_detectee_et_memorisee(admin_client, settings, _instance_json_en_memoire):
+    settings.BASE_URL = ""
+    settings.ALLOWED_HOSTS = ["testserver", "mdl.alwaysdata.net"]
+    admin_client.get("/", HTTP_HOST="mdl.alwaysdata.net")
+    assert settings.BASE_URL == "https://mdl.alwaysdata.net"
+    assert _instance_json_en_memoire.get("app", {}).get("base_url") == "https://mdl.alwaysdata.net"
+
+
+def test_lien_invitation_absolu_apres_auto_detection(db, admin_client, settings):
+    from accounts import services as comptes
+    from tests.factories import make_role
+
+    settings.BASE_URL = ""
+    settings.ALLOWED_HOSTS = ["testserver", "mdl.alwaysdata.net"]
+    admin_client.get("/", HTTP_HOST="mdl.alwaysdata.net")
+    _user, invitation = comptes.create_member(email="auto@example.test", first_name="Léa",
+                                              last_name="Martin", role=make_role("Invité"))
+    assert "https://mdl.alwaysdata.net/inviter/" in comptes.render_invitation_email(invitation)
+
+
 def test_lien_notification_est_absolu(db, settings, monkeypatch):
     import notifications.services as notif
     from tests.factories import make_role, make_user

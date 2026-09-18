@@ -53,10 +53,12 @@ secours. En cas d'échec, l'erreur exacte du serveur s'affiche dans la file, et 
 courriel retente sa chance aux passages suivants. Les courriels unitaires
 (invitation, mot de passe, alerte) tentent en plus un envoi immédiat.
 
-Les liens contenus dans les courriels (invitation, réinitialisation, bilan…) sont
-absolus : `https://votre-site/page`. L'application prend `app.base_url` de
-`config/instance.json` (ou `MDL_BASE_URL`) ; à défaut elle déduit l'adresse du
-premier hôte autorisé (`app.allowed_hosts`).
+Les liens contenus dans les courriels (invitation, réinitialisation, bilan,
+messagerie…) sont absolus : `https://votre-site/page`. L'adresse de base est
+détectée automatiquement à la première visite du site et mémorisée dans
+`config/instance.json` (`app.base_url`) ; on peut aussi la poser à la main
+(`app.base_url` ou `MDL_BASE_URL`), elle est alors prioritaire, ou la laisser
+se déduire du premier hôte autorisé (`app.allowed_hosts`).
 
 ## 6. Monter le ZIP sur le serveur
 

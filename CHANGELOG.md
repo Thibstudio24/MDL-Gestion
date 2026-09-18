@@ -53,8 +53,10 @@ Première version livrée d'un bloc.
   de l'envoi le mode est déduit du port (465 SSL, sinon STARTTLS), donc un vieux
   réglage incohérent ne bloque plus rien.
 * Liens absolus dans les courriels (`https://site/page`) : invitation,
-  réinitialisation de mot de passe et notifications avec lien (bilan…) ; base
-  `app.base_url` / `MDL_BASE_URL`, à défaut premier hôte de `app.allowed_hosts`.
+  réinitialisation de mot de passe et notifications avec lien (bilan,
+  messagerie…) ; l'adresse de base est auto-détectée à la première visite et
+  mémorisée dans `app.base_url` (prioritaire si posée à la main, repli sur le
+  premier hôte de `app.allowed_hosts`).
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;

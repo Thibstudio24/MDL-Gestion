@@ -148,3 +148,38 @@ class AuditContextMiddleware:
         request.user_agent = request.headers.get("user-agent", "")[:240]
         request.origin = "web"
         return self.get_response(request)
+
+class BaseUrlMiddleware:
+    """Déduit et mémorise l'URL de base du site pour les liens des courriels.
+
+    Tant que ``BASE_URL`` est vide, le premier hôte concret vu en requête est
+    écrit dans ``config/instance.json`` (``app.base_url``) et appliqué au
+    processus : les courriels du web, de la pompe et du cron produisent alors
+    des liens ``https://site/page`` sans rien configurer. Un ``app.base_url``
+    ou ``MDL_BASE_URL`` posé à la main reste prioritaire (lu au démarrage).
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not str(getattr(settings, "BASE_URL", "") or ""):
+            self._memorise(request)
+        return self.get_response(request)
+
+    @staticmethod
+    def _memorise(request):
+        host = request.get_host()
+        if not host or any(x in host for x in ("testserver", "localhost", "127.0.0.1")):
+            return
+        from config import settings as instance
+
+        config = instance.read_instance()
+        app = dict(config.get("app") or {})
+        app["base_url"] = "https://%s" % host
+        config["app"] = app
+        try:
+            instance.write_instance(config)
+        except OSError:  # répertoire config non accessible : on n'insiste pas
+            return
+        settings.BASE_URL = app["base_url"]
