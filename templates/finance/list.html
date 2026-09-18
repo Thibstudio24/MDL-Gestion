@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div><h2 class="page-heading">Trésorerie</h2>
+  <p class="page-help">Grand livre unique : chaque mouvement est daté, rattaché à un compte et à une catégorie. Un mois clôturé ne peut plus être modifié, même par un administrateur.</p></div>
+  <div class="page-actions">
+    <form method="get" class="field field-inline"><span class="field-label">Année</span>
+      <select name="annee" onchange="this.form.submit()">{% for item in years %}<option value="{{ item.pk }}"{% if item.pk == year.pk %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></form>
+    <a class="btn btn-primary btn-sm" href="{% url 'finance:entry_create' %}">{% icon 'plus' 14 %} Nouvelle écriture</a>
+    <a class="btn btn-ghost btn-sm" href="{% url 'finance:export' %}?format=xlsx">{% icon 'download' 14 %} Exporter</a>
+  </div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi"><span class="kpi-label">Solde total</span>
+    <strong class="kpi-value">{{ total_balance|money }}</strong>
+    <span class="kpi-hint">{{ year.label }}</span></div>
+  <div class="kpi"><span class="kpi-label">Recettes de l'année</span><strong class="kpi-value">{{ year_flows.incomes|money }}</strong>
+    <span class="kpi-hint">{{ current_month.count }} écriture(s) ce mois-ci</span></div>
+  <div class="kpi"><span class="kpi-label">Dépenses de l'année</span><strong class="kpi-value">{{ year_flows.expenses|money }}</strong>
+    <span class="kpi-hint">solde du mois : {{ current_month.balance|money }}</span></div>
+  <div class="kpi"><span class="kpi-label">Coffre-fort</span><strong class="kpi-value">{{ safe|money }}</strong>
+    <span class="kpi-hint"><a href="{% url 'finance:cash' %}">Compter la caisse</a></span></div>
+</div>
+{% if locked_months %}<div class="alert alert-info"><span>{% icon 'lock' 18 %}</span>
+<div>{% for lock in locked_months %}{{ lock.0 }}/{{ lock.1 }}{% if not forloop.last %}, {% endif %}{% endfor %} — mois clôturé(s). Aucune écriture ne peut y être ajoutée, modifiée ou supprimée.</div></div>{% endif %}
+<div class="card"><div class="card-head"><h3>Évolution mensuelle</h3><span class="grow"></span>
+<span class="small muted">Recettes en vert, dépenses en rouge</span></div>
+<div class="card-body">{% histogram_chart histogram as chart_spec %}<canvas id="chart-histogram" height="120" data-chart="{{ chart_spec|as_json }}"></canvas></div></div>
+<div class="grid-2">
+  <div class="card"><div class="card-head"><h3>Comptes</h3><span class="grow"></span>
+    <a class="btn btn-ghost btn-sm" href="{% url 'finance:accounts' %}">Gérer</a></div>
+  <div class="card-body tight"><div class="table-wrap"><table class="data">
+    <thead><tr><th>Compte</th><th class="num">Ouverture</th><th class="num">Mouvements</th><th class="num">Solde</th></tr></thead>
+    <tbody>{% for row in accounts %}<tr><td>{{ row.account.name }}{% if row.account.is_safe %} <span class="badge badge-muted">coffre</span>{% endif %}</td>
+    <td class="num">{{ row.opening|money }}</td><td class="num">{{ row.movements|money }}</td>
+    <td class="num"><strong>{{ row.total|money }}</strong></td></tr>
+    {% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun compte actif." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="card"><div class="card-head"><h3>Dépenses par catégorie</h3><span class="grow"></span>
+    <a class="btn btn-ghost btn-sm" href="{% url 'finance:categories' %}">Catégories</a></div>
+  <div class="card-body">{% donut_chart expenses_by_category as donut_spec %}<canvas id="chart-categories" height="200" data-chart="{{ donut_spec|as_json }}"></canvas>
+  {% if not expenses_by_category %}{% include "partials/_empty.html" with text="Aucune dépense enregistrée cette année." %}{% endif %}</div></div>
+</div>
+<div class="card"><div class="card-head"><h3>Dernières écritures</h3><span class="grow"></span>
+<a class="btn btn-ghost btn-sm" href="{% url 'finance:ledger' %}">Voir le grand livre</a></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Libellé</th><th>Compte</th><th>Catégorie</th><th>Mode</th><th class="num">Montant</th><th class="num">Solde</th></tr></thead>
+<tbody>{% for entry in entries %}<tr>
+<td class="nowrap">{{ entry.day|date_fr }}</td>
+<td><a href="{% url 'finance:entry_detail' entry.pk %}">{{ entry.title }}</a>{% if entry.third_party %}<br><span class="small muted">{{ entry.third_party }}</span>{% endif %}</td>
+<td>{{ entry.account.name }}{% if entry.to_account %} → {{ entry.to_account.name }}{% endif %}</td>
+<td>{{ entry.category|default:"—" }}</td><td>{{ entry.get_mode_display|default:"—" }}</td>
+<td class="num {% if entry.kind == 'R' %}is-income{% elif entry.kind == 'D' %}is-expense{% endif %}">{{ entry.amount|money }}</td>
+<td class="num">{{ entry.signed|signed_money }}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucune écriture : saisissez votre première dépense ou importez votre relevé bancaire." action_url="/tresorerie/ecritures/creer/" action_label="Nouvelle écriture" %}</td></tr>{% endfor %}</tbody>
+</table></div></div><div class="card-foot"><span class="small muted">Bilan mensuel : {% if latest_balance %}dernier généré le {{ latest_balance.generated_at|date_fr }}{% else %}aucun — planifié selon Réglages → Bilan{% endif %}</span>
+<span class="grow"></span><a class="btn btn-ghost btn-sm" href="{% url 'finance:balance' %}">Générer le bilan</a></div></div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2 class="page-heading">Réglages de l'association</h2>
+    <p class="page-help">Ces réglages concernent toute l'association. La plupart exigent le rôle Administrateur.</p>
+  </div>
+</div>
+<nav class="tabs">
+  {% for item in tabs %}<a class="tab{% if item.active %} is-active{% endif %}" href="{{ item.url }}">{{ item.label }}</a>{% endfor %}
+</nav>
+{% block settings_content %}{% endblock %}
+{% endblock %}

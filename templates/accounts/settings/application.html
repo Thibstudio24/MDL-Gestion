@@ -1,0 +1,21 @@
+{% extends "accounts/settings/_base.html" %}
+{% load ui %}
+{% block settings_body %}
+<div class="card"><div class="card-head"><h3>Installer l'application</h3></div>
+<div class="card-body">
+<p>Une fois installée, MDL Gestion s'ouvre comme une application, garde sa coquille en cache et affiche les pages déjà consultées hors ligne (lecture seule).</p>
+<ul>
+<li><strong>Android / PC (Chrome, Edge)</strong> : bouton <em>Installer</em> en bas de page, ou menu ⋮ → « Installer l'application ».</li>
+<li><strong>iPhone / iPad (iOS ≥ 16.4)</strong> : Safari → Partager → <em>Sur l'écran d'accueil</em>, puis autorisez les notifications depuis l'icône installée.</li>
+<li><strong>Firefox</strong> : pas d'installation ; utilisez le site en favori (badge et e-mails en repli).</li>
+</ul>
+<div class="btn-row"><button type="button" class="btn btn-primary" data-install-accept>Installer maintenant</button>
+<button type="button" class="btn btn-ghost" data-clear-cache>Vider le cache</button></div>
+</div></div>
+<div class="card"><div class="card-head"><h3>État hors ligne</h3></div>
+<div class="card-body">
+<p class="small">Consultation hors ligne = lecture seule : un bandeau permanent signale la coupure et les boutons de validation sont désactivés. Les documents PDF et images peuvent être conservés avec le bouton « Garder hors ligne ».</p>
+<p class="small muted">Notifications push : {% if push_ready %}clés VAPID présentes{% else %}<span class="danger">clés VAPID absentes — voyez Réglages → PWA</span>{% endif %} · {{ devices|length }} appareil(s) abonné(s).</p>
+<div class="btn-row"><form method="post" action="/notifications/test/">{% csrf_token %}<button class="btn btn-ghost">Envoyer une notification de test</button></form></div>
+</div></div>
+{% endblock %}

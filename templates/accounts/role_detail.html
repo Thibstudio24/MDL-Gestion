@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ role.name }}</h2>
+<p class="page-help">{{ role.description|default:"Rôle personnalisé." }} — {{ members|length }} membre(s){% if protected %} · rôle protégé{% endif %}</p></div>
+<div class="page-actions">
+  <form method="post" action="/roles/{{ role.pk }}/dupliquer/">{% csrf_token %}<input type="hidden" name="name" value="{{ role.name }} (copie)"><button class="btn btn-ghost btn-sm">Dupliquer</button></form>
+  {% if not protected %}<form method="post" action="/roles/{{ role.pk }}/supprimer/">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer ce rôle ?">Supprimer</button></form>{% endif %}
+  <a class="btn btn-ghost btn-sm" href="/roles/">Retour</a>
+</div></div>
+<form method="post">{% csrf_token %}
+<div class="card"><div class="card-head"><h3>Identité du rôle</h3></div>
+<div class="card-body"><div class="form-grid">{% include "partials/_form.html" with form=form %}</div></div></div>
+<div class="card"><div class="card-head"><h3>Droits par module</h3><span class="grow"></span>
+<span class="small muted">Aucun = module absent du menu · Consulter = lecture + exports · Modifier = créer, éditer, supprimer, importer</span></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data matrix">
+<thead><tr><th>Module</th><th>Aucun</th><th>Consulter</th><th>Modifier</th><th>Niveau</th></tr></thead>
+<tbody>
+{% for key, label in modules.items %}
+<tr><td>{{ label }}</td>
+<td><label class="checkbox-line"><input type="radio" name="level-{{ key }}" value="0"{% if not levels|get_item:key %} checked{% endif %}{% if key == "roles" and not role.is_administrator %} disabled{% endif %}></label></td>
+<td><label class="checkbox-line"><input type="radio" name="level-{{ key }}" value="1"{% if levels|get_item:key == 1 %} checked{% endif %}{% if key == "roles" and not role.is_administrator %} disabled{% endif %}></label></td>
+<td><label class="checkbox-line"><input type="radio" name="level-{{ key }}" value="2"{% if levels|get_item:key == 2 %} checked{% endif %}{% if key == "roles" and not role.is_administrator %} disabled{% endif %}></label></td>
+<td><span class="badge badge-{% if levels|get_item:key == 2 %}success{% elif levels|get_item:key == 1 %}info{% else %}muted{% endif %}">{% if levels|get_item:key == 2 %}Modifier{% elif levels|get_item:key == 1 %}Consulter{% else %}Aucun{% endif %}</span></td>
+</tr>
+{% endfor %}
+</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Droits fins</h3><span class="grow"></span>
+<span class="small muted">Importer / exporter sont accordés automatiquement par « Modifier » ; supprimer et clôturer se cochent explicitement.</span></div>
+<div class="card-body"><div class="form-grid">
+{% for key, item in fine.items %}
+<label class="checkbox-line"><input type="checkbox" name="fine-{{ key }}"{% if key in fine_checked %} checked{% endif %}>
+<span>{{ item.0 }}{% if item.2 %} <span class="small muted">(automatique avec Modifier sur {{ modules|get_item:item.1 }})</span>{% endif %}</span></label>
+{% endfor %}
+</div></div></div>
+<div class="btn-row"><button type="submit" class="btn btn-primary">Enregistrer les droits</button>
+<a class="btn btn-ghost" href="/roles/">Annuler</a></div>
+</form>
+<div class="card"><div class="card-head"><h3>Membres avec ce rôle</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Nom</th><th>Fonction</th><th>Statut</th><th></th></tr></thead>
+<tbody>{% for member in members %}<tr><td>{{ member.get_full_name|default:member.email }}</td><td>{{ member.display_function|default:"—" }}</td>
+<td>{% status_badge member.status member.get_status_display %}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="/membres/{{ member.pk }}/">Fiche</a></td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun membre n'a ce rôle." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Comptes</h2>
+<p class="page-help">Un compte bancaire, un coffre-fort dont le solde est calculé à partir des mouvements. Le solde d'ouverture se règle une fois par année scolaire.</p></div>
+<div class="page-actions"><a class="btn btn-primary btn-sm" href="{% url 'finance:account_create' %}">{% icon 'plus' 14 %} Nouveau compte</a></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Compte</th><th>Banque</th><th>IBAN</th><th class="num">Ouverture</th><th class="num">Mouvements</th><th class="num">Solde</th><th></th></tr></thead>
+<tbody>{% for row in rows %}<tr>
+<td><strong>{{ row.account.name }}</strong>{% if row.account.is_safe %} <span class="badge badge-muted">coffre</span>{% endif %}
+{% if not row.account.active %} {% status_badge "inactive" "inactif" %}{% endif %}<br><span class="small muted">{{ row.entries }} écriture(s) cette année</span></td>
+<td>{{ row.account.bank|default:"—" }}</td><td class="small">{{ row.account.iban_masked|default:"—" }}</td>
+<td class="num">{{ row.opening|money }}</td><td class="num">{{ row.movements|money }}</td>
+<td class="num"><strong>{{ row.total|money }}</strong></td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="{% url 'finance:account_edit' row.account.pk %}">Modifier</a></td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun compte." action_url="/tresorerie/comptes/creer/" action_label="Créer un compte" %}</td></tr>{% endfor %}</tbody>
+</table></div></div><div class="card-foot"><span class="small muted">Coffre : {{ safe|money }}</span></div></div>
+<div class="card"><div class="card-head"><h3>Soldes d'ouverture — {{ year.label }}</h3><span class="grow"></span>
+<form method="get" class="field field-inline"><span class="field-label">Année</span>
+<select name="annee" onchange="this.form.submit()">{% for item in years %}<option value="{{ item.pk }}"{% if item.pk == year.pk %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></form></div>
+<div class="card-body"><form method="post">{% csrf_token %}<input type="hidden" name="opening" value="1">
+<div class="form-grid">{% include "partials/_form.html" with form=opening_form %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer le solde d'ouverture</button></form>
+<p class="small muted">Le solde d'ouverture est le relevé bancaire au premier jour de l'année scolaire.</p></div></div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{% if creating %}Nouvelle écriture{% else %}Modifier l'écriture{% endif %}</h2>
+<p class="page-help">Une écriture ne se modifie jamais silencieusement : toute correction est tracée dans le journal d'audit, et un mois clôturé refuse toute saisie.</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'finance:ledger' %}">Retour au grand livre</a></div></div>
+<div class="card"><div class="card-body">
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-primary">{% if creating %}Enregistrer l'écriture{% else %}Enregistrer les modifications{% endif %}</button>
+</form></div></div>
+{% endblock %}

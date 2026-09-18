@@ -1,0 +1,47 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card">
+  <div class="card-head"><h3>Années scolaires</h3><span class="grow"></span><span class="small muted">Toutes les données sont rattachées à une année.</span></div>
+  <div class="card-body tight">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Libellé</th><th>Du</th><th>Au</th><th>État</th><th class="right">Actions</th></tr></thead>
+      <tbody>
+      {% for year in years %}
+      <tr{% if year.is_locked %} class="is-locked"{% endif %}>
+        <td><strong>{{ year.label }}</strong>{% if year.note %}<br><span class="small muted">{{ year.note }}</span>{% endif %}</td>
+        <td>{{ year.start_date|date_fr }}</td><td>{{ year.end_date|date_fr }}</td>
+        <td>{% if year.is_current %}{% status_badge "active" "en cours" %}{% endif %}{% if year.is_locked %}{% status_badge "closed" "clôturée" %}{% else %}{% status_badge "open" "ouverte" %}{% endif %}</td>
+        <td class="right nowrap">
+          <form method="post" action="/reglages/annees/{{ year.pk }}/action/" style="display:inline">{% csrf_token %}
+            {% if not year.is_current %}<button class="btn btn-ghost btn-sm" name="action" value="current">Définir en cours</button>{% endif %}
+            {% if not year.is_locked %}<button class="btn btn-ghost btn-sm" name="action" value="lock" data-confirm-click="Clôturer cette année ? Elle passera en lecture seule.">Clôturer</button>
+            {% else %}<button class="btn btn-ghost btn-sm" name="action" value="unlock">Rouvrir</button>{% endif %}
+            {% if not year.is_current %}<button class="btn btn-ghost btn-sm" name="action" value="delete" data-confirm-click="Supprimer cette année et toutes ses données ?">Supprimer</button>{% endif %}
+          </form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucune année scolaire : créez la première (libellé, début, fin)." %}</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card-foot">
+    <form method="post" class="form-row">{% csrf_token %}
+      {% include "partials/_form.html" %}
+      <button type="submit" class="btn btn-primary">Enregistrer l'année</button>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="card-head"><h3>Jours de fermeture (vacances, jours fériés)</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Jour</th><th>Année</th><th>Motif</th><th></th></tr></thead>
+      <tbody>{% for day in closure_days %}
+        <tr><td>{{ day.day|date_fr }}</td><td>{{ day.year.label }}</td><td>{{ day.reason|default:"—" }}</td>
+        <td class="right"><form method="post" action="/reglages/annees/fermetures/{{ day.pk }}/supprimer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Retirer</button></form></td></tr>
+      {% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun jour de fermeture : les calendriers de planning utilisent tous les jours ouvrés de la campagne." %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

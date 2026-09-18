@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Nouvelle diffusion</h2>
+<p class="page-help">Messagerie descendante uniquement : les membres ne peuvent pas répondre depuis l'application. Le courriel est mis en file et part au prochain passage du cron.</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'mail:admin_list' %}">Retour</a></div></div>
+<div class="card"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-ghost" name="envoyer" value="0">Enregistrer en brouillon</button>
+<button type="submit" class="btn btn-primary" name="envoyer" value="1" data-confirm-click="Envoyer cette diffusion maintenant ?">Envoyer maintenant</button>
+</form></div></div>
+{% endblock %}

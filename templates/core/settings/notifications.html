@@ -1,0 +1,27 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card">
+  <div class="card-head"><h3>Matrice Événement × canaux</h3><span class="grow"></span><span class="small muted">Chaque membre peut ajuster, sauf les événements obligatoires.</span></div>
+  <div class="card-body tight">
+    <form method="post">{% csrf_token %}
+    <div class="table-wrap"><table class="data matrix">
+      <thead><tr><th>Événement</th><th>Dans l'app</th><th>E-mail</th><th>Push</th></tr></thead>
+      <tbody>
+      {% for event in events %}
+      {% with key=event.key %}
+      <tr>
+        <td><strong>{{ event.label }}</strong>{% if event.mandatory %} {% status_badge "closed" "obligatoire" %}{% endif %}<br><span class="small muted">{{ event.key }}</span></td>
+        <td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-inapp" value="1"{% if matrix|get_item:key|get_item:"inapp" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td>
+        <td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-email" value="1"{% if matrix|get_item:key|get_item:"email" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td>
+        <td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-push" value="1"{% if matrix|get_item:key|get_item:"push" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td>
+      </tr>
+      {% endwith %}
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="card-foot"><button type="submit" class="btn btn-primary">Enregistrer la matrice</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

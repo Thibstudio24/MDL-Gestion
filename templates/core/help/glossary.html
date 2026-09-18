@@ -1,0 +1,8 @@
+{% extends "core/help/_base.html" %}
+{% block help_content %}
+<h2 class="page-heading">Glossaire</h2>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Terme</th><th>Définition</th></tr></thead>
+<tbody>{% for term, definition in glossary %}<tr><td><strong>{{ term }}</strong></td><td>{{ definition }}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

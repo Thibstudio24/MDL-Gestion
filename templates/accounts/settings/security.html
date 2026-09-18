@@ -1,0 +1,31 @@
+{% extends "accounts/settings/_base.html" %}
+{% load ui %}
+{% block settings_body %}
+<div class="card"><div class="card-head"><h3>Mot de passe</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}{% include "partials/_form.html" with form=password_form %}
+<div class="strength" data-strength-meter><span></span><span></span><span></span><span></span></div>
+<div class="strength-label small muted" data-strength-label></div>
+<button type="submit" class="btn btn-primary">Changer le mot de passe</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Authentification à deux facteurs</h3></div>
+<div class="card-body">
+{% if twofa %}<p><strong>Activée.</strong> Codes de récupération restants : {{ codes_left }}.</p>
+<div class="btn-row"><a class="btn btn-ghost" href="/connexion/a2f/configurer/">Régénérer les codes</a>
+<form method="post" action="/connexion/a2f/desactiver/">{% csrf_token %}<button class="btn btn-ghost" data-confirm-click="Désactiver l'A2F ?">Désactiver</button></form></div>
+{% else %}<p class="muted">Non activée.</p><a class="btn btn-primary" href="/connexion/a2f/configurer/">Activer l'A2F</a>{% endif %}
+</div></div>
+<div class="card"><div class="card-head"><h3>Sessions ouvertes</h3><span class="grow"></span>
+<form method="post" action="/parametres/securite/sessions/toutes/">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Fermer toutes les autres sessions ?">Déconnecter partout</button></form></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Appareil</th><th>IP</th><th>Dernière activité</th><th>PWA</th><th></th></tr></thead>
+<tbody>{% for session in sessions %}<tr><td>{{ session.device|default:"Navigateur" }}</td><td>{{ session.ip|default:"—" }}</td>
+<td>{{ session.last_seen|date_fr:"%d/%m %H:%M" }}</td><td>{% if session.is_pwa %}oui{% else %}—{% endif %}</td>
+<td class="right">{% if session.session_key != current_session %}<form method="post" action="/parametres/securite/sessions/{{ session.pk }}/revoquer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Déconnecter</button></form>{% else %}<span class="small muted">cet appareil</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucune session enregistrée." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>12 dernières connexions</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>IP</th><th>Résultat</th><th>Motif</th></tr></thead>
+<tbody>{% for attempt in attempts %}<tr><td>{{ attempt.at|date_fr:"%d/%m %H:%M" }}</td><td>{{ attempt.ip|default:"—" }}</td>
+<td>{% if attempt.success %}{% status_badge "validated" "réussie" %}{% else %}{% status_badge "failed" "échec" %}{% endif %}</td>
+<td>{{ attempt.reason|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune tentative enregistrée." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

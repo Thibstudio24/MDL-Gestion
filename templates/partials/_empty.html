@@ -1,0 +1,5 @@
+{% load ui %}<div class="empty">
+  <span class="empty-icon">{% icon 'info' 28 %}</span>
+  <p>{{ text|default:"Rien à afficher pour le moment." }}</p>
+  {% if action_url %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label|default:"Ouvrir" }}</a>{% endif %}
+</div>

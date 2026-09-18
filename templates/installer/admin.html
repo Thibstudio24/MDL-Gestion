@@ -1,0 +1,13 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<div class="install-card">
+  <h2 class="page-heading">Premier compte administrateur</h2>
+  <p class="page-help">Ce compte possède tous les droits. Aucun compte de démonstration n'est créé : c'est le vôtre.</p>
+  {% include "installer/_steps.html" %}
+  <form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
+  <a class="btn btn-ghost" href="{% url 'installer:identity' %}">Retour</a>
+  <button type="submit" class="btn btn-primary">Créer le compte</button></form>
+  <p class="small muted">L'authentification à deux facteurs vous sera demandée à la première connexion.</p>
+</div>
+{% endblock %}

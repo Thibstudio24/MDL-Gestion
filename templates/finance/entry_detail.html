@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ entry.title }}</h2>
+<p class="page-help">{{ entry.day|date_fr }} · {{ entry.account.name }}{% if entry.to_account %} → {{ entry.to_account.name }}{% endif %} · solde du compte ce jour-là : {{ balance|money }}</p></div>
+<div class="page-actions">
+  {% if can_edit %}<a class="btn btn-ghost btn-sm" href="{% url 'finance:entry_edit' entry.pk %}">{% icon 'edit' 14 %} Modifier</a>
+  <form method="post" action="{% url 'finance:entry_duplicate' entry.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% icon 'copy' 14 %} Dupliquer</button></form>{% endif %}
+</div></div>
+{% if entry.month_lock_id %}<div class="alert alert-warning"><span>{% icon 'lock' 18 %}</span>
+<div><strong>Mois clôturé.</strong> Cette écriture appartient à un mois verrouillé : elle ne peut être ni modifiée ni supprimée sans réouverture motivée (Réglages → Bilan mensuel).</div></div>{% endif %}
+<div class="grid-2">
+<div class="card"><div class="card-head"><h3>Détail</h3></div><div class="card-body">
+<dl class="detail-list">
+  <dt>Montant</dt><dd class="{% if entry.kind == 'R' %}is-income{% else %}is-expense{% endif %}">{{ entry.amount|money }}</dd>
+  <dt>Sens</dt><dd>{{ entry.get_kind_display }}</dd>
+  <dt>Catégorie</dt><dd>{{ entry.category|default:"—" }}{% if entry.subcategory %} / {{ entry.subcategory }}{% endif %}</dd>
+  <dt>Mode de règlement</dt><dd>{{ entry.get_mode_display|default:"—" }}</dd>
+  <dt>Tiers</dt><dd>{{ entry.third_party|default:"—" }}</dd>
+  <dt>Pièce</dt><dd>{{ entry.reference|default:"—" }}</dd>
+  <dt>Note</dt><dd>{{ entry.note|default:"—" }}</dd>
+  <dt>Origine</dt><dd>{{ entry.get_source_display }}{% if entry.import_batch %} ({{ entry.import_batch.file_name }}){% endif %}</dd>
+  <dt>Saisie par</dt><dd>{{ entry.created_by|default:"—" }} le {{ entry.created_at|date_fr }}</dd>
+  {% if entry.updated_by %}<dt>Modifiée par</dt><dd>{{ entry.updated_by }} le {{ entry.updated_at|date_fr }}</dd>{% endif %}
+  <dt>Justificatif</dt><dd>{% if entry.support_file %}<a href="{{ entry.support_file.url }}">Ouvrir le justificatif</a>{% else %}aucun{% endif %}</dd>
+</dl></div></div>
+<div class="card"><div class="card-head"><h3>Écritures similaires</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant</th></tr></thead>
+<tbody>{% for item in siblings %}<tr><td class="nowrap">{{ item.day|date_fr }}</td>
+<td><a href="{% url 'finance:entry_detail' item.pk %}">{{ item.title }}</a></td><td class="num">{{ item.amount|money }}</td></tr>
+{% empty %}<tr><td colspan="3">{% include "partials/_empty.html" with text="Aucune écriture similaire." %}</td></tr>{% endfor %}</tbody></table></div></div>
+{% if can_edit and not entry.month_lock_id %}<div class="card-foot">
+<form method="post" action="{% url 'finance:entry_delete' entry.pk %}">{% csrf_token %}
+  <label class="field"><span class="field-label">Motif de suppression</span><input type="text" name="reason" maxlength="240" required
+    placeholder="Ex. : doublon du 12/09, saisie en double"></label>
+  <button type="submit" class="btn btn-danger btn-sm" data-confirm-click="Supprimer cette écriture ? L'action est tracée.">Supprimer</button>
+</form><p class="small muted">La suppression est définitive mais toujours motivée et journalisée.</p></div>{% endif %}
+</div></div>
+{% endblock %}

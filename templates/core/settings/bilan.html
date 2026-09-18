@@ -1,0 +1,17 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>Planification du bilan</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer</button></form>
+<p class="small muted">Le cron lance <code>manage.py bilans --auto</code> : le classeur est régénéré à l'échéance, rangé dans Documents → Bilans et notifié.</p></div></div>
+<div class="card"><div class="card-head"><h3>Dernières générations</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Année</th><th>Jusqu'au mois</th><th>Mode</th><th>Généré le</th><th>État</th><th></th></tr></thead>
+<tbody>{% for run in runs %}<tr><td>{{ run.year.label }}</td><td>{{ run.up_to_month }}</td>
+<td>{% if run.auto %}auto{% else %}manuel{% endif %}</td><td>{{ run.generated_at|date_fr:"%d/%m %H:%M" }}</td>
+<td>{% status_badge run.status run.get_status_display %}</td>
+<td class="right">{% if run.workbook %}<a class="btn btn-ghost btn-sm" href="/documents/{{ run.workbook_id }}/">Ouvrir</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucun bilan généré pour l'instant." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

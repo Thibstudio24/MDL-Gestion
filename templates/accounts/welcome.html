@@ -1,0 +1,24 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<h3>Bienvenue {{ user.first_name|default:"" }} !</h3>
+<p class="small muted">Deux réglages avant de commencer.</p>
+<form method="post">{% csrf_token %}
+  <ol class="welcome-steps">
+    <li>
+      <label class="checkbox-line">{{ form.receive_personal_email }}
+        <span>Voulez-vous recevoir les messages de l'association sur votre boîte e-mail ?<br>
+        <span class="small muted">Décoché = messages uniquement dans l'app/PWA. Ce choix reste modifiable.</span></span></label>
+    </li>
+    <li>
+      <p>Autoriser les notifications de ce site (pour être prévenu des plannings et des tâches)</p>
+      <button type="button" class="btn btn-ghost btn-sm" data-request-push>Autoriser les notifications</button>
+    </li>
+    {% if charte %}
+    <li><label class="checkbox-line">{{ form.accept_charte }} <span>J'accepte la <a href="/reglages/textes/{{ charte.slug }}/" target="_blank">charte</a></span></label>
+    {% for error in form.accept_charte.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</li>
+    {% endif %}
+  </ol>
+  <button type="submit" class="btn btn-primary" style="width:100%">Commencer</button>
+</form>
+{% endblock %}

@@ -1,0 +1,17 @@
+# MDL Gestion — dépendances d'exécution (cible : alwaysdata plan Free, Python 3.11)
+# Aucun build frontend : pas de Node, pas de Sass, pas de Pillow, pas de Celery/Redis.
+Django>=5.2,<6
+whitenoise>=6.6
+openpyxl>=3.1
+reportlab>=4.1
+pyotp>=2.9
+segno>=1.6
+pywebpush>=2.0
+cryptography>=42.0
+Markdown>=3.5
+
+# --- Pilotes de base de données : décommenter selon votre hébergeur ---
+# PostgreSQL (recommandé sur alwaysdata)
+# psycopg[binary]>=3.1
+# MariaDB / MySQL (PyMySQL est utilisé via install_as_MySQLdb(), aucune compilation)
+# PyMySQL>=1.1

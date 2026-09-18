@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div><h2 class="page-heading">{{ member.get_full_name|default:member.email }}</h2>
+  <p class="page-help">{{ member.display_function|default:"Membre" }} · {{ member.role.name|default:"sans rôle" }} ·
+  {% status_badge member.status member.get_status_display %} {% if member.is_boarder %}<span class="badge badge-info">interne</span>{% else %}<span class="badge badge-muted">externe</span>{% endif %}</p></div>
+  <div class="page-actions">
+    {% if can_edit %}<a class="btn btn-ghost btn-sm" href="/membres/{{ member.pk }}/modifier/">{% icon 'edit' 14 %} Modifier</a>{% endif %}
+    <a class="btn btn-ghost btn-sm" href="/membres/">Retour à la liste</a>
+  </div>
+</div>
+{% if invitation and not invitation.is_used %}
+<div class="alert alert-warning"><span>{% icon 'warning' 18 %}</span><div>
+<strong>Invitation en attente</strong> — expire le {{ invitation.expires_at|date_fr:"%d/%m %H:%M" }} · code <code>{{ invitation.code }}</code>
+{% if not invitation.delivered %}<br><span class="small">SMTP indisponible : transmettez ce lien à la main → <code>{{ request.scheme }}://{{ request.get_host }}{{ invitation.accept_url }}</code></span>{% endif %}
+<div class="btn-row" style="margin-top:8px">
+<form method="post" action="/membres/{{ member.pk }}/invitation/renvoyer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Renvoyer</button></form>
+<form method="post" action="/membres/{{ member.pk }}/invitation/revoquer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Révoquer</button></form>
+<button type="button" class="btn btn-ghost btn-sm" data-copy="{{ invitation.code }}">Copier le code</button>
+</div></div></div>
+{% endif %}
+<div class="grid-2">
+  <div class="card"><div class="card-head"><h3>Coordonnées</h3></div><div class="card-body">
+    <dl class="detail-list">
+      <dt>E-mail</dt><dd>{{ member.email }}</dd>
+      <dt>Téléphone</dt><dd>{{ member.phone|default:"—" }}</dd>
+      <dt>Mention</dt><dd>{{ member.get_gender_display|default:"—" }}</dd>
+      <dt>Statut</dt><dd>{{ member.get_status_display }}</dd>
+      <dt>A2F</dt><dd>{% if member.two_factor_on %}activée{% else %}non activée{% endif %}</dd>
+      <dt>Dernière activité</dt><dd>{{ member.last_seen|date_fr:"%d/%m %H:%M"|default:"jamais" }}</dd>
+      <dt>Verrouillé</dt><dd>{% if member.is_locked %}jusqu'au {{ member.locked_until|date_fr:"%d/%m %H:%M" }}{% else %}non{% endif %}</dd>
+      <dt>Membre depuis</dt><dd>{{ member.created_at|date_fr }}</dd>
+    </dl>
+    {% if is_admin %}
+    <div class="btn-row">
+      <form method="post" action="/membres/{{ member.pk }}/role/">{% csrf_token %}
+        <select name="role">{% for role in all_roles %}<option value="{{ role.pk }}"{% if role.pk == member.role_id %} selected{% endif %}>{{ role.name }}</option>{% endfor %}</select>
+        <button class="btn btn-ghost btn-sm">Changer de rôle</button></form>
+      <form method="post" action="/membres/{{ member.pk }}/mot-de-passe/">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Réinitialiser le mot de passe ? Il part par e-mail, jamais affiché ici.">Réinitialiser le mot de passe</button></form>
+      {% if member.is_locked %}<form method="post" action="/membres/{{ member.pk }}/debloquer/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Débloquer</button></form>{% endif %}
+      {% if member.two_factor_on %}<form method="post" action="/membres/{{ member.pk }}/a2f/">{% csrf_token %}
+        <input type="text" name="reason" placeholder="Motif obligatoire" required style="max-width:220px">
+        <button class="btn btn-ghost btn-sm" data-confirm-click="Couper l'A2F de ce membre ?">Couper l'A2F</button></form>{% endif %}
+      <form method="post" action="/membres/{{ member.pk }}/statut/">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% if member.status == "active" %}Désactiver{% else %}Réactiver{% endif %}</button></form>
+      <form method="post" action="/membres/{{ member.pk }}/anonymiser/">{% csrf_token %}
+        <input type="text" name="confirmation" maxlength="3" placeholder="3 lettres" required style="max-width:120px">
+        <button class="btn btn-danger btn-sm" data-confirm-click="Anonymiser ce compte ? L'historique reste lisible sous un nom pseudonymisé.">Anonymiser</button></form>
+    </div>
+    {% endif %}
+  </div></div>
+  <div class="card"><div class="card-head"><h3>Activité</h3></div><div class="card-body">
+    <dl class="detail-list">
+      <dt>Écritures saisies</dt><dd>{{ data.entries }}</dd>
+      <dt>Documents déposés</dt><dd>{{ data.documents }}</dd>
+      <dt>Créneaux déclarés</dt><dd>{{ data.slots }}</dd>
+      <dt>Ménages validés</dt><dd>{{ data.chores.valides|default:0 }}</dd>
+      <dt>Ménages en retard</dt><dd>{{ data.chores.retard|default:0 }}</dd>
+      <dt>Messages lus / non lus</dt><dd>{{ data.messages.lus|default:0 }} / {{ data.messages.non_lus|default:0 }}</dd>
+    </dl>
+  </div></div>
+</div>
+<div class="card"><div class="card-head"><h3>Historique des rôles</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Rôle</th><th>Depuis</th><th>Jusqu'au</th><th>Par</th></tr></thead>
+<tbody>{% for item in data.roles %}<tr><td>{{ item.role.name }}</td><td>{{ item.since|date_fr }}</td>
+<td>{{ item.until|date_fr|default:"en cours" }}</td><td>{{ item.changed_by|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun changement de rôle enregistré." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Sessions</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Appareil</th><th>IP</th><th>Dernière activité</th></tr></thead>
+<tbody>{% for session in data.sessions %}<tr><td>{{ session.device|default:"Navigateur" }}</td><td>{{ session.ip|default:"—" }}</td><td>{{ session.last_seen|date_fr:"%d/%m %H:%M" }}</td></tr>
+{% empty %}<tr><td colspan="3">{% include "partials/_empty.html" with text="Aucune session ouverte." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Lignes d'audit</h3><span class="grow"></span><a class="btn btn-ghost btn-sm" href="/audit/?actor={{ member.email }}">Tout le journal</a></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Action</th><th>Message</th><th>Gravité</th></tr></thead>
+<tbody>{% for entry in data.audit %}<tr><td>{{ entry.at|date_fr:"%d/%m %H:%M" }}</td><td><code>{{ entry.action }}</code></td>
+<td>{{ entry.message|truncatechars:60 }}</td><td>{{ entry.level }}</td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune ligne d'audit pour ce membre." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

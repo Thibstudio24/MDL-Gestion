@@ -1,0 +1,9 @@
+{% extends "core/help/_base.html" %}
+{% block help_content %}
+<h2 class="page-heading">{{ id }} — {{ title }}</h2>
+<div class="rich">{{ html }}</div>
+<nav class="btn-row no-print" style="margin-top:24px">
+  {% if previous %}<a class="btn btn-ghost btn-sm" href="/aide/{{ previous.0 }}/">← {{ previous.1 }}</a>{% endif %}
+  {% if next %}<a class="btn btn-ghost btn-sm" href="/aide/{{ next.0 }}/">{{ next.1 }} →</a>{% endif %}
+</nav>
+{% endblock %}

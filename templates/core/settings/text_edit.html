@@ -1,0 +1,9 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>{{ document.title }}</h3><span class="grow"></span><span class="small muted">Version {{ document.version }}</span></div>
+<div class="card-body"><form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+<div class="btn-row"><button type="submit" class="btn btn-primary">Enregistrer</button>
+<a class="btn btn-ghost" href="/reglages/textes/{{ document.slug }}/">Annuler</a></div></form>
+<p class="small muted">Markdown simple : titres (#), gras (**), listes (-), liens. Le rendu est nettoyé (aucune balise active).</p></div></div>
+{% endblock %}

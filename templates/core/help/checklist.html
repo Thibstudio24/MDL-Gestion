@@ -1,0 +1,9 @@
+{% extends "core/help/_base.html" %}
+{% block help_content %}
+<h2 class="page-heading">Check-list de rentrée</h2>
+<div class="rich">{% include "core/help/_checklist_body.html" %}</div>
+<h3>Modèle de courriel au référent technique</h3>
+<p class="page-help">À copier-coller tel quel.</p>
+<pre>{{ email }}</pre>
+<div class="btn-row"><button type="button" class="btn btn-ghost btn-sm" data-copy="{{ email|escapejs }}">Copier le message</button></div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Rôles &amp; droits</h2>
+<p class="page-help">Un rôle = un ensemble de droits (module × niveau + droits fins). Un seul rôle par membre. « Rôles &amp; droits » n'est éditable que par un Administrateur.</p></div>
+<div class="page-actions">
+  <a class="btn btn-ghost btn-sm" href="/roles/export/">{% icon 'download' 14 %} Exporter la configuration</a>
+  <button type="button" class="btn btn-primary btn-sm" data-open-modal="create-role">{% icon 'plus' 14 %} Créer un rôle</button>
+</div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Rôle</th><th>Description</th><th class="num">Membres</th><th>Résumé des droits</th><th>A2F</th><th></th></tr></thead>
+<tbody>{% for role in roles %}
+<tr><td><a href="/roles/{{ role.pk }}/"><strong>{{ role.name }}</strong></a>
+{% if role.is_administrator %} {% status_badge "published" "Administrateur" %}{% endif %}
+{% if role.is_system %} {% status_badge "closed" "système" %}{% endif %}</td>
+<td class="small">{{ role.description|default:"—" }}</td><td class="num">{{ role.nm }}</td>
+<td class="small">{{ role.rights_summary|truncatechars:70 }}</td>
+<td>{% if role.force_2fa %}imposée ({{ role.force_2fa_deadline_days }} j){% else %}—{% endif %}</td>
+<td class="right nowrap"><a class="btn btn-ghost btn-sm" href="/roles/{{ role.pk }}/">Ouvrir</a>
+<form method="post" action="/roles/{{ role.pk }}/dupliquer/" style="display:inline">{% csrf_token %}
+<input type="hidden" name="name" value="{{ role.name }} (copie)"><button class="btn btn-ghost btn-sm">Dupliquer</button></form></td></tr>
+{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucun rôle : lancez la commande seed pour créer Administrateur et Utilisateur." %}</td></tr>{% endfor %}</tbody>
+</table></div></div>
+<div class="card-foot">
+  <form method="post" action="/roles/import/" class="form-row">{% csrf_token %}
+    <label class="field" style="flex:1"><span class="field-label">Importer une configuration (JSON)</span>
+    <textarea name="payload" rows="2" placeholder='{"roles": [...]}'></textarea></label>
+    <button type="submit" class="btn btn-ghost">Importer</button></form>
+</div></div>
+<dialog class="modal" id="create-role">
+  <form method="post" action="/roles/creer/">{% csrf_token %}
+    <h3>Créer un rôle</h3>
+    <label class="field"><span class="field-label">Nom</span><input type="text" name="name" required maxlength="80"></label>
+    <label class="field"><span class="field-label">Description</span><input type="text" name="description" maxlength="240"></label>
+    <div class="btn-row"><button type="submit" class="btn btn-primary">Créer</button>
+    <button type="button" class="btn btn-ghost" data-close-modal>Annuler</button></div>
+  </form>
+</dialog>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ page_title }}</h2>
+<p class="page-help">Changer le rôle d'un membre crée une ligne d'historique et invalide immédiatement son cache de droits.</p></div></div>
+<div class="card"><div class="card-body">
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<div class="btn-row"><button type="submit" class="btn btn-primary">Enregistrer</button>
+<a class="btn btn-ghost" href="{% if member %}/membres/{{ member.pk }}/{% else %}/membres/{% endif %}">Annuler</a></div>
+</form></div></div>
+{% endblock %}

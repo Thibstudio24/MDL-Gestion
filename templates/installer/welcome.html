@@ -1,0 +1,25 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<div class="install-card">
+  <h2 class="page-heading">Installation de MDL Gestion</h2>
+  <p class="page-help">Quatre étapes, aucune donnée de démonstration. Vérifions d'abord que l'hébergement est prêt.</p>
+  {% include "installer/_steps.html" %}
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Contrôle</th><th>État</th><th>Détail</th></tr></thead>
+    <tbody>{% for item in checks %}<tr>
+      <td>{{ item.label }}{% if item.blocking %} <span class="small">— bloquant</span>{% endif %}</td>
+      <td>{% if item.ok %}{% status_badge "success" "prêt" %}{% else %}{% status_badge "closed" "à corriger" %}{% endif %}</td>
+      <td class="small">{{ item.detail }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if ready %}<a class="btn btn-primary" href="{% url 'installer:identity' %}">Continuer vers l'identité</a>
+  {% else %}<div class="alert alert-warning"><span>{% icon 'warning' 18 %}</span>
+  <div><p>Corrigez {% if bloquants|length > 1 %}ces points{% else %}ce point{% endif %} pour continuer :</p>
+    <ul>{% for item in bloquants %}<li><strong>{{ item.label }}</strong> — {{ item.detail }}</li>{% endfor %}</ul>
+  </div></div>{% endif %}
+  {% if recommandes %}<div class="alert alert-info"><span>{% icon 'info' 18 %}</span>
+  <div><p>Non bloquant — à régler maintenant ou plus tard :</p>
+    <ul>{% for item in recommandes %}<li><strong>{{ item.label }}</strong> — {{ item.detail }}</li>{% endfor %}</ul>
+  </div></div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card">
+  <div class="card-head"><h3>Marque de l'association</h3></div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+      <div class="form-grid">{% include "partials/_form.html" %}</div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="card-head"><h3>Aperçu des palettes</h3><span class="grow"></span><span class="small muted">Cliquer pour choisir (enregistré ensuite)</span></div>
+  <div class="card-body">
+    <div class="palette-picker">
+      {% for item in previews %}
+      <button type="button" class="palette-choice{% if item.key == form.palette_imposee.value %} is-active{% endif %}" data-palette-choice="{{ item.key }}">
+        {{ item.light|safe }}<span>{{ item.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <p class="small muted" style="margin-top:12px">Option « aux couleurs du lycée » : saisissez une seule couleur principale, toute la palette est dérivée automatiquement.</p>
+    <div style="max-width:180px">{{ seed_preview|safe }}</div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-head"><h3>Textes légaux</h3><span class="grow"></span><a class="btn btn-ghost btn-sm" href="/reglages/textes/">Gérer les textes</a></div>
+  <div class="card-body"><p class="small muted">Mentions légales, RGPD, règlement intérieur et charte sont modifiables et versionnés. L'acceptation de la charte est horodatée et journalisée.</p></div>
+</div>
+{% endblock %}

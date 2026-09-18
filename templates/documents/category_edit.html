@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ category.name }}</h2>
+<p class="page-help">{{ category.description|default:"Catégorie de documents." }} — {{ documents|length }} document(s)</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="/documents/categories/">Retour aux catégories</a></div></div>
+<div class="card"><div class="card-head"><h3>Réglages</h3><span class="grow"></span>
+<form method="post" action="/documents/categories/{{ category.pk }}/verrou/">{% csrf_token %}
+<button class="btn btn-ghost btn-sm">{% if category.locked_read %}Déverrouiller la lecture{% else %}Verrouiller la lecture{% endif %}</button></form></div>
+<div class="card-body"><form method="post">{% csrf_token %}<input type="hidden" name="save" value="1">
+<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Visibilité par rôle</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Rôle</th><th>Niveau</th><th>Peut supprimer</th><th></th></tr></thead>
+<tbody>{% for access in accesses %}<tr><td>{{ access.role.name }}</td><td>{% level_badge access.level %}</td>
+<td>{% if access.can_delete %}oui{% else %}non{% endif %}</td><td></td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune restriction : la visibilité suit le niveau du module Documents. Ajoutez une ligne pour restreindre." %}</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card-foot"><form method="post" class="form-row">{% csrf_token %}<input type="hidden" name="access" value="1">
+{% include "partials/_form.html" with form=access_form %}<button type="submit" class="btn btn-primary">Ajouter</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Supprimer la catégorie</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}<input type="hidden" name="supprimer" value="1">
+{% include "partials/_form.html" with form=delete_form %}
+<button type="submit" class="btn btn-danger" data-confirm-click="Supprimer cette catégorie ? L'opération est ré-authentifiée et tracée.">Supprimer</button></form></div></div>
+{% endblock %}

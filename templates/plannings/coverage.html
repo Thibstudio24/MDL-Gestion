@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Couverture — {{ campaign.label }}</h2>
+<p class="page-help">{{ stats.reponse_pct }} % de réponses · {{ stats.gaps }} créneau(x) à pourvoir sur {{ stats.slots }}.</p></div>
+<div class="page-actions"><a class="btn btn-primary btn-sm" href="{% url 'plannings:export' campaign.pk %}?format=pdf">{% icon 'download' 14 %} Générer le planning (PDF)</a>
+<a class="btn btn-ghost btn-sm" href="{% url 'plannings:campaign_detail' campaign.pk %}">Retour à la grille</a></div></div>
+{% if stats.gaps %}<div class="alert alert-danger"><span>{% icon 'warning' 18 %}</span>
+<div><strong>{{ stats.gaps }} créneau(x) sans gérant.</strong> Relancez les membres ou proposez un échange.</div></div>{% endif %}
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Créneau</th><th>Intitulé</th><th class="num">Gérants</th><th class="num">Nécessaire</th><th class="num">Candidats</th><th>État</th></tr></thead>
+<tbody>{% for row in rows %}<tr>
+<td class="nowrap">{{ row.slot.get_weekday_display|capfirst }} {{ row.slot.start_time|time:"H:i" }}–{{ row.slot.end_time|time:"H:i" }}</td>
+<td>{{ row.slot.label|default:"—" }}</td><td class="num">{{ row.managers }}</td><td class="num">{{ row.capacity }}</td>
+<td class="num">{{ row.candidates }}</td>
+<td>{% if row.covered %}{% status_badge "active" "couvert" %}{% else %}{% status_badge "closed" "à pourvoir" %}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucun créneau." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

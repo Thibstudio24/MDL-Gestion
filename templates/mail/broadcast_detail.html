@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ broadcast.subject }}</h2>
+<p class="page-help">{{ broadcast.get_kind_display }} · {{ broadcast.get_audience_display }} · {{ read }}/{{ total }} lu(s)</p></div>
+<div class="page-actions">{% if broadcast.is_pending %}
+<form method="post" action="{% url 'mail:send_now' broadcast.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-primary btn-sm" data-confirm-click="Envoyer maintenant ?">Envoyer maintenant</button></form>
+<form method="post" action="{% url 'mail:cancel' broadcast.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Annuler cette diffusion ?">Annuler</button></form>{% endif %}
+<a class="btn btn-ghost btn-sm" href="{% url 'mail:admin_list' %}">Retour</a></div></div>
+{% if broadcast.is_pending %}
+<div class="card"><div class="card-head"><h3>Programmer l'envoi</h3></div><div class="card-body">
+<form method="post" action="{% url 'mail:schedule' broadcast.pk %}" class="form-row">{% csrf_token %}
+<label class="field"><span class="field-label">Date et heure</span><input type="datetime-local" name="scheduled_at" required></label>
+<button type="submit" class="btn btn-primary">Programmer</button></form>
+<p class="small muted">Le cron d'alwaysdata passe toutes les heures : la diffusion part au premier passage après l'heure choisie.</p></div></div>
+{% endif %}
+<div class="card"><div class="card-head"><h3>Message</h3></div><div class="card-body">
+<div class="prose">{{ broadcast.body|markdown }}</div></div></div>
+<div class="card"><div class="card-head"><h3>Destinataires</h3><span class="grow"></span>
+<span class="small muted">{% if broadcast.is_pending %}{{ audience|length }} membre(s) seront touchés{% else %}{{ total }} membre(s){% endif %}</span></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Membre</th><th>Courriel</th><th>Lu le</th><th>Accusé</th></tr></thead>
+<tbody>{% for item in recipients %}<tr><td>{{ item.user.get_full_name }}</td><td class="small">{{ item.user.email }}</td>
+<td class="nowrap">{{ item.read_at|date_fr|default:"—" }}</td><td>{{ item.ack_at|date_fr|default:"—" }}</td></tr>
+{% empty %}{% for member in audience %}<tr><td>{{ member.get_full_name }}</td><td class="small">{{ member.email }}</td>
+<td>—</td><td>—</td></tr>{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucun destinataire." %}</td></tr>{% endfor %}{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

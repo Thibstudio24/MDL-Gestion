@@ -1,0 +1,14 @@
+{% extends "accounts/settings/_base.html" %}
+{% load ui %}
+{% block settings_body %}
+{% if forced.palette or forced.mode %}<div class="alert alert-info"><span>{% icon 'info' 18 %}</span>
+<div><strong>Rendu imposé par l'administration.</strong> Palette : {{ forced.palette|default:"—" }} · mode : {{ forced.mode|default:"—" }}.</div></div>{% endif %}
+<div class="card"><div class="card-head"><h3>Palette et mode</h3></div>
+<div class="card-body">
+  <div class="palette-picker">{% for item in previews %}
+    <button type="button" class="palette-choice{% if item.active %} is-active{% endif %}" data-palette-choice="{{ item.key }}">{{ item.svg|safe }}<span>{{ item.label }}</span></button>
+  {% endfor %}</div>
+  <form method="post" style="margin-top:14px">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button></form>
+</div></div>
+{% endblock %}

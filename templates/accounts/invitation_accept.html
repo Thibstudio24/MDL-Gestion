@@ -1,0 +1,20 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<h3>Bienvenue {{ user.first_name }} !</h3>
+<p class="small muted">Vous rejoignez {{ asso_nom }}{% if user.display_function %} en tant que {{ user.display_function }}{% endif %}. Choisissez votre mot de passe (10 caractères minimum).</p>
+{% if invitation.message %}<div class="alert alert-info"><span>{{ invitation.message }}</span></div>{% endif %}
+<form method="post">{% csrf_token %}
+  {% include "partials/_form.html" %}
+  <div class="strength" data-strength-meter><span></span><span></span><span></span><span></span></div>
+  <div class="strength-label small muted" data-strength-label></div>
+  <label class="checkbox-line"><input type="checkbox" name="receive_email" checked>
+    <span>Recevoir les messages de l'association sur cette boîte e-mail</span></label>
+  {% if charte %}
+  <label class="checkbox-line"><input type="checkbox" name="accept_charte">
+    <span>J'accepte la <a href="/reglages/textes/{{ charte.slug }}/" target="_blank">charte d'utilisation</a></span></label>
+  {% endif %}
+  <button type="submit" class="btn btn-primary" style="width:100%">Créer mon compte</button>
+</form>
+<div class="auth-foot">Valable jusqu'au {{ invitation.expires_at|date_fr:"%d/%m/%Y à %H:%M" }} · code {{ invitation.code }}</div>
+{% endblock %}

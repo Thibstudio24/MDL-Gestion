@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<article class="document-page">
+  <header class="page-head">
+    <div>
+      <h2 class="page-heading">{{ document.title }}</h2>
+      <p class="page-help">Version {{ document.version }} — mise à jour le {{ document.updated_at|date_fr:"%d/%m/%Y à %H:%M" }}</p>
+    </div>
+    <div class="page-actions"><button type="button" class="btn btn-ghost btn-sm" data-print>{% icon 'print' 14 %} Imprimer</button></div>
+  </header>
+  <div class="rich">{{ html }}</div>
+</article>
+{% endblock %}

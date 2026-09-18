@@ -1,0 +1,7 @@
+{% extends "accounts/_bare.html" %}
+{% block auth_content %}
+<h3>Lien invalide</h3>
+<p>{{ reason }}</p>
+<div class="btn-row"><a class="btn btn-primary" href="/mot-de-passe/oubli/">Demander un nouveau lien</a>
+<a class="btn btn-ghost" href="/connexion/">Se connecter</a></div>
+{% endblock %}

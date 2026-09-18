@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Bilan mensuel</h2>
+<p class="page-help">Un classeur Excel par année scolaire : synthèse, une feuille par mois avec sous-totaux par catégorie, croisement catégorie × mois, rapprochement bancaire. Régénéré automatiquement selon la planification.</p></div>
+<div class="page-actions"><span class="badge badge-muted">Planifié : {{ schedule.mode }} à {{ schedule.heure }}</span></div></div>
+<div class="card"><div class="card-head"><h3>Générer maintenant</h3></div><div class="card-body">
+<form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary">Générer le classeur</button></form>
+<p class="small muted">Le classeur est enregistré dans Documents → Bilans : les trois dernières versions restent disponibles.</p></div></div>
+<div class="card"><div class="card-head"><h3>Historique des générations</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Arrêté au mois</th><th>Mode</th><th class="num">Recettes</th><th class="num">Dépenses</th><th class="num">Solde</th><th>État</th><th></th></tr></thead>
+<tbody>{% for run in runs %}<tr>
+<td class="nowrap">{{ run.generated_at|date_fr }}</td><td>{{ run.months|last|default:"—" }}</td>
+<td>{% if run.auto %}automatique{% else %}manuel{% endif %}</td>
+<td class="num">{{ run.stats.incomes|money }}</td><td class="num">{{ run.stats.expenses|money }}</td>
+<td class="num">{{ run.stats.balance|money }}</td>
+<td>{% if run.status == 'ok' %}{% status_badge "active" "généré" %}{% else %}{% status_badge "closed" run.status %}{% endif %}</td>
+<td class="right">{% if run.workbook %}<a class="btn btn-ghost btn-sm" href="{% url 'documents:detail' run.workbook.pk %}">Ouvrir</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8">{% include "partials/_empty.html" with text="Aucun bilan généré pour cette année." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Mois de l'année</h3><span class="grow"></span>
+<a class="btn btn-ghost btn-sm" href="{% url 'finance:locks' %}">Clôtures</a></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Mois</th><th class="num">Recettes</th><th class="num">Dépenses</th><th class="num">Solde</th><th>État</th></tr></thead>
+<tbody>{% for item in months %}{% with flows=item.flows %}<tr>
+<td>{{ item.label }}</td><td class="num">{{ flows.incomes|money }}</td><td class="num">{{ flows.expenses|money }}</td>
+<td class="num">{{ flows.balance|money }}</td>
+<td>{% if item.locked %}{% status_badge "closed" "clôturé" %}{% else %}{% status_badge "pending" "ouvert" %}{% endif %}</td></tr>
+{% endwith %}{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

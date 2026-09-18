@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div><h2 class="page-heading">{{ document.title }} <span class="badge badge-primary">v{{ document.current.version|default:1 }}</span></h2>
+  <p class="page-help">{{ document.category.name }}{% if document.folder %} / {{ document.folder.name }}{% endif %} · déposé par {{ document.owner|default:"—" }} le {{ document.created_at|date_fr }} · {{ document.views }} consultation(s), {{ document.downloads }} téléchargement(s)</p></div>
+  <div class="page-actions">
+    <a class="btn btn-ghost btn-sm" href="/documents/{{ document.pk }}/apercu/">{% icon 'eye' 14 %} Aperçu</a>
+    <a class="btn btn-ghost btn-sm" href="/documents/{{ document.pk }}/telecharger/">{% icon 'download' 14 %} Télécharger</a>
+    {% if document.offline_cacheable %}<button type="button" class="btn btn-ghost btn-sm" data-keep-offline="/documents/{{ document.pk }}/telecharger/">{% icon 'wifi-off' 14 %} Garder hors ligne</button>{% endif %}
+    <button type="button" class="btn btn-ghost btn-sm" data-print>{% icon 'print' 14 %} Imprimer</button>
+  </div>
+</div>
+{% if document.is_locked %}<div class="alert alert-warning"><span>{% icon 'lock' 18 %}</span>
+<div><strong>Verrouillé.</strong> {% if can_edit %}<form method="post" action="/documents/{{ document.pk }}/forcer/" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Forcer le verrou ? L'action est journalisée.">Forcer (gestionnaire de catégories)</button></form>{% endif %}</div></div>{% endif %}
+{% if document.deleted_at %}<div class="alert alert-danger"><span>{% icon 'trash' 18 %}</span>
+<div>À la corbeille depuis le {{ document.deleted_at|date_fr }} — motif : {{ document.delete_reason|default:"—" }}.
+<form method="post" action="/documents/{{ document.pk }}/restaurer/" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm">Restaurer</button></form></div></div>{% endif %}
+{% if document.is_previewable %}
+<div class="card"><div class="card-body tight">
+  {% if document.ext == "pdf" %}<object data="/documents/{{ document.pk }}/apercu/" type="application/pdf" class="pdf-viewer"><p>Votre navigateur n'affiche pas le PDF : <a href="/documents/{{ document.pk }}/telecharger/">téléchargez-le</a>.</p></object>
+  {% else %}<img class="image-viewer" src="/documents/{{ document.pk }}/apercu/" alt="{{ document.title }}">{% endif %}
+</div></div>
+{% endif %}
+<div class="grid-2">
+  <div class="card"><div class="card-head"><h3>Informations</h3></div><div class="card-body">
+    <dl class="detail-list">
+      <dt>Description</dt><dd>{{ document.description|default:"—" }}</dd>
+      <dt>Étiquettes</dt><dd>{% for tag in document.tags %}<span class="badge badge-muted">{{ tag }}</span> {% endfor %}</dd>
+      <dt>Extension</dt><dd>{{ document.ext|default:"—" }}</dd>
+      <dt>Taille</dt><dd>{{ document.size|kb }}</dd>
+      <dt>Empreinte</dt><dd class="small"><code>{{ document.current.sha256|truncatechars:24 }}</code></dd>
+      <dt>Consultable hors ligne</dt><dd>{% if document.offline_cacheable %}oui{% else %}non{% endif %}</dd>
+    </dl>
+    {% if edit_form %}<form method="post" action="/documents/{{ document.pk }}/modifier/">{% csrf_token %}
+      {% include "partials/_form.html" with form=edit_form %}
+      <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button></form>{% endif %}
+  </div></div>
+  <div class="card"><div class="card-head"><h3>Versions</h3></div>
+  <div class="card-body tight"><div class="table-wrap"><table class="data">
+    <thead><tr><th>Version</th><th>Déposée le</th><th>Par</th><th>Commentaire</th><th></th></tr></thead>
+    <tbody>{% for version in versions %}
+      <tr{% if version.is_current %} class="is-locked"{% endif %}><td>v{{ version.version }}{% if version.is_current %} (courante){% endif %}</td>
+      <td>{{ version.uploaded_at|date_fr:"%d/%m %H:%M" }}</td><td>{{ version.uploaded_by|default:"—" }}</td>
+      <td class="small">{{ version.comment|default:"—" }}</td>
+      <td class="right nowrap"><a class="btn btn-ghost btn-sm" href="/documents/{{ document.pk }}/telecharger/{{ version.pk }}/">Télécharger</a>
+      {% if can_edit and not version.is_current %}<form method="post" action="/documents/{{ document.pk }}/versions/{{ version.pk }}/restaurer/" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm">Restaurer</button></form>{% endif %}</td></tr>
+    {% endfor %}</tbody></table></div></div>
+  {% if replace_form %}<div class="card-foot"><form method="post" action="/documents/{{ document.pk }}/remplacer/" enctype="multipart/form-data">{% csrf_token %}
+    {% include "partials/_form.html" with form=replace_form %}<button type="submit" class="btn btn-primary btn-sm">Déposer une nouvelle version</button></form></div>{% endif %}
+  </div>
+</div>
+<div class="card"><div class="card-head"><h3>Consultations</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Membre</th><th>Action</th><th>IP</th></tr></thead>
+<tbody>{% for entry in logs %}<tr><td>{{ entry.at|date_fr:"%d/%m %H:%M" }}</td><td>{{ entry.user|default:"—" }}</td>
+<td>{% if entry.action == "download" %}téléchargement{% else %}consultation{% endif %}</td><td>{{ entry.ip|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune consultation enregistrée." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% if can_delete %}
+<div class="card"><div class="card-head"><h3>Supprimer</h3></div>
+<div class="card-body"><form method="post" action="/documents/{{ document.pk }}/supprimer/">{% csrf_token %}
+<label class="field"><span class="field-label">Motif (obligatoire)</span><input type="text" name="reason" required maxlength="240"></label>
+<button type="submit" class="btn btn-danger" data-confirm-click="Mettre ce document à la corbeille ?">Mettre à la corbeille</button></form>
+<p class="small muted">Corbeille conservée 30 jours, puis purge automatique.</p></div></div>
+{% endif %}
+{% endblock %}

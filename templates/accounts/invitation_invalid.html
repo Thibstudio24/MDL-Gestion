@@ -1,0 +1,8 @@
+{% extends "accounts/_bare.html" %}
+{% block auth_content %}
+<h3>Invitation indisponible</h3>
+<p>{{ reason }}</p>
+{% if code %}<p class="small muted">Code saisi : <code>{{ code }}</code></p>{% endif %}
+<p class="small">Un membre du bureau peut renvoyer une invitation depuis la fiche du membre (bouton « Renvoyer »).</p>
+<div class="btn-row"><a class="btn btn-primary" href="/connexion/">Aller à la connexion</a></div>
+{% endblock %}

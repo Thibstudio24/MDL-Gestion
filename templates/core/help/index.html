@@ -1,0 +1,11 @@
+{% extends "core/help/_base.html" %}
+{% block help_content %}
+<h2 class="page-heading">Mode d'emploi</h2>
+<p class="page-help">26 sections, de la découverte de l'interface jusqu'à la check-list de rentrée. Chaque page est imprimable.</p>
+<div class="tiles">
+  {% for item in sections %}
+  <a class="tile" href="/aide/{{ item.id }}/"><div class="tile-head"><h3 class="tile-title">{{ item.id }}</h3></div>
+  <div class="tile-sub">{{ item.title }}</div></a>
+  {% endfor %}
+</div>
+{% endblock %}

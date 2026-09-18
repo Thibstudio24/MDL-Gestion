@@ -1,0 +1,7 @@
+{% extends "accounts/_bare.html" %}
+{% block auth_content %}
+<h3>Confirmation requise</h3>
+<p class="small muted">Cette opération est sensible : confirmez votre mot de passe (valable 10 minutes).</p>
+<form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+<button type="submit" class="btn btn-primary" style="width:100%">Confirmer</button></form>
+{% endblock %}

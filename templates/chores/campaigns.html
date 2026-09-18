@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Campagnes de ménage</h2>
+<p class="page-help">Une campagne par semaine de ménage. La publication attribue automatiquement les cinq tâches types aux membres volontaires.</p></div>
+<div class="page-actions"><a class="btn btn-primary btn-sm" href="{% url 'chores:campaign_create' %}">{% icon 'plus' 14 %} Nouvelle campagne</a></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Campagne</th><th>Semaine</th><th class="num">Tâches</th><th class="num">Validées</th><th class="num">Retard</th><th class="num">Sans réponse</th><th>État</th><th></th></tr></thead>
+<tbody>{% for row in rows %}<tr>
+<td><a href="{% url 'chores:campaign_detail' row.campaign.pk %}"><strong>{{ row.campaign.label }}</strong></a>
+<br><span class="small muted">{{ row.campaign.start_date|date_fr }} → {{ row.campaign.end_date|date_fr }}</span></td>
+<td>{{ row.campaign.get_week_display }}</td><td class="num">{{ row.progress.total }}</td>
+<td class="num">{{ row.progress.done }}</td><td class="num {% if row.progress.late %}is-expense{% endif %}">{{ row.progress.late }}</td>
+<td class="num">{{ row.progress.missing }}</td>
+<td>{% if row.campaign.closed %}{% status_badge "closed" "clôturée" %}{% elif row.campaign.published %}{% status_badge "active" "ouverte" %}{% else %}{% status_badge "pending" "brouillon" %}{% endif %}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="{% url 'chores:campaign_detail' row.campaign.pk %}">Ouvrir</a></td></tr>
+{% empty %}<tr><td colspan="8">{% include "partials/_empty.html" with text="Aucune campagne de ménage." action_url="/menage/campagnes/creer/" action_label="Nouvelle campagne" %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

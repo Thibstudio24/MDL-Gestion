@@ -1,0 +1,32 @@
+{% extends "accounts/settings/_base.html" %}
+{% load ui %}
+{% block settings_body %}
+<div class="card"><div class="card-head"><h3>Événements et canaux</h3><span class="grow"></span>
+<button type="button" class="btn btn-ghost btn-sm" data-reset-matrix>Revenir aux réglages de l'association</button></div>
+<div class="card-body tight"><form method="post">{% csrf_token %}
+<div class="table-wrap"><table class="data matrix">
+<thead><tr><th>Événement</th><th>Dans l'app</th><th>E-mail</th><th>Push</th></tr></thead>
+<tbody>{% for event in events %}{% with key=event.key %}
+<tr><td><strong>{{ event.label }}</strong>{% if event.mandatory %} {% status_badge "closed" "obligatoire" %}{% endif %}</td>
+<td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-inapp" value="1"{% if matrix|get_item:key|get_item:"inapp" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td>
+<td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-email" value="1"{% if matrix|get_item:key|get_item:"email" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td>
+<td><label class="checkbox-line"><input type="checkbox" name="evt-{{ key }}-push" value="1"{% if matrix|get_item:key|get_item:"push" %} checked{% endif %}{% if event.mandatory %} disabled checked{% endif %}></label></td></tr>
+{% endwith %}{% endfor %}</tbody></table></div>
+<div class="card-foot">
+  <label class="checkbox-line"><input type="checkbox" name="receive_email"{% if user.receive_personal_email %} checked{% endif %}><span>Recevoir les e-mails de l'association sur ma boîte personnelle</span></label>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+</div></form></div></div>
+<div class="card"><div class="card-head"><h3>Heures de silence</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}<div class="form-row">{% include "partials/_form.html" with form=quiet_form %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Appareils abonnés aux notifications</h3><span class="grow"></span>
+<button type="button" class="btn btn-ghost btn-sm" data-request-push>S'abonner sur cet appareil</button>
+<form method="post" action="/notifications/test/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Envoyer une notification de test</button></form></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Appareil</th><th>Étiquette</th><th>Dernier succès</th><th>Échecs</th><th></th></tr></thead>
+<tbody>{% for device in devices %}<tr><td class="small">{{ device.ua|truncatechars:44 }}</td><td>{{ device.label|default:"—" }}</td>
+<td>{{ device.last_success|date_fr:"%d/%m %H:%M"|default:"—" }}</td><td>{{ device.failures }}</td>
+<td class="right"><form method="post" action="/notifications/desabonner/">{% csrf_token %}<input type="hidden" name="endpoint" value="{{ device.endpoint }}"><button class="btn btn-ghost btn-sm">Retirer</button></form></td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucun appareil abonné sur ce compte." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "accounts/settings/_base.html" %}
+{% load ui %}
+{% block settings_body %}
+<div class="card"><div class="card-head"><h3>Profil</h3></div>
+<div class="card-body"><form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Adresse e-mail de connexion</h3></div>
+<div class="card-body"><p class="small muted">Changement re-authentifié : une confirmation part sur l'ancienne et la nouvelle boîte.</p>
+<form method="post">{% csrf_token %}{% include "partials/_form.html" with form=email_form %}
+<button type="submit" class="btn btn-primary">Changer l'adresse</button></form></div></div>
+{% endblock %}

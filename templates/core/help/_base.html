@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="help-layout">
+  <nav class="help-nav no-print" aria-label="Sommaire du mode d'emploi">
+    <strong>Mode d'emploi</strong>
+    <ol>
+      {% for item in sections %}<li><a href="/aide/{{ item.id }}/">{{ item.id }} {{ item.title }}</a></li>{% endfor %}
+    </ol>
+    <ul class="help-extra">
+      <li><a href="/aide/faq/">FAQ</a></li>
+      <li><a href="/aide/glossaire/">Glossaire</a></li>
+      <li><a href="/aide/check-list/">Check-list de rentrée</a></li>
+    </ul>
+  </nav>
+  <article class="help-body">
+    {% block help_content %}{% endblock %}
+    <div class="btn-row no-print" style="margin-top:20px"><button type="button" class="btn btn-ghost btn-sm" data-print>{% icon 'print' 14 %} Imprimer cette page</button></div>
+  </article>
+</div>
+{% endblock %}

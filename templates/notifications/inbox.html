@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Notifications</h2>
+<p class="page-help">{{ unread }} non lue(s). Les notifications lues sont purgées après 90 jours. Les canaux se règlent dans <a href="/parametres/notifications/">Notifications &amp; e-mails</a>.</p></div>
+<div class="page-actions"><form method="post" action="/notifications/tout-marquer-lu/">{% csrf_token %}<button class="btn btn-ghost btn-sm">Tout marquer comme lu</button></form></div></div>
+<nav class="tabs">
+  <a class="tab{% if tab == 'non-lus' %} is-active{% endif %}" href="?onglet=non-lus">Non lus</a>
+  <a class="tab{% if tab == 'lus' %} is-active{% endif %}" href="?onglet=lus">Lus</a>
+  <a class="tab{% if tab == 'tous' %} is-active{% endif %}" href="?onglet=tous">Tous</a>
+</nav>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Date</th><th>Titre</th><th>Message</th><th>Niveau</th><th></th></tr></thead>
+<tbody>{% for item in page_obj %}
+<tr><td class="nowrap">{{ item.created_at|date_fr:"%d/%m %H:%M" }}</td>
+<td><strong>{{ item.title }}</strong></td><td class="small">{{ item.body|truncatechars:90 }}</td>
+<td>{% status_badge item.level item.level %}</td>
+<td class="right nowrap">
+  {% if item.url %}<a class="btn btn-ghost btn-sm" href="/notifications/{{ item.pk }}/">Ouvrir</a>{% endif %}
+  {% if not item.read_at %}<form method="post" action="/notifications/marquer-lu/" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ item.pk }}"><button class="btn btn-ghost btn-sm">Marquer lu</button></form>{% endif %}
+</td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucun message. Les diffusions de l'administration arriveront ici (et dans la cloche)." %}</td></tr>{% endfor %}</tbody>
+</table></div></div><div class="card-foot">{% pagination page_obj %}</div></div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Diffusions</h2>
+<p class="page-help">{{ stats.envoyees }} envoyée(s), {{ stats.programmées }} programmée(s), {{ stats.file }} courriel(s) en file, {{ stats.echecs }} échec(s).</p></div>
+<div class="page-actions"><a class="btn btn-primary btn-sm" href="{% url 'mail:create' %}">{% icon 'send' 14 %} Nouvelle diffusion</a>
+<a class="btn btn-ghost btn-sm" href="{% url 'mail:outbox' %}">{% icon 'list' 14 %} File SMTP</a></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Objet</th><th>Type</th><th>Destinataires</th><th>État</th><th>Envoyé le</th><th></th></tr></thead>
+<tbody>{% for item in broadcasts %}<tr>
+<td><a href="{% url 'mail:admin_detail' item.pk %}"><strong>{{ item.subject }}</strong></a></td>
+<td>{{ item.get_kind_display }}</td><td class="num">{{ item.get_audience_display }}</td>
+<td>{% if item.status == 'sent' %}{% status_badge "success" "envoyé" %}{% elif item.status == 'scheduled' %}{% status_badge "pending" "programmé" %}{% elif item.status == 'cancelled' %}{% status_badge "closed" "annulé" %}{% else %}{% status_badge "inactive" "brouillon" %}{% endif %}</td>
+<td class="nowrap">{{ item.sent_at|date_fr|default:"—" }}</td>
+<td class="right"><a class="btn btn-ghost btn-sm" href="{% url 'mail:admin_detail' item.pk %}">Ouvrir</a></td></tr>
+{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucune diffusion pour l'instant." action_url="/messages/admin/creer/" action_label="Nouvelle diffusion" %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

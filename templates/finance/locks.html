@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Clôtures mensuelles</h2>
+<p class="page-help">Un mois clôturé est verrouillé pour tout le monde, administrateurs compris. La réouverture exige une ré-authentification et un motif : elle est tracée en rouge dans le journal d'audit.</p></div></div>
+<div class="card"><div class="card-head"><h3>Clôturer un mois</h3></div><div class="card-body">
+<form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" with form=form %}</div>
+<button type="submit" class="btn btn-primary" data-confirm-click="Clôturer ce mois ? Plus aucune écriture ne pourra y être modifiée.">Clôturer</button></form>
+<p class="small muted">Le bilan de la période doit avoir été généré avant la clôture.</p></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Mois</th><th class="num">Recettes</th><th class="num">Dépenses</th><th class="num">Solde</th><th>Clôturé le</th><th>Par</th><th></th></tr></thead>
+<tbody>{% for item in months %}<tr>
+<td><strong>{{ item.label }}</strong></td><td class="num">{{ item.flows.incomes|money }}</td>
+<td class="num">{{ item.flows.expenses|money }}</td><td class="num">{{ item.flows.balance|money }}</td>
+<td>{% if item.locked %}{{ item.locked_at|date_fr }}{% else %}—{% endif %}</td>
+<td>{{ item.locked_by|default:"—" }}</td>
+<td class="right">{% if item.locked %}
+  <form method="post" action="{% url 'finance:lock_reopen' item.lock_pk %}">{% csrf_token %}
+  <input type="text" name="reason" placeholder="Motif de réouverture" required maxlength="240" style="width:220px">
+  <button class="btn btn-ghost btn-sm" data-confirm-click="Rouvrir ce mois ? Vous devrez vous ré-authentifier.">Rouvrir</button></form>
+  {% else %}<form method="post" action="{% url 'finance:lock_create' %}" style="display:inline">{% csrf_token %}
+  <input type="hidden" name="month" value="{{ item.month }}"><input type="hidden" name="year_number" value="{{ item.year }}">
+  <button class="btn btn-ghost btn-sm">Clôturer</button></form>{% endif %}</td></tr>
+{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{
+  "app": {"debug": false, "allowed_hosts": ["*"], "timezone": "Europe/Paris"},
+  "security": {"secret_key": "ci-insecure-key-not-a-real-secret"},
+  "database": {"engine": "sqlite", "name": "db.sqlite3"},
+  "branding": {"nom": "MDL de test", "sigle": "MDL"}
+}

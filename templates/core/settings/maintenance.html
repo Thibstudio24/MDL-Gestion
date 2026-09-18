@@ -1,0 +1,8 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>Mode maintenance</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}{% include "partials/_form.html" %}
+<button type="submit" class="btn btn-primary">Enregistrer</button></form>
+<p class="small muted">Pendant la maintenance, seule la liste des comptes exclus peut accéder à l'application.</p></div></div>
+{% endblock %}

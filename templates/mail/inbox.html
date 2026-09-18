@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Messages</h2>
+<p class="page-help">Messagerie descendante : le bureau écrit, les membres lisent. {{ unread }} message(s) non lu(s).</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm{% if only_unread %} is-active{% endif %}" href="?nonlus=1">Non lus</a>
+<a class="btn btn-ghost btn-sm" href="{% url 'mail:mail_inbox' %}">Tous</a>
+{% if can_edit %}<a class="btn btn-primary btn-sm" href="{% url 'mail:create' %}">{% icon 'send' 14 %} Nouvelle diffusion</a>{% endif %}</div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Objet</th><th>Type</th><th>De</th><th>Date</th><th>État</th></tr></thead>
+<tbody>{% for item in items %}<tr{% if not item.read_at %} class="is-unread"{% endif %}>
+<td><a href="{% url 'mail:detail' item.pk %}"><strong>{{ item.broadcast.subject }}</strong></a>
+<br><span class="small muted">{{ item.broadcast.body|truncatechars:90 }}</span></td>
+<td>{{ item.broadcast.get_kind_display }}</td>
+<td>{{ item.broadcast.created_by|default:"Bureau" }}</td>
+<td class="nowrap">{{ item.created_at|date_fr }}</td>
+<td>{% if item.ack_at %}{% status_badge "success" "accusé" %}{% elif item.read_at %}{% status_badge "active" "lu" %}{% else %}{% status_badge "pending" "non lu" %}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucun message dans votre boîte." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

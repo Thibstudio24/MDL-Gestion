@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head">
+  <div><h2 class="page-heading">{% if category %}{{ category.name }}{% elif folder %}{{ folder.name }}{% else %}Documents{% endif %}</h2>
+  <p class="page-help">Verrouiller une catégorie après diffusion empêche tout dépôt et toute suppression, y compris pour les administrateurs (sauf droit de gestion des catégories). Formats acceptés : {{ accepted|join:", " }}.</p></div>
+  <div class="page-actions">
+    {% if can_manage_categories %}<a class="btn btn-ghost btn-sm" href="/documents/categories/">{% icon 'sliders' 14 %} Catégories</a>{% endif %}
+    <a class="btn btn-ghost btn-sm" href="/documents/corbeille/">{% icon 'trash' 14 %} Corbeille</a>
+  </div>
+</div>
+{% if usage.pct >= 80 %}<div class="alert alert-{% if usage.pct >= 95 %}danger{% else %}warning{% endif %}"><span>{% icon 'warning' 18 %}</span>
+<div><strong>Espace utilisé à {{ usage.pct }} %</strong> ({{ usage.label }}). Purgez la corbeille ou relevez la limite dans Réglages → Quotas.</div></div>{% endif %}
+<nav class="chips">
+  <a class="chip{% if not category and not folder %} is-active{% endif %}" href="/documents/">Toutes</a>
+  {% for item in categories %}<a class="chip{% if category.pk == item.pk %} is-active{% endif %}" href="?categorie={{ item.pk }}">
+    <span class="chip-dot" style="background:{{ item.color }}"></span>{{ item.name }}{% if item.locked_read %} 🔒{% endif %}</a>{% endfor %}
+</nav>
+{% if folders %}<nav class="chips">{% for item in folders %}<a class="chip{% if folder.pk == item.pk %} is-active{% endif %}" href="?dossier={{ item.pk }}">{% icon 'folder' 14 %} {{ item.name }}</a>{% endfor %}</nav>{% endif %}
+<form class="filters" method="get">
+  {% if category %}<input type="hidden" name="categorie" value="{{ category.pk }}">{% endif %}
+  <label class="field field-inline"><span class="field-label">Recherche</span><input type="search" name="q" value="{{ query }}" placeholder="Titre, description, étiquette"></label>
+  <div class="filters-actions"><button type="submit" class="btn btn-ghost btn-sm">{% icon 'search' 14 %} Chercher</button><a class="btn btn-ghost btn-sm" href="/documents/">Réinitialiser</a></div>
+</form>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Titre</th><th>Catégorie</th><th>Dossier</th><th>Version</th><th class="num">Taille</th><th>Étiquettes</th><th>Modifié le</th><th></th></tr></thead>
+<tbody>{% for document in page_obj %}
+<tr><td><a href="/documents/{{ document.pk }}/"><strong>{{ document.title }}</strong></a>
+  {% if document.is_locked %} <span class="badge badge-warning">verrouillé</span>{% endif %}
+  <br><span class="small muted">{{ document.description|truncatechars:60 }}</span></td>
+<td><span class="chip-dot" style="background:{{ document.category.color }}"></span> {{ document.category.name }}</td>
+<td>{{ document.folder.name|default:"—" }}</td>
+<td>v{{ document.current.version|default:1 }}</td>
+<td class="num">{{ document.size|kb }}</td>
+<td class="small">{% for tag in document.tags %}<span class="badge badge-muted">{{ tag }}</span>{% endfor %}</td>
+<td class="nowrap">{{ document.updated_at|date_fr:"%d/%m/%Y" }}</td>
+<td class="right nowrap"><a class="btn btn-ghost btn-sm" href="/documents/{{ document.pk }}/apercu/">Aperçu</a>
+<a class="btn btn-ghost btn-sm" href="/documents/{{ document.pk }}/telecharger/">Télécharger</a></td></tr>
+{% empty %}<tr><td colspan="8">{% include "partials/_empty.html" with text="Aucun document dans cette catégorie. Déposez un PDF, un Word ou un Excel en le glissant ici, ou créez un sous-dossier (un par club)." %}</td></tr>{% endfor %}</tbody>
+</table></div></div><div class="card-foot">{% pagination page_obj %}<span class="grow"></span>
+<span class="small muted">Quota : {{ usage.label }} ({{ usage.pct }} %)</span></div></div>
+{% if form %}
+<div class="card" id="depot"><div class="card-head"><h3>Déposer des documents</h3><span class="grow"></span>
+<span class="small muted">Glissez-déposez plusieurs fichiers, ou utilisez le sélecteur.</span></div>
+<div class="card-body">
+<form method="post" action="/documents/deposer/" enctype="multipart/form-data" data-dropzone>{% csrf_token %}
+  <div class="dropzone" data-dropzone-target>
+    <p>{% icon 'upload' 22 %} Glissez vos fichiers ici ({{ accepted|join:", " }})</p>
+    <p class="small muted">Taille maximale : {{ usage.max_file_mb }} Mo par fichier.</p>
+  </div>
+  <div class="form-grid">{% include "partials/_form.html" %}</div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+</div></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,256 @@
+"""Messagerie : file SMTP en base, diffusions, purge."""
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Any
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from django.utils import timezone
+
+from audit import services as audit
+
+if TYPE_CHECKING:  # pragma: no cover
+    from mail.models import Outbox
+
+logger = logging.getLogger(__name__)
+MAX_ATTEMPTS = 5
+READ_RETENTION_DAYS = 180
+
+
+def queue_email(*, to_email: str, recipient_user=None, subject: str, text_body: str,
+                kind: str = "", urgent: bool = False, notification=None,
+                immediat: bool = False) -> Outbox:
+    """Met un courriel en file.
+
+    Avec ``immediat`` (courriels unitaires : invitation, réinitialisation de mot
+    de passe, rappel d'expiration), un envoi est tenté sur-le-champ : l'attente
+    d'un cron ne retarde plus un message que l'émetteur croit parti. En cas
+    d'échec SMTP le courriel reste en file pour le cron ou le vidage manuel.
+    Sans ``immediat`` (diffusions en nombre, notifications), jamais d'envoi
+    synchrone dans une requête web.
+    """
+    from mail.models import Outbox
+
+    item = Outbox.objects.create(to_email=to_email[:254], recipient_user=recipient_user,
+                                 subject=subject[:200], text_body=text_body or subject,
+                                 kind=kind[:20], urgent=bool(urgent))
+    if immediat and getattr(settings, "MAIL_ENABLED", False) and not getattr(settings, "TESTING", False):
+        _try_send(item)
+    return item
+
+
+def _connexion_smtp():
+    """Connexion SMTP explicite : mode déduit du port (465 SSL, sinon STARTTLS).
+
+    Un couple « SSL + port 587 » ne peut pas marcher (le serveur parle STARTTLS
+    sur le 587) : en déduisant le mode du port au moment de l'envoi, l'envoi ne
+    dépend plus d'un réglage incohérent. En test, la connexion par défaut
+    (locmem) est utilisée.
+    """
+    from django.core.mail import get_connection
+
+    if getattr(settings, "TESTING", False):
+        return get_connection()
+    port = int(getattr(settings, "EMAIL_PORT", 587) or 587)
+    return get_connection(
+        backend="django.core.mail.backends.smtp.EmailBackend",
+        host=getattr(settings, "EMAIL_HOST", "localhost") or "localhost",
+        port=port,
+        username=getattr(settings, "EMAIL_HOST_USER", "") or None,
+        password=getattr(settings, "EMAIL_HOST_PASSWORD", "") or None,
+        use_ssl=port == 465,
+        use_tls=port != 465,
+        timeout=getattr(settings, "EMAIL_TIMEOUT", 20) or 20,
+    )
+
+
+def _try_send(item) -> bool:
+    """Réserve le courriel (« sending ») puis l'envoie ; en cas d'échec il reste en file.
+
+    La réservation rend mutuellement exclusifs la pompe de fond, le cron, le
+    bouton manuel et l'envoi immédiat : chaque courriel part exactement une
+    fois. Au-delà de ``MAX_ATTEMPTS`` tentatives il passe en échec définitif.
+    """
+    from mail.models import Outbox
+
+    if Outbox.objects.filter(pk=item.pk, status="queued").update(status="sending") == 0:
+        return True  # déjà pris en charge par un autre émetteur
+    item.status = "sending"
+    item.attempts += 1
+    try:
+        message = EmailMultiAlternatives(subject=item.subject, body=item.text_body,
+                                         from_email=_from_email(), to=[item.to_email],
+                                         connection=_connexion_smtp())
+        message.send(fail_silently=False)
+        item.status = "sent"
+        item.sent_at = timezone.now()
+        item.error = ""
+        ok = True
+    except Exception as exc:  # noqa: BLE001 - on ne bloque pas la file sur un échec SMTP
+        item.error = str(exc)[:400]
+        ok = False
+        item.status = "failed" if item.attempts >= MAX_ATTEMPTS else "queued"
+    item.save(update_fields=["status", "attempts", "error", "sent_at"])
+    return ok
+
+
+def drain_outbox(limit: int = 30) -> dict[str, int]:
+    """Vide la file d'attente. Chaque échec est compté, au-delà de 5 tentatives on abandonne."""
+    from mail.models import Outbox
+
+    report = {"envoyes": 0, "echecs": 0, "abandons": 0}
+    if not getattr(settings, "MAIL_ENABLED", False):
+        queued = Outbox.objects.filter(status="queued")
+        report["ignores"] = queued.count()
+        queued.update(status="skipped", error="SMTP désactivé")
+        return report
+    for item in Outbox.objects.filter(status="queued").order_by("-urgent", "queued_at")[:limit]:
+        if _try_send(item):
+            report["envoyes"] += 1
+        elif item.status == "failed":
+            report["abandons"] += 1
+        else:
+            report["echecs"] += 1
+    return report
+
+
+def _from_email() -> str:
+    brand = None
+    try:
+        from core.models import Setting
+
+        brand = Setting.brand()
+    except Exception:  # pragma: no cover - base non migrée
+        brand = {}
+    name = (brand or {}).get("association") or "MDL"
+    sender = getattr(settings, "DEFAULT_FROM_EMAIL", "") or "mdl@localhost"
+    return "%s <%s>" % (name, sender) if "<" not in sender else sender
+
+
+def send_test_email(to_email: str) -> None:
+    """Test SMTP immédiat depuis Réglages → Envois. Lève une erreur lisible sinon."""
+    if not getattr(settings, "MAIL_ENABLED", False):
+        raise RuntimeError("SMTP désactivé : cochez « Envoyer les e-mails par SMTP » "
+                           "dans Réglages → Envois, puis enregistrez.")
+    message = EmailMultiAlternatives(subject="Test de messagerie",
+                                     body="Ce message confirme que le SMTP est correctement configuré.",
+                                     from_email=_from_email(), to=[to_email],
+                                     connection=_connexion_smtp())
+    message.send(fail_silently=False)
+
+
+def audience_members(broadcast) -> list:
+    """Résout les destinataires d'une diffusion."""
+    from accounts.models import User
+
+    if broadcast.audience == "board":
+        from core.permissions import BOARD_ROLES
+
+        return list(User.objects.filter(status="active", role__name__in=BOARD_ROLES))
+    if broadcast.audience == "role":
+        return list(User.objects.filter(status="active", role__in=broadcast.roles.all()))
+    return list(User.objects.filter(status="active"))
+
+
+def send_broadcast(broadcast, actor=None) -> int:
+    """Crée les destinataires, notifie et met les courriels en file."""
+    from mail.models import Recipient
+    from notifications import services as notifications
+
+    members = audience_members(broadcast)
+    with transaction.atomic():
+        for member in members:
+            Recipient.objects.get_or_create(broadcast=broadcast, user=member)
+        broadcast.status = "sent"
+        broadcast.sent_at = timezone.now()
+        broadcast.save(update_fields=["status", "sent_at"])
+    for member in members:
+        notifications.notify(member, "mail", broadcast.subject, broadcast.body[:240],
+                             url="/messages/%d/" % broadcast.pk,
+                             level="danger" if broadcast.kind == "alert" else "info",
+                             force=broadcast.kind in ("important", "alert"))
+    audit.log(actor, "mail.broadcast_sent", "mail", broadcast, "Diffusion envoyée à %s membre(s)" % len(members))
+    return len(members)
+
+
+def send_scheduled(now=None) -> int:
+    """Le cron envoie les diffusions programmées dont l'heure est venue."""
+    from mail.models import Broadcast
+
+    now = now or timezone.now()
+    due = Broadcast.objects.filter(status="scheduled", scheduled_at__lte=now)
+    count = 0
+    for broadcast in due:
+        send_broadcast(broadcast, broadcast.created_by)
+        count += 1
+    return count
+
+
+def cancel_broadcast(broadcast, actor) -> None:
+    broadcast.status = "cancelled"
+    broadcast.save(update_fields=["status"])
+    audit.log(actor, "mail.broadcast_cancelled", "mail", broadcast, "Diffusion annulée : %s" % broadcast)
+
+
+def schedule(broadcast, when, actor) -> None:
+    if when <= timezone.now():
+        raise ValueError("La date programmée doit être dans le futur.")
+    broadcast.scheduled_at = when
+    broadcast.status = "scheduled"
+    broadcast.save(update_fields=["scheduled_at", "status"])
+    audit.log(actor, "mail.broadcast_scheduled", "mail", broadcast,
+              "Diffusion programmée pour le %s" % when.strftime("%d/%m/%Y %H:%M"))
+
+
+def mark_read(recipient) -> None:
+    if recipient.read_at is None:
+        recipient.read_at = timezone.now()
+        recipient.save(update_fields=["read_at"])
+        audit.log(recipient.user, "mail.read", "mail", recipient.broadcast, "Message lu : %s" % recipient.broadcast)
+
+
+def unread_count(user) -> int:
+    from mail.models import Recipient
+
+    return Recipient.objects.filter(user=user, read_at__isnull=True, archived_at__isnull=True).count()
+
+
+def inbox(user, unread_only: bool = False):
+    from mail.models import Recipient
+
+    items = Recipient.objects.filter(user=user, archived_at__isnull=True).select_related("broadcast")
+    if unread_only:
+        items = items.filter(read_at__isnull=True)
+    return items.order_by("-created_at")
+
+
+def purge_read_emails(days: int = READ_RETENTION_DAYS, dry_run: bool = False) -> int:
+    """Purge les messages lus et les courriels de la file déjà traités (quota disque)."""
+    from mail.models import Outbox, Recipient
+
+    limit = timezone.now() - timezone.timedelta(days=days)
+    recipients = Recipient.objects.filter(read_at__isnull=False, created_at__lt=limit)
+    outbox = Outbox.objects.filter(status__in=("sent", "failed", "skipped"), queued_at__lt=limit)
+    count = recipients.count() + outbox.count()
+    if dry_run:
+        return count
+    with transaction.atomic():
+        recipients.delete()
+        outbox.delete()
+    return count
+
+
+def stats() -> dict[str, Any]:
+    """Chiffres pour la tuile du tableau de bord et la page d'administration."""
+    from mail.models import Broadcast, Outbox, Recipient
+
+    return {
+        "diffusions": Broadcast.objects.count(),
+        "envoyees": Broadcast.objects.filter(status="sent").count(),
+        "programmées": Broadcast.objects.filter(status="scheduled").count(),
+        "file": Outbox.objects.filter(status="queued").count(),
+        "echecs": Outbox.objects.filter(status="failed").count(),
+        "non_lus": Recipient.objects.filter(read_at__isnull=True).count(),
+    }

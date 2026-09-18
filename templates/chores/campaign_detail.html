@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">{{ campaign.label }}</h2>
+<p class="page-help">{{ campaign.get_week_display }} · {{ campaign.start_date|date_fr }} → {{ campaign.end_date|date_fr }} · {{ progress.done }}/{{ progress.total }} tâche(s) validée(s)</p></div>
+<div class="page-actions">{% if not campaign.published %}<form method="post" action="{% url 'chores:publish' campaign.pk %}">{% csrf_token %}<button class="btn btn-primary btn-sm">Publier et attribuer</button></form>
+{% else %}{% if not campaign.closed %}<form method="post" action="{% url 'chores:close' campaign.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm" data-confirm-click="Clôturer la campagne ?">Clôturer</button></form>{% endif %}{% endif %}
+<a class="btn btn-ghost btn-sm" href="{% url 'chores:admin_tracking' %}?campagne={{ campaign.pk }}">{% icon 'check' 14 %} Suivi</a>
+<form method="post" action="{% url 'chores:campaign_delete' campaign.pk %}" style="display:inline">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer cette campagne et les tâches attribuées ?">{% icon 'trash' 14 %} Supprimer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Tâches attribuées</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Membre</th><th>Jour</th><th>Tâche</th><th>État</th><th>Fait le</th></tr></thead>
+<tbody>{% for item in assignments %}<tr><td>{{ item.member.get_full_name }}</td>
+<td>{{ item.get_weekday_display|capfirst }}</td><td>{{ item.task }}</td>
+<td>{% if item.status == 'validated' %}{% status_badge "success" "validé" %}{% elif item.status == 'done' %}{% status_badge "active" "à valider" %}{% elif item.status == 'redo' %}{% status_badge "closed" "à refaire" %}{% else %}{% status_badge "pending" "à faire" %}{% endif %}</td>
+<td class="nowrap">{{ item.done_at|date_fr|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucune tâche : publiez la campagne pour les attribuer." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Réponses des membres</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Membre</th><th>Réponse</th><th>Note</th><th>Date</th></tr></thead>
+<tbody>{% for item in responses %}<tr><td>{{ item.member.get_full_name }}</td>
+<td>{% if item.choice == 'accept' %}{% status_badge "success" "accepte" %}{% else %}{% status_badge "closed" "décline" %}{% endif %}</td>
+<td class="small">{{ item.note|default:"—" }}</td><td class="nowrap">{{ item.created_at|date_fr }}</td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune réponse pour l'instant." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Mes disponibilités</h2>
+<p class="page-help">Toutes vos réponses, campagne par campagne. Vous pouvez les modifier tant que la campagne est ouverte.</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'plannings:planning_list' %}">Retour</a></div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Campagne</th><th>Créneau</th><th>Ma réponse</th><th>Note</th><th>Modifiée le</th></tr></thead>
+<tbody>{% for item in items %}<tr>
+<td>{{ item.campaign.label }}</td>
+<td class="nowrap">{{ item.slot.get_weekday_display|capfirst }} {{ item.slot.start_time|time:"H:i" }}–{{ item.slot.end_time|time:"H:i" }}</td>
+<td>{% if item.choice == 'yes' %}{% status_badge "active" "disponible" %}{% elif item.choice == 'maybe' %}{% status_badge "pending" "si besoin" %}{% else %}{% status_badge "closed" "indisponible" %}{% endif %}</td>
+<td class="small">{{ item.note|default:"—" }}</td><td class="nowrap">{{ item.updated_at|date_fr }}</td></tr>
+{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Vous n'avez encore indiqué aucune disponibilité." action_url="/planning/" action_label="Voir les campagnes" %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

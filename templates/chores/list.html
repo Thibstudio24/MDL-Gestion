@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Planning de ménage</h2>
+<p class="page-help">Chaque membre reçoit une tâche par semaine, dépose une photo une fois faite, puis le bureau valide. Une tâche refusée repasse à faire avec un motif.</p></div>
+<div class="page-actions">{% if can_edit %}<a class="btn btn-ghost btn-sm" href="{% url 'chores:admin_tracking' %}">{% icon 'check' 14 %} Suivi</a>
+<a class="btn btn-ghost btn-sm" href="{% url 'chores:campaigns' %}">{% icon 'list' 14 %} Campagnes</a>{% endif %}</div></div>
+{% if campaign %}
+{% if campaign.is_open and not response %}
+<div class="card"><div class="card-head"><h3>{{ campaign.label }} — votre réponse</h3></div><div class="card-body">
+<p>{{ campaign.description|default:"Merci de répondre avant la date limite." }}</p>
+<form method="post" action="{% url 'chores:respond' %}" class="form-row">{% csrf_token %}
+<input type="hidden" name="campaign" value="{{ campaign.pk }}">
+<label class="field"><span class="field-label">Ma réponse</span><select name="choice">
+<option value="accept">J'accepte</option><option value="decline">Je ne peux pas</option></select></label>
+<label class="field"><span class="field-label">Note</span><input type="text" name="note" maxlength="240" placeholder="Ex. : absent le jeudi"></label>
+<button type="submit" class="btn btn-primary">Répondre</button></form></div></div>
+{% endif %}
+<div class="kpi-grid">
+  <div class="kpi"><span class="kpi-label">Tâches</span><strong class="kpi-value">{{ progress.total }}</strong><span class="kpi-hint">{{ campaign.label }}</span></div>
+  <div class="kpi"><span class="kpi-label">Validées</span><strong class="kpi-value">{{ progress.done }}</strong><span class="kpi-hint">{{ progress.pct }} %</span></div>
+  <div class="kpi"><span class="kpi-label">À valider</span><strong class="kpi-value">{{ progress.proof_pending }}</strong><span class="kpi-hint">photos déposées</span></div>
+  <div class="kpi"><span class="kpi-label">En retard</span><strong class="kpi-value">{{ progress.late }}</strong><span class="kpi-hint">semaine close le {{ campaign.end_date|date_fr }}</span></div>
+</div>
+{% endif %}
+<div class="card"><div class="card-head"><h3>Mes tâches</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Semaine</th><th>Jour</th><th>Tâche</th><th>Lieu</th><th>État</th><th>Photo</th><th></th></tr></thead>
+<tbody>{% for item in mine %}<tr>
+<td>{{ item.campaign.label }}</td><td>{{ item.get_weekday_display|capfirst }}</td>
+<td>{{ item.task }}</td><td>{{ item.zone }}</td>
+<td>{% if item.status == 'todo' %}{% status_badge "pending" "à faire" %}{% elif item.status == 'done' %}{% status_badge "active" "à valider" %}{% elif item.status == 'validated' %}{% status_badge "success" "validé" %}{% else %}{% status_badge "closed" "à refaire" %}{% endif %}
+{% if item.is_late %} <span class="badge badge-danger">en retard</span>{% endif %}</td>
+<td>{% if item.proof %}<a href="{{ item.proof.url }}">Voir la photo</a>{% else %}—{% endif %}</td>
+<td class="right">{% if item.status == 'todo' or item.status == 'redo' %}
+<form method="post" action="{% url 'chores:mark_done' item.pk %}" enctype="multipart/form-data" class="form-row">{% csrf_token %}
+<input type="file" name="proof" accept="image/*" class="btn btn-ghost btn-sm">
+<input type="text" name="note" maxlength="240" placeholder="Note">
+<button class="btn btn-primary btn-sm">Fait</button></form>{% else %}{{ item.note|default:"—" }}{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucune tâche ne vous est attribuée pour l'instant." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}

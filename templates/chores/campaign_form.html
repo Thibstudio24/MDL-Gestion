@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Nouvelle campagne de ménage</h2>
+<p class="page-help">Les cinq tâches types (poubelles, balai, tables, matériel, fenêtres) sont attribuées à la publication, en tournant entre les volontaires.</p></div>
+<div class="page-actions"><a class="btn btn-ghost btn-sm" href="{% url 'chores:campaigns' %}">Retour</a></div></div>
+<div class="card"><div class="card-body"><form method="post">{% csrf_token %}
+<div class="form-grid">{% include "partials/_form.html" %}</div>
+<button type="submit" class="btn btn-primary">Créer la campagne</button></form></div></div>
+{% endblock %}

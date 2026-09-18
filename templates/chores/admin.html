@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Suivi du ménage</h2>
+<p class="page-help">{% if progress %}{{ progress.total }} tâche(s) — {{ progress.done }} validée(s), {{ progress.proof_pending }} à valider, {{ progress.late }} en retard, {{ progress.missing }} membre(s) sans réponse.{% else %}Aucune campagne.{% endif %}</p></div>
+<div class="page-actions"><form method="get" class="field field-inline"><span class="field-label">Campagne</span>
+<select name="campagne" onchange="this.form.submit()">{% for item in campaigns %}<option value="{{ item.pk }}"{% if campaign.pk == item.pk %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></form>
+{% if campaign %}<form method="post" action="{% url 'chores:remind' campaign.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% icon 'bell' 14 %} Relancer</button></form>{% endif %}</div></div>
+<div class="card"><div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Membre</th><th>Jour</th><th>Tâche</th><th>État</th><th>Photo</th><th>Note</th><th></th></tr></thead>
+<tbody>{% for item in assignments %}<tr>
+<td>{{ item.member.get_full_name }}</td><td>{{ item.get_weekday_display|capfirst }}</td><td>{{ item.task }}</td>
+<td>{% if item.status == 'todo' %}{% status_badge "pending" "à faire" %}{% elif item.status == 'done' %}{% status_badge "active" "à valider" %}{% elif item.status == 'validated' %}{% status_badge "success" "validé" %}{% else %}{% status_badge "closed" "à refaire" %}{% endif %}
+{% if item.is_late %} <span class="badge badge-danger">retard</span>{% endif %}</td>
+<td>{% if item.proof %}<a href="{{ item.proof.url }}">Photo</a>{% else %}—{% endif %}</td>
+<td class="small">{{ item.note|default:"—" }}</td>
+<td class="right nowrap">{% if item.status == 'done' %}
+<form method="post" action="{% url 'chores:validate' item.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-ghost btn-sm">Valider</button></form>
+<form method="post" action="{% url 'chores:request_redo' item.pk %}" style="display:inline">{% csrf_token %}
+<input type="text" name="reason" placeholder="Motif" required maxlength="240" style="width:160px">
+<button class="btn btn-ghost btn-sm">À refaire</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucune tâche attribuée pour cette campagne." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+{% endblock %}
