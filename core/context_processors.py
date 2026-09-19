@@ -135,9 +135,18 @@ def nav(request):
         pending = 0
     unread = 0
     try:
-        from notifications.services import unread_count
+        from mail.services import unread_count
 
         unread = unread_count(user)
     except Exception:
         unread = 0
-    return {"nav_groups": groups, "nav_pending_interventions": pending, "nav_unread": unread}
+    unread_notifs = 0
+    try:
+        from notifications.models import Notification
+
+        if user is not None and getattr(user, "is_authenticated", False):
+            unread_notifs = Notification.objects.filter(user=user, read_at__isnull=True).count()
+    except Exception:
+        unread_notifs = 0
+    return {"nav_groups": groups, "nav_pending_interventions": pending, "nav_unread": unread,
+            "nav_unread_notifs": unread_notifs}

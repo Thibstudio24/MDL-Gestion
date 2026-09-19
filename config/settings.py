@@ -267,6 +267,7 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 # --------------------------------------------------------------------------- #
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(cfg("app", "media_root", str(BASE_DIR / "media"), "MDL_MEDIA_ROOT"))
+BACKUP_DIR = BASE_DIR / "backups"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]

@@ -14,6 +14,7 @@ ACTIONS = [
     "auth.password_reset", "auth.reauth", "auth.2fa_enabled", "auth.2fa_disabled", "auth.2fa_recovery_used",
     "member.created", "member.updated", "member.invited", "member.invitation_resent", "member.invitation_revoked",
     "member.role_changed", "member.deactivated", "member.reactivated", "member.anonymized",
+    "member.deleted", "settings.site_reset",
     "member.unlocked", "member.exported", "member.2fa_reset",
     "role.created", "role.updated", "role.deleted", "role.permissions_changed", "role.exported", "role.imported",
     "document.uploaded", "document.updated", "document.version_restored", "document.deleted",

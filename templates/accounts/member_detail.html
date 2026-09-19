@@ -46,6 +46,9 @@
       <form method="post" action="/membres/{{ member.pk }}/anonymiser/">{% csrf_token %}
         <input type="text" name="confirmation" maxlength="3" placeholder="3 lettres" required style="max-width:120px">
         <button class="btn btn-danger btn-sm" data-confirm-click="Anonymiser ce compte ? L'historique reste lisible sous un nom pseudonymisé.">Anonymiser</button></form>
+      {% if is_admin and member.pk != request.user.pk %}<form method="post" action="/membres/{{ member.pk }}/supprimer/">{% csrf_token %}
+        <input type="text" name="confirmation" placeholder="SUPPRIMER" required style="max-width:120px">
+        <button class="btn btn-danger btn-sm" data-confirm-click="Supprimer définitivement ce compte ? Aucune trace ne restera. Irréversible.">Supprimer définitivement</button></form>{% endif %}
     </div>
     {% endif %}
   </div></div>

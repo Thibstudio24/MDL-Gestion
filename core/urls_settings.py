@@ -17,6 +17,7 @@ urlpatterns = [
     path("smtp/", views.smtp, name="settings_smtp"),
     path("smtp/test/", views.smtp_test, name="settings_smtp_test"),
     path("smtp/vider/", views.smtp_drain, name="settings_smtp_drain"),
+    path("reinitialiser/", views.reset_site, name="settings_reset"),
     path("pwa/", views.pwa, name="settings_pwa"),
     path("pwa/cles/", views.pwa_generate_keys, name="settings_pwa_keys"),
     path("bilan/", views.bilan_settings, name="settings_bilan"),

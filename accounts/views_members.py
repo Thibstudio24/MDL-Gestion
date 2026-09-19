@@ -51,9 +51,12 @@ def list_view(request):
     queryset, params = _filters(request)
     page = Paginator(queryset, 25).get_page(request.GET.get("page"))
     invitations = Invitation.objects.filter(accepted_at__isnull=True).select_related("user")[:10]
+    grantables = Role.objects.all()
+    if not permissions.is_administrator(request.user):
+        grantables = grantables.filter(is_administrator=False)
     return render(request, "accounts/member_list.html", {
         "page_obj": page, "params": params, "invitations": invitations,
-        "roles": Role.objects.all(),
+        "roles": Role.objects.all(), "roles_invite": grantables,
         "can_edit": permissions.can_edit(request.user, "members"),
         "can_invite": permissions.fine(request.user, "members.invite"),
         "page_title": "Membres & invitations",
@@ -66,7 +69,7 @@ def invite(request):
     if not permissions.fine(request.user, "members.invite"):
         messages.error(request, _("Votre rôle ne permet pas d'inviter un membre."))
         return HttpResponseForbidden()
-    form = InvitationForm(request.POST)
+    form = InvitationForm(request.POST, actor=request.user)
     if not form.is_valid():
         for field, errors in form.errors.items():
             for error in errors:
@@ -166,7 +169,8 @@ def detail(request, pk: int):
         "member": member, "invitation": invitation, "data": data,
         "can_edit": permissions.can_edit(request.user, "members"),
         "is_admin": permissions.is_administrator(request.user),
-        "all_roles": Role.objects.order_by("order", "name"),
+        "all_roles": (Role.objects.order_by("order", "name") if permissions.is_administrator(request.user)
+                      else Role.objects.filter(is_administrator=False).order_by("order", "name")),
         "page_title": member.get_full_name() or member.email,
     })
 
@@ -222,7 +226,7 @@ def _messages(member):
 
 @administrator_required
 def create(request):
-    form = MemberForm(request.POST or None, request.FILES or None)
+    form = MemberForm(request.POST or None, request.FILES or None, actor=request.user)
     if request.method == "POST" and form.is_valid():
         member = form.save(commit=False)
         member.email = (member.email or "").strip().lower()
@@ -243,7 +247,7 @@ def create(request):
 @administrator_required
 def edit(request, pk: int):
     member = get_object_or_404(User, pk=pk)
-    form = MemberForm(request.POST or None, request.FILES or None, instance=member)
+    form = MemberForm(request.POST or None, request.FILES or None, instance=member, actor=request.user)
     if request.method == "POST" and form.is_valid():
         previous = {"role": member.role.name if member.role else None, "status": member.status,
                     "is_boarder": member.is_boarder}
@@ -362,6 +366,31 @@ def anonymize(request, pk: int):
     services.revoke_all_sessions(member)
     member.anonymize()
     messages.success(request, _("Compte anonymisé : l'historique reste lisible sous ce nom pseudonymisé."))
+    return redirect("members:members_list")
+
+
+@administrator_required
+@require_POST
+def delete(request, pk: int):
+    """Suppression définitive du compte, sans laisser de traces.
+
+    À la différence de l'anonymisation (qui pseudonymise en conservant
+    l'historique lisible), ici le compte et ses rattachements directs
+    disparaissent. Réservé aux administrateurs, confirmation tapée.
+    """
+    member = get_object_or_404(User, pk=pk)
+    if member.pk == request.user.pk:
+        messages.error(request, _("Vous ne pouvez pas supprimer votre propre compte."))
+        return redirect("members:members_detail", pk=pk)
+    if (request.POST.get("confirmation") or "").strip().upper() != "SUPPRIMER":
+        messages.error(request, _("Saisissez « SUPPRIMER » pour confirmer la suppression définitive."))
+        return redirect("members:members_detail", pk=pk)
+    email = member.email
+    log(request.user, "member.deleted", "members", None,
+        "Compte supprimé définitivement, sans traces : %(email)s" % {"email": email},
+        level="danger", request=request)
+    member.delete()
+    messages.success(request, _("Compte %(email)s supprimé définitivement.") % {"email": email})
     return redirect("members:members_list")
 
 

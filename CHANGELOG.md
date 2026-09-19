@@ -23,7 +23,15 @@ Première version livrée d'un bloc.
   l'imposer (`force_2fa`) : l'inscription est alors demandée dès la première connexion,
   reportable jusqu'au délai fixé, obligatoire ensuite.
 * Droits par module × niveau + 10 droits fins, cache 300 s invalidé à chaque changement de rôle.
-* RGPD : anonymisation, export JSON des données d'un compte, textes légaux versionnés.
+  Le rôle Administrateur ne peut être attribué (invitation ou changement de rôle) que par un
+  administrateur ; les autres rôles ne voient même pas l'option.
+* RGPD : anonymisation, export JSON des données d'un compte, textes légaux versionnés, et
+  suppression définitive d'un compte sans laisser de traces (admin, confirmation tapée).
+* Cloche de notifications : widget déroulant des non-lues (un clic = marqué lu + ouverture de
+  la page concernée, « Tout marquer lu »), compteur propre aux notifications ; le chiffre à
+  côté de « Messages » compte les courriels non lus (la source était inversée auparavant).
+* Réglages → Sauvegarde : « Zone dangereuse » — réinitialisation complète du site à l'état
+  neuf (admin ré-authentifié, confirmation tapée), retour à l'assistant d'installation.
 
 ### Modules métier
 * Documents : catégories, dossiers (2 niveaux), versions (3 conservées), corbeille 30 jours,

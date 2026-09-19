@@ -3,7 +3,7 @@
   <label class="field"><span class="field-label">Nom</span><input type="text" name="last_name" required maxlength="80"></label>
   <label class="field"><span class="field-label">Adresse e-mail</span><input type="email" name="email" required></label>
   <label class="field"><span class="field-label">Rôle</span><select name="role" required>
-    {% for role in roles %}<option value="{{ role.pk }}">{{ role.name }}</option>{% endfor %}</select></label>
+    {% for role in roles_invite %}<option value="{{ role.pk }}">{{ role.name }}</option>{% endfor %}</select></label>
   <label class="field"><span class="field-label">Fonction affichée</span><input type="text" name="display_function" maxlength="120" placeholder="ex. Trésorier"></label>
   <label class="field"><span class="field-label">Validité</span><select name="days">
     <option value="1">1 jour</option><option value="3">3 jours</option>

@@ -48,6 +48,15 @@ class InvitationForm(forms.Form):
     last_name = forms.CharField(label="Nom", max_length=80)
     email = forms.EmailField(label="Adresse e-mail")
     role = forms.ModelChoiceField(label="Rôle", queryset=Role.objects.all())
+
+    def __init__(self, *args, actor=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        from core import permissions
+
+        self.actor = actor
+        if actor is not None and not permissions.is_administrator(actor):
+            # Seul un administrateur peut inviter quelqu'un au rôle Administrateur.
+            self.fields["role"].queryset = Role.objects.filter(is_administrator=False)
     display_function = forms.CharField(label="Fonction affichée", max_length=120, required=False)
     is_boarder = forms.BooleanField(label="Interne (hébergé au lycée)", required=False)
     days = forms.TypedChoiceField(label="Validité de l'invitation", coerce=int,
@@ -70,10 +79,31 @@ class MemberForm(forms.ModelForm):
                   "is_boarder", "role", "status", "photo"]
         widgets = {"photo": forms.ClearableFileInput(attrs={"accept": ".png,.jpg,.jpeg,.webp,.gif"})}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
+        from core import permissions
+
+        self.actor = actor
         self.fields["photo"].validators = [FileExtensionValidator(["png", "jpg", "jpeg", "webp", "gif"])]
-        self.fields["role"].queryset = Role.objects.all()
+        roles = Role.objects.all()
+        if actor is not None and not permissions.is_administrator(actor):
+            # Seul un administrateur peut attribuer le rôle Administrateur ; le
+            # rôle actuel reste proposable pour ne pas casser l'édition d'un admin.
+            roles = Role.objects.filter(is_administrator=False)
+            if self.instance is not None and getattr(self.instance, "role_id", None):
+                roles = roles | Role.objects.filter(pk=self.instance.role_id)
+        self.fields["role"].queryset = roles
+
+    def clean(self):
+        data = super().clean()
+        role = data.get("role")
+        actuelle = getattr(self.instance, "role", None)
+        if role is not None and role.is_administrator and (actuelle is None or actuelle.pk != role.pk):
+            from core import permissions
+
+            if self.actor is None or not permissions.is_administrator(self.actor):
+                self.add_error("role", "Seul un Administrateur peut attribuer le rôle Administrateur.")
+        return data
 
 
 class ProfileForm(forms.ModelForm):

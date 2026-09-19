@@ -6,6 +6,9 @@ SECTIONS = [
 La **barre latérale** liste les modules auxquels votre rôle donne accès : un module absent du menu
 signifie simplement que votre rôle n'a aucun droit dessus. En haut : le filtre d'année scolaire, la
 recherche, la cloche des notifications, la bascule clair/sombre et votre profil.
+La cloche déroule les notifications non lues : un clic marque comme lu et ouvre la page
+concernée ; « Tout marquer lu » solde le compteur. Le petit chiffre à côté de
+« Messages » compte, lui, les courriels non lus de la messagerie.
 
 * « Réduire la sidebar » (icône en bas de la barre) passe en pleine largeur.
 * Densité **confort** ou **compacte** : Réglages → Apparence.
@@ -170,6 +173,12 @@ d'avoir choisi son mot de passe.
 
 Le lien **et** un code court à 6 caractères sont affichés : le code sert aux membres dont l'adresse
 e-mail n'est pas fiable. Relance automatique la veille de l'expiration.
+
+Seul un administrateur voit et peut attribuer le rôle Administrateur (invitation ou
+changement de rôle) ; les autres rôles n'ont même pas l'option à l'écran. Sur la fiche
+d'un membre, un administrateur peut **anonymiser** (l'historique reste lisible sous un
+nom pseudonymisé) ou **supprimer définitivement** le compte, sans laisser de traces
+(confirmation tapée « SUPPRIMER », irréversible).
 """),
     ("12", "Créer un rôle et ses droits", """
 Rôles & droits → **Créer un rôle**. Pour chaque module : *Aucun* (module absent du menu),
@@ -282,6 +291,11 @@ supprimée du serveur ; téléchargez-la d'abord, le serveur ne doit pas être v
 
 Réglages → **Journal d'audit** : le journal ne se modifie jamais ligne à ligne. L'administrateur
 peut le vider entièrement ; le vidage lui-même y est tracé.
+
+Réglages → **Sauvegarde**, « Zone dangereuse » : un administrateur ré-authentifié peut
+réinitialiser complètement le site (comptes, documents, messages, fichiers, sauvegardes)
+et rendre la main à l'assistant d'installation. Confirmation tapée « REINITIALISER »,
+irréversible.
 
 Réglages → **Mises à jour** : vérification depuis les Releases GitHub, application en un clic
 (sauvegarde automatique, vérification SHA-256, retour arrière en cas d'échec). L'application ne

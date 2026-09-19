@@ -18,9 +18,20 @@
   <span class="grow"></span>
   <div class="topbar-actions">
     <button type="button" class="icon-btn" data-mode-toggle title="Clair / sombre" aria-label="Basculer clair ou sombre">{% icon 'moon' 18 %}</button>
-    <a class="icon-btn bell{% if nav_unread %} has-unread{% endif %}" href="/notifications/" title="Notifications" aria-label="Notifications">
-      {% icon 'bell' 18 %}{% if nav_unread %}<span class="bell-count">{{ nav_unread }}</span>{% endif %}
-    </a>
+    <div class="bell-wrap">
+      <button type="button" class="icon-btn bell{% if nav_unread_notifs %} has-unread{% endif %}" data-bell-toggle
+              title="Notifications" aria-label="Notifications : {{ nav_unread_notifs }} non lue(s)">
+        {% icon 'bell' 18 %}{% if nav_unread_notifs %}<span class="bell-count">{{ nav_unread_notifs }}</span>{% endif %}
+      </button>
+      <div class="bell-panel" data-bell-panel hidden>
+        <div class="bell-head"><strong>Notifications non lues</strong>
+          <form method="post" action="{% url 'notifications:mark_all' %}" data-bell-markall>{% csrf_token %}
+            <button class="btn btn-ghost btn-sm" type="submit">Tout marquer lu</button></form>
+        </div>
+        <ul class="bell-list" data-bell-list><li class="bell-empty">Chargement…</li></ul>
+        <div class="bell-foot"><a href="{% url 'notifications:inbox' %}">Voir toutes les notifications</a></div>
+      </div>
+    </div>
     <a class="icon-btn" href="/parametres/" title="Mes réglages" aria-label="Mes réglages">{% icon 'user' 18 %}</a>
   </div>
 </header>

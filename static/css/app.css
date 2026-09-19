@@ -499,3 +499,21 @@ tr.is-error td { background: color-mix(in srgb, var(--danger) 12%, transparent);
 .checklist { padding-left: 20px; margin: 0 0 14px; }
 .checklist li { margin-bottom: 6px; }
 tr.is-unread td { background: color-mix(in srgb, var(--primary) 7%, transparent); font-weight: 600; }
+
+/* ---------------------------------------------------------------- cloche : panneau déroulant */
+.bell-wrap { position: relative; display: inline-block; }
+.bell-panel { position: absolute; right: 0; top: calc(100% + 6px); width: min(340px, 90vw);
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .18); z-index: 60; overflow: hidden; }
+.bell-head { display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.bell-list { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; }
+.bell-list li + li { border-top: 1px solid var(--border); }
+.bell-list a { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+  color: var(--text); text-decoration: none; }
+.bell-list a:hover { background: var(--hover); }
+.bell-title { font-weight: 600; }
+.bell-date { font-size: .8rem; color: var(--muted); }
+.bell-empty { padding: 12px; color: var(--muted); }
+.bell-foot { padding: 8px 12px; border-top: 1px solid var(--border); }
+.bell-foot a { color: var(--accent); text-decoration: none; font-size: .9rem; }

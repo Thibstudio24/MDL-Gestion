@@ -17,4 +17,13 @@
 </table></div></div>
 <div class="card-foot"><span class="small muted">Contenu : dump JSON des données, configuration (mots de passe remplacés par ***) et fichiers média. Espace utilisé : {{ usage.label }}.</span></div>
 </div>
+<div class="card"><div class="card-head"><h3>Zone dangereuse</h3></div>
+<div class="card-body">
+<p class="small muted">Réinitialise complètement le site à l'état neuf : comptes, documents, messages,
+fichiers et sauvegardes sont effacés, puis l'assistant d'installation reprend la main. Irréversible.</p>
+<form method="post" action="{% url 'settings:settings_reset' %}" class="form-row">{% csrf_token %}
+<label class="field"><span class="field-label">Tapez REINITIALISER pour confirmer</span>
+<input type="text" name="confirmation" required></label>
+<button type="submit" class="btn btn-danger" data-confirm-click="Tout effacer et réinitialiser le site ? Irréversible.">Réinitialiser complètement le site</button>
+</form></div></div>
 {% endblock %}

@@ -540,6 +540,50 @@ def backup_restore(request):
     return redirect("settings:settings_backup")
 
 
+@administrator_required
+@reauth_required
+@require_POST
+def reset_site(request):
+    """Réinitialise complètement le site à l'état neuf : retour à l'assistant.
+
+    Efface la base (comptes compris), le contenu de media/ et de backups/,
+    puis repasse l'installation en mode « non installé ». Seul un
+    administrateur ré-authentifié peut le faire, confirmation tapée.
+    """
+    import shutil
+    from pathlib import Path
+
+    from django.contrib.auth import logout
+    from django.core.management import call_command
+
+    from config import settings as instance
+
+    if (request.POST.get("confirmation") or "").strip() != "REINITIALISER":
+        messages.error(request, _("Saisissez « REINITIALISER » pour confirmer."))
+        return redirect("settings:settings_backup")
+    audit.log(request.user, "settings.site_reset", "settings", None,
+              "Réinitialisation complète du site demandée", level="danger", request=request)
+    for dossier in (Path(settings.MEDIA_ROOT), Path(settings.BACKUP_DIR)):
+        if dossier.exists():
+            for enfant in dossier.iterdir():
+                try:
+                    if enfant.is_dir() and not enfant.is_symlink():
+                        shutil.rmtree(enfant, ignore_errors=True)
+                    else:
+                        enfant.unlink(missing_ok=True)
+                except OSError:
+                    pass
+    config = instance.read_instance()
+    meta = dict(config.get("meta") or {})
+    meta["installed"] = False
+    meta.pop("installed_at", None)
+    config["meta"] = meta
+    instance.write_instance(config)
+    call_command("flush", "--noinput", verbosity=0)
+    logout(request)
+    return redirect("/installation/")
+
+
 @module_required("settings_global")
 def interventions(request):
     return render(request, "core/settings/interventions.html", {

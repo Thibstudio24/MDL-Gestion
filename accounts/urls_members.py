@@ -18,6 +18,7 @@ urlpatterns = [
     path("<int:pk>/a2f/", views.disable_2fa, name="members_disable_2fa"),
     path("<int:pk>/statut/", views.toggle_status, name="members_toggle_status"),
     path("<int:pk>/anonymiser/", views.anonymize, name="members_anonymize"),
+    path("<int:pk>/supprimer/", views.delete, name="members_delete"),
     path("<int:pk>/invitation/renvoyer/", views.invitation_resend, name="members_invitation_resend"),
     path("<int:pk>/invitation/revoquer/", views.invitation_revoke, name="members_invitation_revoke"),
 ]
