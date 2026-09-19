@@ -33,5 +33,6 @@ urlpatterns = [
     path("mise-a-jour/", views.update, name="settings_update"),
     path("telemetrie/", views.telemetry, name="settings_telemetry"),
     path("textes/", views.texts, name="settings_texts"),
+    path("textes/generer/", views.texts_generate, name="settings_texts_generate"),
     path("textes/<slug:slug>/", views.text_edit, name="settings_text"),
 ]

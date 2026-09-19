@@ -48,6 +48,14 @@ d'un membre, un administrateur peut **anonymiser** (l'historique reste lisible s
 nom pseudonymisé) ou **supprimer définitivement** le compte, sans laisser de traces
 (confirmation tapée « SUPPRIMER », irréversible).
 
+**RGPD et chartes** : Réglages → Marque & textes → Textes légaux. Le bouton
+« Générer les textes par défaut » crée la politique de protection des données (RGPD),
+la charte d'utilisation, les mentions légales et l'extrait de règlement, personnalisés
+avec le nom et le contact de l'association (un texte déjà écrit n'est jamais écrasé).
+La charte est présentée pour acceptation horodatée à la première connexion ; chaque
+membre retrouve tous les textes dans Mes paramètres → Charte & mentions, avec ses
+propres acceptations. Relisez et adaptez chaque texte : ils engagent l'association.
+
 ## 12. Créer un rôle et ses droits
 
 Rôles & droits → **Créer un rôle**. Pour chaque module : *Aucun* (module absent du menu),

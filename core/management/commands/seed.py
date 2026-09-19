@@ -9,6 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from accounts.services import create_board_roles, ensure_base_roles
+        from core.legal_texts import ensure_legal_texts
         from documents.services import ensure_default_categories
         from finance.services import ensure_accounts, ensure_gap_category
         from finance.services import ensure_default_categories as finance_categories
@@ -19,6 +20,7 @@ class Command(BaseCommand):
         finance_categories()
         ensure_gap_category()
         ensure_accounts()
+        ensure_legal_texts()
         from accounts.models import Role
         from documents.models import Category as DocCategory
         from finance.models import Account

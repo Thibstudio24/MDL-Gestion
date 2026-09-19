@@ -15,7 +15,7 @@
       <button type="button" class="btn btn-ghost btn-sm" data-request-push>Autoriser les notifications</button>
     </li>
     {% if charte %}
-    <li><label class="checkbox-line">{{ form.accept_charte }} <span>J'accepte la <a href="/reglages/textes/{{ charte.slug }}/" target="_blank">charte</a></span></label>
+    <li><label class="checkbox-line">{{ form.accept_charte }} <span>J'accepte la <a href="/parametres/charte/" target="_blank">{{ charte.title|lower }}</a> (version {{ charte.version }})</span></label>
     {% for error in form.accept_charte.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</li>
     {% endif %}
   </ol>

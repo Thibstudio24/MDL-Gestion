@@ -220,6 +220,7 @@ def storage_choice(request):
 def seed_defaults(request):
     """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
     from accounts.services import ensure_admin_role
+    from core.legal_texts import ensure_legal_texts
     from documents.services import ensure_default_categories
     from finance.services import ensure_accounts, ensure_gap_category
     from finance.services import ensure_default_categories as finance_categories
@@ -231,5 +232,8 @@ def seed_defaults(request):
     finance_categories()
     ensure_gap_category()
     ensure_accounts()
+    if ensure_legal_texts():
+        messages.success(request, _("Textes légaux par défaut créés (RGPD, charte, mentions, "
+                                    "règlement) — à relire et adapter dans Réglages → Textes."))
     messages.success(request, _("Référentiels par défaut créés."))
     return redirect("installer:done")

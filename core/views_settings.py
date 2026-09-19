@@ -782,6 +782,23 @@ def texts(request):
 
 
 @administrator_required
+@require_POST
+def texts_generate(request):
+    """Crée les textes légaux manquants (RGPD, charte, mentions, règlement)."""
+    from core.legal_texts import ensure_legal_texts
+
+    created = ensure_legal_texts(request.user)
+    if created:
+        audit.log(request.user, "settings.legal_updated", "settings", None,
+                  "%d texte(s) légaux par défaut créé(s)" % created, request=request)
+        messages.success(request, _("%(n)s texte(s) créé(s). Relisez-les et adaptez-les : "
+                                    "ils engagent l'association.") % {"n": created})
+    else:
+        messages.info(request, _("Tous les textes par défaut existent déjà."))
+    return redirect("settings:settings_texts")
+
+
+@administrator_required
 def text_edit(request, slug: str):
     document = get_object_or_404(LegalDocument, slug=slug)
     form = LegalForm(request.POST or None, instance=document)

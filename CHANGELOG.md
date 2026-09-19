@@ -95,6 +95,12 @@ Première version livrée d'un bloc.
   page « Aucune année scolaire » qui renvoie vers Réglages → Années scolaires. Fini l'année de
   test qui « réapparaît » après réinitialisation.
 
+* Textes légaux générables en un clic (Réglages → Textes, bouton de l'assistant ou `seed`) :
+  politique RGPD complète (finalités, bases légales, durées dont 10 ans comptables et photos de
+  ménage supprimées après validation, droits, CNIL), charte d'utilisation à acceptation
+  horodatée, mentions légales et extrait de règlement, personnalisés avec la marque de
+  l'association ; un texte déjà écrit n'est jamais écrasé.
+
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
   aucun compte de démonstration n'est créé. La clé secrète est générée à l'étape 2

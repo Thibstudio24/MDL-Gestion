@@ -10,6 +10,11 @@
 <td>{% if doc.published %}{% status_badge "active" "oui" %}{% else %}{% status_badge "inactive" "non" %}{% endif %}</td>
 <td>{{ doc.updated_at|date_fr }}</td>
 <td class="right"><a class="btn btn-ghost btn-sm" href="/reglages/textes/{{ doc.slug }}/">Modifier</a></td></tr>
-{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun texte légal : lancez la commande seed pour créer les modèles prêts à l'emploi." %}</td></tr>{% endfor %}</tbody>
-</table></div></div></div>
+{% empty %}<tr><td colspan="7">{% include "partials/_empty.html" with text="Aucun texte légal pour l'instant." %}</td></tr>{% endfor %}</tbody>
+</table></div>
+<div class="card-foot"><form method="post" action="{% url 'settings:settings_texts_generate' %}">{% csrf_token %}
+<button class="btn btn-primary">Générer les textes par défaut (RGPD, charte, mentions, règlement)</button></form>
+<p class="small muted">Crée uniquement les textes manquants, personnalisés avec le nom et le contact de
+l'association ; un texte déjà écrit n'est jamais écrasé. La charte exige une acceptation horodatée à la
+connexion. Relisez chaque texte : il engage l'association.</p></div></div></div>
 {% endblock %}
