@@ -17,6 +17,7 @@ from audit import services as audit
 from core import permissions
 from core.decorators import fine_required, module_required, reauth_required
 from core.models import SchoolYear
+from core.services import aucune_annee
 from finance import services
 from finance.forms import (
     AccountForm,
@@ -51,7 +52,7 @@ def _year(request) -> SchoolYear:
         found = SchoolYear.objects.filter(pk=requested).first()
         if found:
             return found
-    return SchoolYear.get_or_current()
+    return SchoolYear.current()
 
 
 def _filter_summary(form) -> str:
@@ -87,6 +88,8 @@ def _fail(request, exc: Exception, back: str, **kwargs) -> HttpResponse:
 def finance_list(request):
     """Tableau de bord : soldes, mois en cours, histogramme, dernières écritures."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     services.ensure_accounts()
     data = services.overview(year)
     entries = (Entry.objects.filter(year=year).select_related("account", "category", "created_by")
@@ -112,6 +115,8 @@ def finance_list(request):
 def finance_ledger(request):
     """Grand livre filtrable et paginé."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = LedgerFilterForm(request.GET or None)
     entries = Entry.objects.filter(year=year).select_related("account", "category", "subcategory", "created_by")
     if form.is_valid():
@@ -131,6 +136,8 @@ def finance_ledger(request):
 def entry_create(request):
     """Saisie d'une écriture (dépense, recette, transfert)."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = EntryForm(request.POST or None, request.FILES or None,
                      initial={"day": timezone.localdate(),
                               "account": Account.objects.filter(active=True).order_by("order").first()})
@@ -233,6 +240,8 @@ def entry_delete(request, pk):
 def accounts(request):
     """Comptes bancaires, coffre, soldes d'ouverture."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     services.ensure_accounts()
     rows = []
     for account in Account.objects.all():
@@ -290,6 +299,8 @@ def account_edit(request, pk):
 def cash(request):
     """Comptage de caisse : théorique calculé, écart justifié, ajustement automatique."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     services.ensure_accounts()
     safe = services.safe_account()
     form = CashCountForm(request.POST or None, initial={"day": timezone.localdate(), "account": safe})
@@ -320,6 +331,8 @@ def cash(request):
 @module_required(MODULE)
 def categories(request):
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = CategoryForm(request.POST or None, prefix="categorie")
     if request.method == "POST" and form.is_valid():
         category = form.save()
@@ -346,6 +359,8 @@ def categories(request):
 def import_view(request):
     """Import bancaire : aperçu avant écriture, détection des doublons, annulable."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     services.ensure_accounts()
     form = ImportForm(request.POST or None, request.FILES or None)
     prepared = []
@@ -390,6 +405,8 @@ def import_view(request):
 def import_run(request):
     """Écrit les lignes validées après vérification visuelle."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     data = request.session.get("finance_import")
     if not data:
         messages.error(request, _("Aucun import en attente : rechargez votre fichier."))
@@ -429,6 +446,8 @@ def import_revert(request, pk):
 def export(request):
     """Export du grand livre en Excel, en CSV ou en PDF."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = LedgerFilterForm(request.GET or None)
     entries = Entry.objects.filter(year=year).select_related("account", "category")
     if form.is_valid():
@@ -471,6 +490,8 @@ def export(request):
 def balance(request):
     """Génération du bilan et historique des classeurs."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = BalanceForm(request.POST or None, initial={"up_to": timezone.localdate()})
     if request.method == "POST" and form.is_valid():
         try:
@@ -497,6 +518,8 @@ def balance(request):
 def locks(request):
     """Clôtures mensuelles : verrou dur, réouverture motivée et ré-authentifiée."""
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     form = LockForm(year, request.POST or None)
     if request.method == "POST" and form.is_valid():
         month, year_number = (int(value) for value in form.cleaned_data["month"].split("-"))
@@ -525,6 +548,8 @@ def locks(request):
 @require_POST
 def lock_create(request):
     year = _year(request)
+    if year is None:
+        return aucune_annee(request)
     month = int(request.POST.get("month", 0))
     year_number = int(request.POST.get("year_number", 0))
     try:

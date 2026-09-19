@@ -90,6 +90,11 @@ Première version livrée d'un bloc.
   inclut le droit fin « Supprimer des documents » (corbeille 30 jours) et la fiche d'un document
   explique comment l'obtenir.
 
+* Le site ne recrée plus jamais d'année scolaire à l'insu de l'association : après une
+  réinitialisation (ou sur une installation neuve), trésorerie, plannings et ménage affichent une
+  page « Aucune année scolaire » qui renvoie vers Réglages → Années scolaires. Fini l'année de
+  test qui « réapparaît » après réinitialisation.
+
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
   aucun compte de démonstration n'est créé. La clé secrète est générée à l'étape 2

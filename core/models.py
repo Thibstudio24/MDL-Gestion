@@ -239,11 +239,12 @@ class SchoolYear(models.Model):
 
     @classmethod
     def ensure_current(cls) -> SchoolYear:
-        """Crée l'année scolaire couvrant la date du jour si aucune n'existe.
+        """Crée l'année scolaire couvrant la date du jour.
 
-        Sans année, la trésorerie et les plannings n'ont rien à quoi rattacher
-        leurs données : une installation neuve doit donc en avoir une.
-        L'année scolaire française court du 1er septembre au 31 août.
+        Réservé aux jeux de tests et à `manage.py seed` : en usage normal, le
+        site ne recrée JAMAIS d'année tout seul (une réinitialisation doit
+        laisser une base vraiment vide) ; les modules affichent alors une page
+        invitant à créer l'année dans Réglages → Années scolaires.
         """
         today = timezone.localdate()
         start_year = today.year if today.month >= 9 else today.year - 1

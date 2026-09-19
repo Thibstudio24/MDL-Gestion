@@ -144,3 +144,25 @@ def test_reinitialisation_purge_le_bucket_tiers(db, admin_client, admin, monkeyp
     assert reponse.status_code == 302
     assert purges == ["mdl-test"]
     assert AuditEntry.objects.filter(message__contains="bucket purgé (2 objet(s))").exists()
+
+
+def test_aucune_annee_ne_reapparait_dans_les_modules(db, admin_client):
+    """Après une réinitialisation (base vide), aucun module ne recrée d'année seul."""
+    from core.models import SchoolYear
+
+    assert SchoolYear.objects.count() == 0
+    for url in ("/tresorerie/", "/planning/", "/menage/campagnes/", "/menage/admin/suivi/"):
+        page = admin_client.get(url)
+        assert page.status_code == 200, url
+        assert "Aucune année scolaire" in page.content.decode(), url
+    assert SchoolYear.objects.count() == 0  # rien n'a été recréé à l'insu de l'association
+
+
+def test_modules_fonctionnels_une_fois_l_annee_creee(db, admin_client):
+    from tests.factories import make_year
+
+    make_year()
+    for url in ("/tresorerie/", "/planning/", "/menage/campagnes/"):
+        page = admin_client.get(url)
+        assert page.status_code == 200, url
+        assert "Aucune année scolaire" not in page.content.decode(), url

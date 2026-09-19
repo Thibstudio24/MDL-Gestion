@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="card"><div class="card-head"><h3>Aucune année scolaire</h3></div>
+<div class="card-body">
+<p class="page-help">Ce module rattache ses données à une année scolaire, et aucune n'existe :
+le site ne recrée plus d'année tout seul (vous retrouviez sinon une année non voulue après une
+réinitialisation) — c'est à vous de choisir la vôtre : libellé et dates, de septembre à août.</p>
+<p><a class="btn btn-primary" href="/reglages/annees/">Créer une année scolaire</a></p>
+<p class="small muted">Réglages → Années scolaires (réservé aux administrateurs). Si vous n'êtes
+pas administrateur, demandez à l'un d'eux de la créer.</p>
+</div></div>
+{% endblock %}

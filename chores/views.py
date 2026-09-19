@@ -12,6 +12,7 @@ from audit import services as audit
 from chores import services
 from chores.models import DAYS, Assignment, Campaign, ChorePreference, Response, Task
 from core import permissions
+from core import services as noyau
 from core.decorators import module_required
 from core.models import SchoolYear
 
@@ -87,7 +88,9 @@ def mark_done(request, pk):
 @module_required(MODULE)
 def admin_tracking(request):
     """Suivi administrateur : toutes les tâches, preuves, retards."""
-    year = SchoolYear.get_or_current()
+    year = SchoolYear.current()
+    if year is None:
+        return noyau.aucune_annee(request)
     campaigns = Campaign.objects.filter(year=year)
     campaign_id = request.GET.get("campagne")
     campaign = campaigns.filter(pk=campaign_id).first() if campaign_id else campaigns.first()
@@ -102,7 +105,9 @@ def admin_tracking(request):
 
 @module_required(MODULE, edit=True)
 def campaigns(request):
-    year = SchoolYear.get_or_current()
+    year = SchoolYear.current()
+    if year is None:
+        return noyau.aucune_annee(request)
     rows = [{"campaign": item, "progress": services.campaign_progress(item)}
             for item in Campaign.objects.filter(year=year)]
     return render(request, "chores/campaigns.html", {
@@ -115,7 +120,10 @@ def campaign_create(request):
     form = CampaignForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         campaign = form.save(commit=False)
-        campaign.year = SchoolYear.get_or_current()
+        annee = SchoolYear.current()
+        if annee is None:
+            return noyau.aucune_annee(request)
+        campaign.year = annee
         campaign.created_by = request.user
         campaign.save()
         services.ensure_tasks(campaign)

@@ -304,7 +304,10 @@ Confirmation tapée « REINITIALISER », irréversible. Tout y passe : **chaque 
 est vidée** (comptes, documents, écritures, réglages compris ; le fichier SQLite est
 reconstruit pour ne laisser aucune ancienne page de données), les fichiers et sauvegardes du
 serveur sont effacés et, si un stockage tiers est configuré, **le bucket est purgé**. La première
-ligne du journal de la nouvelle installation trace la réinitialisation.
+ligne du journal de la nouvelle installation trace la réinitialisation. Et rien ne « réapparaît » :
+le site ne recrée plus jamais d'année scolaire tout seul — après une réinitialisation, créez la
+vôtre dans Réglages → Années scolaires (les modules affichent une page qui y renvoie tant
+qu'aucune n'existe).
 
 Réglages → **Mises à jour** : vérification depuis les Releases GitHub, application en un clic
 (sauvegarde automatique, vérification SHA-256, retour arrière en cas d'échec). L'application ne

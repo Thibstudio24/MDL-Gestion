@@ -12,6 +12,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core.models import Installation, Intervention, SchoolYear, Setting
 
@@ -554,3 +555,15 @@ def health() -> dict:
         "push": bool(getattr(settings, "VAPID_PUBLIC_KEY", "")),
         "alertes": len(health_alerts()),
     }
+
+
+def aucune_annee(request):
+    """Page « aucune année scolaire » : plus de création silencieuse après reset.
+
+    Les modules rattachent tout à une année ; plutôt que d'en recréer une à
+    l'insu de l'association (qui retrouvait « son » année de test après une
+    réinitialisation), on l'invite à créer explicitement la sienne.
+    """
+    from django.shortcuts import render
+
+    return render(request, "core/no_year.html", {"page_title": _("Aucune année scolaire")})

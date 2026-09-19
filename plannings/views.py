@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from audit import services as audit
 from core import permissions
+from core import services as noyau
 from core.decorators import module_required
 from core.models import SchoolYear
 from plannings import services
@@ -24,7 +25,9 @@ MODULE = "planning_salle"
 @module_required(MODULE)
 def planning_list(request):
     """Campagnes en cours et passées."""
-    year = SchoolYear.get_or_current()
+    year = SchoolYear.current()
+    if year is None:
+        return noyau.aucune_annee(request)
     campaigns = Campaign.objects.filter(year=year).select_related("year")
     rows = [{"campaign": item, "stats": services.campaign_stats(item)} for item in campaigns]
     return render(request, "plannings/list.html", {
@@ -83,7 +86,9 @@ def save_availability(request):
 @module_required(MODULE, edit=True)
 def campaign_create(request):
     """Création d'une campagne et de ses créneaux types."""
-    year = SchoolYear.get_or_current()
+    year = SchoolYear.current()
+    if year is None:
+        return noyau.aucune_annee(request)
     form = CampaignForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         campaign = form.save(commit=False)
