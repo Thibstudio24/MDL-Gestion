@@ -82,33 +82,55 @@ def invite(request):
         message=data["message"], actor=request.user, boarder=data["is_boarder"],
     )
     link = _absolute(request, invitation.accept_url())
-    sent = _send_invitation(user, invitation)
+    etat = _send_invitation(user, invitation)
     log(request.user, "member.created", "members", user,
         "Membre créé et invité : %(email)s" % {"email": user.email}, request=request)
     messages.success(request, _("Invitation créée pour %(email)s.") % {"email": user.email})
-    if not sent:
-        messages.warning(request, _(
-            "SMTP indisponible : transmettez ce lien à la main → %(lien)s — ou ce code : %(code)s"
-        ) % {"lien": link, "code": invitation.code})
+    _alerte_envoi(request, etat, invitation, link)
     return redirect("members:members_detail", pk=user.pk)
 
 
-def _send_invitation(user, invitation) -> bool:
-    try:
-        from mail.services import queue_email
-        from notifications.services import notify
+def _send_invitation(user, invitation):
+    """Renvoie le statut du courriel (« sent », « queued », « sending ») ou None.
 
-        queue_email(to_email=user.email, recipient_user=user,
-                    subject="Invitation à rejoindre l'association",
-                    text_body=services.render_invitation_email(invitation), kind="invitation",
-                    immediat=True)
+    Une panne de notification in-app ou de push ne doit jamais être présentée
+    comme une panne SMTP : chaque canal a son propre filet de sécurité. Seul
+    l'état réel du courriel en file décide de l'alerte affichée.
+    """
+    from mail.services import queue_email
+    from notifications.services import notify
+
+    try:
+        item = queue_email(to_email=user.email, recipient_user=user,
+                           subject="Invitation à rejoindre l'association",
+                           text_body=services.render_invitation_email(invitation),
+                           kind="invitation", immediat=True)
+    except Exception:  # noqa: BLE001 - sans file, le code reste transmissible à la main
+        return None
+    try:
         notify(user, "invitation", "Vous êtes invité·e à rejoindre l'association",
                "Ouvrez le lien reçu pour choisir votre mot de passe.", url=invitation.accept_url())
+    except Exception:  # noqa: BLE001 - une notification n'est pas un courriel
+        pass
+    try:
         invitation.delivered = True
         invitation.save(update_fields=["delivered"])
-        return True
-    except Exception:
-        return False
+    except Exception:  # noqa: BLE001
+        pass
+    return item.status
+
+
+def _alerte_envoi(request, etat, invitation, lien: str = "") -> None:
+    """N'alerte que si le courriel est vraiment en panne, jamais pour une notification."""
+    manuel = (" — transmettez%(lien)s à la main, ou ce code : %(code)s"
+              % {"lien": (" ce lien : %s" % lien) if lien else "", "code": invitation.code})
+    if etat is None:
+        messages.warning(request, _("E-mail impossible à mettre en file%(manuel)s") % {"manuel": manuel})
+    elif etat == "failed":
+        messages.warning(request, _("L'envoi SMTP a échoué, détail dans Réglages → Envois%(manuel)s")
+                         % {"manuel": manuel})
+    elif etat in ("queued", "sending"):
+        messages.info(request, _("Courriel en file : départ automatique dans quelques secondes."))
 
 
 def _absolute(request, path: str) -> str:
@@ -352,9 +374,7 @@ def invitation_resend(request, pk: int):
         messages.error(request, _("Aucune invitation en cours pour ce compte."))
         return redirect("members:members_detail", pk=pk)
     invitation.renew()
-    if not _send_invitation(member, invitation):
-        messages.warning(request, _("SMTP indisponible : transmettez ce code à la main : %(code)s")
-                         % {"code": invitation.code})
+    _alerte_envoi(request, _send_invitation(member, invitation), invitation)
     log(request.user, "member.invitation_resent", "members", member, "Invitation renvoyée", request=request)
     messages.success(request, _("Invitation renvoyée (nouveau lien, nouveau code)."))
     return redirect("members:members_detail", pk=pk)

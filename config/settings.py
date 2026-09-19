@@ -193,6 +193,10 @@ if str(DB_ENGINE).lower() in ("mysql", "mariadb"):
     except ImportError:  # pragma: no cover
         pass
     DATABASES["default"]["OPTIONS"] = {"charset": "utf8mb4"}
+if "sqlite3" in DATABASES["default"]["ENGINE"]:
+    # La pompe SMTP de fond écrit pendant que des requêtes web écrivent :
+    # sans délai d'attente, SQLite rendrait « database is locked ».
+    DATABASES["default"]["OPTIONS"] = {"timeout": 20}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 

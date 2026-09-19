@@ -57,6 +57,11 @@ Première version livrée d'un bloc.
   messagerie…) ; l'adresse de base est auto-détectée à la première visite et
   mémorisée dans `app.base_url` (prioritaire si posée à la main, repli sur le
   premier hôte de `app.allowed_hosts`).
+* Une panne de notification in-app ou de push n'est plus jamais affichée comme
+  « SMTP indisponible » : l'alerte avec code à transmettre n'apparaît que si le
+  courriel n'a réellement pas pu être mis en file ou a échoué (détail dans
+  Réglages → Envois) ; en file, un simple avis annonce le départ automatique.
+  SQLite : timeout 20 s pour absorber les écritures concurrentes de la pompe.
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;

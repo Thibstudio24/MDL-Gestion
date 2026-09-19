@@ -112,6 +112,41 @@ def test_lien_invitation_est_absolu_sans_base_url(db, settings):
     assert "https://mdl-test.alwaysdata.net/inviter/" in corps
 
 
+def test_panne_notification_ne_pas_accuse_le_smtp(db, admin_client, monkeypatch):
+    import notifications.services as notif
+    from accounts import services as comptes
+    from tests.factories import make_role
+
+    def casse(*a, **k):
+        raise RuntimeError("panne de notification")
+
+    monkeypatch.setattr(notif, "notify", casse)
+    user, _inv = comptes.create_member(email="panne@example.test", first_name="Léa",
+                                       last_name="Martin", role=make_role("Invité"))
+    reponse = admin_client.post(reverse("members:members_invitation_resend", args=[user.pk]),
+                                follow=True)
+    texte = reponse.content.decode()
+    assert "SMTP indisponible" not in texte
+    assert "E-mail impossible" not in texte
+    assert "Courriel en file" in texte
+
+
+def test_alerte_manuelle_seulement_si_file_inaccessible(db, admin_client, monkeypatch):
+    import mail.services as ms
+    from accounts import services as comptes
+    from tests.factories import make_role
+
+    def casse(*a, **k):
+        raise RuntimeError("base verrouillée")
+
+    monkeypatch.setattr(ms, "queue_email", casse)
+    user, _inv = comptes.create_member(email="file@example.test", first_name="Léa",
+                                       last_name="Martin", role=make_role("Invité"))
+    reponse = admin_client.post(reverse("members:members_invitation_resend", args=[user.pk]),
+                                follow=True)
+    assert "E-mail impossible à mettre en file" in reponse.content.decode()
+
+
 def test_base_url_auto_detectee_et_memorisee(admin_client, settings, _instance_json_en_memoire):
     settings.BASE_URL = ""
     settings.ALLOWED_HOSTS = ["testserver", "mdl.alwaysdata.net"]
