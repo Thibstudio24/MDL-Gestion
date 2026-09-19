@@ -145,10 +145,20 @@ def s3_request(cfg: dict, method: str, name: str, payload: bytes = b"") -> bytes
         raise S3Error("S3 injoignable (%s) : %s" % (host, exc.reason)) from exc
 
 
-def list_objects(cfg: dict, prefix: str = "") -> list[str]:
-    """Liste les clés du bucket (LIST v2, pages de 1000)."""
-    import xml.etree.ElementTree as ET
+def _xml_unescape(text: str) -> str:
+    """Dé-échappe les cinq entités XML (&amp; en dernier)."""
+    for entite, caractere in (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'),
+                              ("&apos;", "'"), ("&amp;", "&")):
+        text = text.replace(entite, caractere)
+    return text
 
+
+def list_objects(cfg: dict, prefix: str = "") -> list[str]:
+    """Liste les clés du bucket (LIST v2, pages de 1000).
+
+    Extraction sans parseur XML complet : seules les balises <Key> et
+    <NextContinuationToken> intéressent la purge.
+    """
     endpoint = (cfg.get("endpoint") or "").rstrip("/")
     if "://" not in endpoint:
         endpoint = "https://" + endpoint
@@ -171,15 +181,12 @@ def list_objects(cfg: dict, prefix: str = "") -> list[str]:
         url = "%s://%s%s?%s" % (endpoint.split("://")[0], host, quote(path, safe="/~"), query)
         request = urllib.request.Request(url, headers=headers, method="GET")
         with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310 — https forcé
-            corps = response.read()
-        racine = ET.fromstring(corps)
-        namespace = racine.tag.split("}")[0] + "}" if "}" in racine.tag else ""
-        for cle in racine.findall("%sContents/%sKey" % (namespace, namespace)):
-            cles.append(cle.text or "")
-        suivant = racine.find("%sNextContinuationToken" % namespace)
-        if suivant is None or not suivant.text:
+            corps = response.read().decode("utf-8", "replace")
+        cles.extend(_xml_unescape(cle) for cle in re.findall(r"<Key>([^<]*)</Key>", corps))
+        suivant = re.search(r"<NextContinuationToken>([^<]*)</NextContinuationToken>", corps)
+        if suivant is None:
             break
-        token = suivant.text
+        token = _xml_unescape(suivant.group(1))
     return cles
 
 
