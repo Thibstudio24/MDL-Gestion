@@ -64,3 +64,5 @@ boîte SMTP, site Python WSGI, assistant d'installation, ligne de cron, clés VA
 ## Licence
 
 AGPL-3.0 — voir [`LICENSE`](LICENSE).
+By Thibstudio24
+Idée originale de Lindeku-lab
