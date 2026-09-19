@@ -16,6 +16,23 @@
 <label class="field"><span class="field-label">Note</span><input type="text" name="note" maxlength="240" placeholder="Ex. : absent le jeudi"></label>
 <button type="submit" class="btn btn-primary">Répondre</button></form></div></div>
 {% endif %}
+{% if not campaign.closed %}
+<div class="card"><div class="card-head"><h3>Mes préférences pour {{ campaign.label }}</h3></div><div class="card-body">
+<p class="page-help">Indiquez vos jours de présence et cochez les tâches que vous ne pouvez pas faire :
+l'attribution en tiendra compte autant que possible. Modifiable tant que la campagne n'est pas close.</p>
+<form method="post" action="{% url 'chores:save_prefs' %}">{% csrf_token %}
+<input type="hidden" name="campaign" value="{{ campaign.pk }}">
+<div class="field"><span class="field-label">Mes jours de présence</span>
+<div class="form-row">{% for code, nom in days %}
+<label class="checkbox"><input type="checkbox" name="days" value="{{ code }}" {% if code in pref_days %}checked{% endif %}> {{ nom }}</label>
+{% endfor %}</div>
+<p class="field-help">Ne rien cocher = présent tous les jours.</p></div>
+<div class="field"><span class="field-label">Tâches que je ne peux pas faire</span>
+<div class="form-row">{% for tache in tasks %}
+<label class="checkbox"><input type="checkbox" name="refused" value="{{ tache.pk }}" {% if tache.pk in pref_refused %}checked{% endif %}> {{ tache.label }} ({{ tache.get_weekday_display }})</label>
+{% empty %}<span class="small">Aucune tâche définie pour cette campagne.</span>{% endfor %}</div></div>
+<button type="submit" class="btn btn-primary">Enregistrer mes préférences</button></form></div></div>
+{% endif %}
 <div class="kpi-grid">
   <div class="kpi"><span class="kpi-label">Tâches</span><strong class="kpi-value">{{ progress.total }}</strong><span class="kpi-hint">{{ campaign.label }}</span></div>
   <div class="kpi"><span class="kpi-label">Validées</span><strong class="kpi-value">{{ progress.done }}</strong><span class="kpi-hint">{{ progress.pct }} %</span></div>

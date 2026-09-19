@@ -40,10 +40,32 @@ def campaign_progress(campaign) -> dict[str, Any]:
     }
 
 
-def generate_assignments(campaign, actor, seed: int | None = None) -> int:
-    """Attribue les tâches types en tournant entre les membres volontaires."""
-    from chores.models import DEFAULT_TASKS, Assignment, Response
+def ensure_tasks(campaign) -> list:
+    """Les tâches de la campagne : celles choisies par l'admin, sinon les 5 types.
 
+    Créées dès la création de la campagne pour que l'administration puisse les
+    modifier avant publication.
+    """
+    from chores.models import DEFAULT_TASKS, Task
+
+    tasks = list(campaign.tasks.all())
+    if not tasks:
+        tasks = [Task.objects.create(campaign=campaign, label=nom, weekday=(index % 5) + 1)
+                 for index, nom in enumerate(DEFAULT_TASKS)]
+    return tasks
+
+
+def generate_assignments(campaign, actor, seed: int | None = None) -> int:
+    """Attribue chaque tâche au membre le moins chargé, en respectant les préférences.
+
+    Sont exclus d'une tâche : le membre qui l'a refusée, puis (s'il reste du
+    monde) ceux dont les jours disponibles ne comprennent pas le jour de la
+    tâche. Les tâches déjà attribuées (éventuellement réarrangées à la main)
+    ne sont pas touchées.
+    """
+    from chores.models import Assignment, ChorePreference, Response
+
+    tasks = ensure_tasks(campaign)
     volunteers = [item.member for item in Response.objects.filter(campaign=campaign, choice="accept")
                   .select_related("member")]
     if not volunteers:
@@ -52,16 +74,25 @@ def generate_assignments(campaign, actor, seed: int | None = None) -> int:
         volunteers = list(User.objects.filter(status="active"))
     if not volunteers:
         return 0
+    prefs = {pref.member_id: pref for pref in ChorePreference.objects.filter(campaign=campaign)}
+    charge = {membre.pk: Assignment.objects.filter(campaign=campaign, member=membre).count()
+              for membre in volunteers}
     picker = random.Random(seed)
-    order = volunteers[:]
-    picker.shuffle(order)
+    tiebreak = {membre.pk: picker.random() for membre in volunteers}
     created = 0
-    for index, task in enumerate(DEFAULT_TASKS):
-        member = order[index % len(order)]
-        Assignment.objects.get_or_create(
-            campaign=campaign, member=member, task=task,
-            defaults={"weekday": (index % 5) + 1, "zone": "Local MDL", "week": campaign.week,
-                      "status": "todo"})
+    for tache in tasks:
+        if Assignment.objects.filter(campaign=campaign, task_def=tache).exists():
+            continue
+        sans_refus = [m for m in volunteers
+                      if tache.pk not in (prefs[m.pk].refused_ids if m.pk in prefs else [])]
+        pool = sans_refus or volunteers
+        dispo = [m for m in pool
+                 if not (m.pk in prefs and prefs[m.pk].days) or tache.weekday in prefs[m.pk].days_list]
+        choix = min(dispo or pool, key=lambda m: (charge[m.pk], tiebreak[m.pk]))
+        Assignment.objects.create(campaign=campaign, member=choix, task=tache.label,
+                                  task_def=tache, weekday=tache.weekday, zone=tache.zone,
+                                  week=campaign.week, status="todo")
+        charge[choix.pk] += 1
         created += 1
     audit.log(actor, "chores.generated", "planning_menage", campaign,
               "%s tâche(s) attribuée(s) pour %s" % (created, campaign))

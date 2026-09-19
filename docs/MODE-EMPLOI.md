@@ -145,14 +145,20 @@ de clôture est dépassée sont fermées automatiquement par le traitement horai
 Pour corriger un créneau déjà publié, l'administrateur ajoute un créneau ou modifie la
 capacité, puis régénère le PDF : la grille imprimée reflète toujours l'état courant.
 
-## 21. Créer un sondage de ménage et publier la répartition
+## 21. Préparer le ménage : tâches, refus, jours et réarrangement
 
-Planning de ménage → **Créer une campagne** : jours (ex. mardi et vendredi midi), tâches avec
-pénibilité et nombre de personnes, nombre maximal de refus autorisés.
+**Créer la campagne** : Planning de ménage → **Campagnes** → « Nouvelle campagne » (semaine type,
+dates, date limite). Les cinq tâches types sont pré-créées ; sur la page de la campagne, ajoutez
+vos propres tâches (libellé, jour, lieu) ou retirez-en avant publication.
 
-Après les réponses, **Générer la répartition** équilibre l'historique, la charge et la pénibilité
-(de façon déterministe), puis vous ajustez à la main avant de publier. Chacun coche « c'est fait »,
-éventuellement avec une photo ; la validation supprime immédiatement la photo.
+**Les membres** répondent à la campagne (J'accepte / Je ne peux pas) puis déclarent, carte
+« Mes préférences », leurs **jours de présence** et les **tâches qu'ils ne peuvent pas faire**.
+« Publier et attribuer » confie chaque tâche au membre le moins chargé : une tâche refusée n'est
+jamais donnée à qui l'a refusée (s'il reste des volontaires) et les jours déclarés sont privilégiés.
+
+**Réarranger** : sur la page de la campagne, chaque tâche attribuée propose un sélecteur de membre
+et de jour — « Appliquer » change le titulaire sans toucher au reste. Chacun déclare sa tâche
+faite avec une photo ; la validation supprime immédiatement la photo.
 
 ## 22. Envoyer un message et relire les accusés
 

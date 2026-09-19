@@ -71,6 +71,11 @@ Première version livrée d'un bloc.
   Réglages → Envois) ; en file, un simple avis annonce le départ automatique.
   SQLite : timeout 20 s pour absorber les écritures concurrentes de la pompe.
 
+* Ménage : les membres déclarent leurs jours de présence et les tâches qu'ils ne peuvent pas
+  faire (respectées par l'attribution, au membre le moins chargé) ; le bureau choisit les tâches
+  de la campagne (ajout/retrait avant publication, cinq tâches types pré-remplies) et réarrange
+  chaque attribution (autre membre et/ou autre jour) après publication.
+
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
   aucun compte de démonstration n'est créé. La clé secrète est générée à l'étape 2

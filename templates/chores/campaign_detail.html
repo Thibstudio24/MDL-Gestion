@@ -8,14 +8,37 @@
 <a class="btn btn-ghost btn-sm" href="{% url 'chores:admin_tracking' %}?campagne={{ campaign.pk }}">{% icon 'check' 14 %} Suivi</a>
 <form method="post" action="{% url 'chores:campaign_delete' campaign.pk %}" style="display:inline">{% csrf_token %}
 <button class="btn btn-ghost btn-sm" data-confirm-click="Supprimer cette campagne et les tâches attribuées ?">{% icon 'trash' 14 %} Supprimer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Tâches de la campagne</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Jour</th><th>Tâche</th><th>Lieu</th><th class="right">Retirer</th></tr></thead>
+<tbody>{% for tache in tasks %}<tr><td>{{ tache.get_weekday_display|capfirst }}</td><td>{{ tache.label }}</td><td>{{ tache.zone }}</td>
+<td class="right"><form method="post" action="{% url 'chores:task_delete' tache.pk %}">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" data-confirm-click="Retirer cette tâche de la campagne ?">{% icon 'trash' 14 %}</button></form></td></tr>
+{% empty %}<tr><td colspan="4">{% include "partials/_empty.html" with text="Aucune tâche définie." %}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" action="{% url 'chores:task_add' campaign.pk %}" class="form-row" style="padding:10px 12px">{% csrf_token %}
+<label class="field"><span class="field-label">Nouvelle tâche</span><input type="text" name="label" maxlength="160" required></label>
+<label class="field"><span class="field-label">Jour</span><select name="weekday">{% for code, nom in days %}<option value="{{ code }}">{{ nom }}</option>{% endfor %}</select></label>
+<label class="field"><span class="field-label">Lieu</span><input type="text" name="zone" maxlength="120" value="Local MDL"></label>
+<button type="submit" class="btn btn-primary btn-sm">Ajouter la tâche</button></form></div></div>
 <div class="card"><div class="card-head"><h3>Tâches attribuées</h3></div>
 <div class="card-body tight"><div class="table-wrap"><table class="data">
-<thead><tr><th>Membre</th><th>Jour</th><th>Tâche</th><th>État</th><th>Fait le</th></tr></thead>
+<thead><tr><th>Membre</th><th>Jour</th><th>Tâche</th><th>État</th><th>Fait le</th><th class="right">Réarranger</th></tr></thead>
 <tbody>{% for item in assignments %}<tr><td>{{ item.member.get_full_name }}</td>
 <td>{{ item.get_weekday_display|capfirst }}</td><td>{{ item.task }}</td>
 <td>{% if item.status == 'validated' %}{% status_badge "success" "validé" %}{% elif item.status == 'done' %}{% status_badge "active" "à valider" %}{% elif item.status == 'redo' %}{% status_badge "closed" "à refaire" %}{% else %}{% status_badge "pending" "à faire" %}{% endif %}</td>
-<td class="nowrap">{{ item.done_at|date_fr|default:"—" }}</td></tr>
-{% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucune tâche : publiez la campagne pour les attribuer." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<td class="nowrap">{{ item.done_at|date_fr|default:"—" }}</td>
+<td class="right nowrap"><form method="post" action="{% url 'chores:reassign' item.pk %}" class="form-row">{% csrf_token %}
+<select name="member">{% for m in members %}<option value="{{ m.pk }}" {% if m.pk == item.member_id %}selected{% endif %}>{{ m.last_name }} {{ m.first_name }}</option>{% endfor %}</select>
+<select name="weekday">{% for code, nom in days %}<option value="{{ code }}" {% if code == item.weekday %}selected{% endif %}>{{ nom }}</option>{% endfor %}</select>
+<button class="btn btn-ghost btn-sm" title="Réattribuer cette tâche">Appliquer</button></form></td></tr>
+{% empty %}<tr><td colspan="6">{% include "partials/_empty.html" with text="Aucune tâche : publiez la campagne pour les attribuer." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h3>Préférences des membres</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Membre</th><th>Jours disponibles</th><th>Tâches refusées</th></tr></thead>
+<tbody>{% for pref in prefs %}<tr><td>{{ pref.member.get_full_name }}</td>
+<td>{% if pref.days_list %}{% for code, nom in days %}{% if code in pref.days_list %}{{ nom }} {% endif %}{% endfor %}{% else %}tous{% endif %}</td>
+<td class="small">{% if pref.refused_labels %}{{ pref.refused_labels|join:", " }}{% else %}aucune{% endif %}</td></tr>
+{% empty %}<tr><td colspan="3">{% include "partials/_empty.html" with text="Aucune préférence déclarée pour l'instant." %}</td></tr>{% endfor %}</tbody></table></div></div></div>
 <div class="card"><div class="card-head"><h3>Réponses des membres</h3></div>
 <div class="card-body tight"><div class="table-wrap"><table class="data">
 <thead><tr><th>Membre</th><th>Réponse</th><th>Note</th><th>Date</th></tr></thead>

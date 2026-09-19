@@ -19,4 +19,8 @@ urlpatterns = [
     path("campagnes/<int:pk>/supprimer/", views.delete, name="campaign_delete"),
     path("campagnes/<int:pk>/cloturer/", views.close, name="close"),
     path("campagnes/<int:pk>/rappel/", views.remind, name="remind"),
+    path("campagnes/<int:pk>/tache/", views.task_add, name="task_add"),
+    path("tache/<int:pk>/retirer/", views.task_delete, name="task_delete"),
+    path("taches/<int:pk>/rearranger/", views.reassign, name="reassign"),
+    path("preferences/", views.save_prefs, name="save_prefs"),
 ]

@@ -30,7 +30,7 @@ ACTIONS = [
     "planning.availability_saved", "planning.published", "planning.reminder_sent",
     "planning.swap_requested", "planning.swap_answered", "planning.slot_assigned",
     "chores.campaign_created", "chores.campaign_published", "chores.campaign_deleted",
-    "chores.response_saved", "chores.generated",
+    "chores.response_saved", "chores.generated", "chores.task_added", "chores.task_deleted",
     "chores.assignment_updated", "chores.assignment_validated", "chores.assignment_redo", "chores.proof_deleted",
     "mail.broadcast_created", "mail.broadcast_sent", "mail.broadcast_scheduled", "mail.broadcast_cancelled",
     "mail.reminder_sent", "mail.read", "mail.test_sent", "mail.outbox_drained",

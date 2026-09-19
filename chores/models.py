@@ -47,6 +47,54 @@ class Campaign(models.Model):
         return self.published and not self.closed and today <= (self.deadline or self.end_date)
 
 
+class Task(models.Model):
+    """Une tâche choisie par l'administration pour une campagne (jour + lieu)."""
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="tasks")
+    label = models.CharField(_("tâche"), max_length=160)
+    weekday = models.PositiveSmallIntegerField(_("jour"), choices=DAYS, default=1)
+    zone = models.CharField(_("lieu"), max_length=120, default="Local MDL")
+
+    class Meta:
+        verbose_name = _("Tâche de campagne")
+        verbose_name_plural = _("Tâches de campagne")
+        ordering = ["weekday", "label"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
+class ChorePreference(models.Model):
+    """Par membre et par campagne : jours de présence et tâches refusées.
+
+    ``days`` : jours disponibles séparés par des virgules (« 1,4,5 »), vide =
+    tous. ``refused`` : identifiants de tâches refusées, séparés par des
+    virgules. L'attribution les respecte autant que possible.
+    """
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="preferences")
+    member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                               related_name="chore_preferences")
+    days = models.CharField(_("jours disponibles"), max_length=20, blank=True)
+    refused = models.TextField(_("tâches refusées"), blank=True)
+
+    class Meta:
+        verbose_name = _("Préférence de ménage")
+        verbose_name_plural = _("Préférences de ménage")
+        unique_together = [("campaign", "member")]
+
+    def __str__(self) -> str:
+        return "%s — %s" % (self.member, self.campaign)
+
+    @property
+    def days_list(self) -> list[int]:
+        return [int(x) for x in self.days.split(",") if x.strip().isdigit()]
+
+    @property
+    def refused_ids(self) -> list[int]:
+        return [int(x) for x in self.refused.split(",") if x.strip().isdigit()]
+
+
 class Assignment(models.Model):
     """Une tâche attribuée à un membre pour une semaine donnée."""
 
@@ -56,6 +104,8 @@ class Assignment(models.Model):
     weekday = models.PositiveSmallIntegerField(_("jour"), choices=DAYS, default=1)
     zone = models.CharField(_("lieu"), max_length=120, default="Local MDL")
     task = models.CharField(_("tâche"), max_length=160)
+    task_def = models.ForeignKey(Task, null=True, blank=True, on_delete=models.SET_NULL,
+                                 related_name="assignments", verbose_name=_("tâche de campagne"))
     status = models.CharField(_("état"), max_length=10, choices=STATUSES, default="todo", db_index=True)
     done_at = models.DateTimeField(_("fait le"), null=True, blank=True)
     proof = models.FileField(_("photo de preuve"), upload_to="menage/%Y/%m/", blank=True,
