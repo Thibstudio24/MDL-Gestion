@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 
 import pyotp
@@ -24,8 +25,21 @@ def provisioning_uri(secret: str, email: str) -> str:
 
 
 def qr_svg(uri: str) -> str:
-    """QR en SVG inline (segno, sans Pillow)."""
-    return segno.make(uri, error="m").svg_inline(scale=6)
+    """QR en SVG inline (segno, sans Pillow), redimensionnable sans rognage.
+
+    segno émet un SVG sans viewBox : redimensionné en CSS, le dessin ne suit pas
+    et le code est coupé en bas à droite. On injecte donc le viewBox (espace du
+    dessin = width × height) pour que le QR reste entier à toute taille.
+    """
+    svg = segno.make(uri, error="m").svg_inline(scale=6)
+    if "viewBox" not in svg:
+        dimensions = re.search(r'width="(\d+)" height="(\d+)"', svg)
+        if dimensions:
+            svg = svg.replace(dimensions.group(0),
+                              '%s viewBox="0 0 %s %s"' % (dimensions.group(0),
+                                                          dimensions.group(1),
+                                                          dimensions.group(2)), 1)
+    return svg
 
 
 def verify(secret: str, code: str, user=None) -> bool:

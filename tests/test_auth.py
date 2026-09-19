@@ -76,6 +76,14 @@ class TestDoubleFacteur:
         svg = twofa.qr_svg(uri)
         assert "<svg" in svg and "</svg>" in svg
 
+    def test_qr_code_redimensionnable_sans_rognage(self, member):
+        """Régression : sans viewBox, le CSS 200×200 rognait le bas-droit du QR."""
+        import re
+
+        svg = twofa.qr_svg(twofa.provisioning_uri(twofa.generate_secret(), member.email))
+        largeur, hauteur = re.search(r'width="(\d+)" height="(\d+)"', svg).groups()
+        assert 'viewBox="0 0 %s %s"' % (largeur, hauteur) in svg
+
 
 class TestSessionEtReauth:
     def test_deconnexion(self, member_client):
