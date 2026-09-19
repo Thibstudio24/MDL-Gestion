@@ -299,9 +299,12 @@ Réglages → **Journal d'audit** : le journal ne se modifie jamais ligne à lig
 peut le vider entièrement ; le vidage lui-même y est tracé.
 
 Réglages → **Sauvegarde**, « Zone dangereuse » : un administrateur ré-authentifié peut
-réinitialiser complètement le site (comptes, documents, messages, fichiers, sauvegardes)
-et rendre la main à l'assistant d'installation. Confirmation tapée « REINITIALISER »,
-irréversible.
+réinitialiser complètement le site et rendre la main à l'assistant d'installation.
+Confirmation tapée « REINITIALISER », irréversible. Tout y passe : **chaque table de la base
+est vidée** (comptes, documents, écritures, réglages compris ; le fichier SQLite est
+reconstruit pour ne laisser aucune ancienne page de données), les fichiers et sauvegardes du
+serveur sont effacés et, si un stockage tiers est configuré, **le bucket est purgé**. La première
+ligne du journal de la nouvelle installation trace la réinitialisation.
 
 Réglages → **Mises à jour** : vérification depuis les Releases GitHub, application en un clic
 (sauvegarde automatique, vérification SHA-256, retour arrière en cas d'échec). L'application ne

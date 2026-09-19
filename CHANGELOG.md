@@ -76,6 +76,10 @@ Première version livrée d'un bloc.
   de la campagne (ajout/retrait avant publication, cinq tâches types pré-remplies) et réarrange
   chaque attribution (autre membre et/ou autre jour) après publication.
 
+* Réinitialisation du site vraiment totale : après le vidage de toutes les tables, le fichier
+  SQLite est reconstruit (VACUUM) et, si un stockage tiers est configuré, le bucket S3 est purgé ;
+  la réinitialisation reste tracée dans le journal de la nouvelle installation.
+
 * Stockage des fichiers au choix : disque du serveur (défaut) ou fournisseur tiers compatible
   S3 sans dépendance (client SigV4 maison, conforme au vecteur officiel AWS) — Backblaze B2
   10 Go gratuits sans CB, R2, Supabase… Choix à l'installation et dans Réglages → Stockage,

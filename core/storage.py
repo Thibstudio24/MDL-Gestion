@@ -145,6 +145,52 @@ def s3_request(cfg: dict, method: str, name: str, payload: bytes = b"") -> bytes
         raise S3Error("S3 injoignable (%s) : %s" % (host, exc.reason)) from exc
 
 
+def list_objects(cfg: dict, prefix: str = "") -> list[str]:
+    """Liste les clés du bucket (LIST v2, pages de 1000)."""
+    import xml.etree.ElementTree as ET
+
+    endpoint = (cfg.get("endpoint") or "").rstrip("/")
+    if "://" not in endpoint:
+        endpoint = "https://" + endpoint
+    host = endpoint.split("://")[1].split("/")[0]
+    region = effective_region(cfg)
+    bucket = cfg["bucket"]
+    cles = []
+    token = ""
+    while True:
+        params = [("list-type", "2"), ("max-keys", "1000")]
+        if prefix:
+            params.append(("prefix", prefix))
+        if token:
+            params.append(("continuation-token", token))
+        query = "&".join("%s=%s" % (k, quote(v, safe="~")) for k, v in sorted(params))
+        path = "/%s" % bucket
+        headers = signed_headers("GET", host, path, cfg["access_key"], cfg["secret_key"],
+                                 region, query=query)
+        headers.pop("host", None)
+        url = "%s://%s%s?%s" % (endpoint.split("://")[0], host, quote(path, safe="/~"), query)
+        request = urllib.request.Request(url, headers=headers, method="GET")
+        with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310 — https forcé
+            corps = response.read()
+        racine = ET.fromstring(corps)
+        namespace = racine.tag.split("}")[0] + "}" if "}" in racine.tag else ""
+        for cle in racine.findall("%sContents/%sKey" % (namespace, namespace)):
+            cles.append(cle.text or "")
+        suivant = racine.find("%sNextContinuationToken" % namespace)
+        if suivant is None or not suivant.text:
+            break
+        token = suivant.text
+    return cles
+
+
+def purge_all(cfg: dict) -> int:
+    """Supprime tous les objets du bucket (réinitialisation du site)."""
+    cles = list_objects(cfg)
+    for cle in cles:
+        s3_request(cfg, "DELETE", cle)
+    return len(cles)
+
+
 # --------------------------------------------------------------------------- #
 # Stockages
 # --------------------------------------------------------------------------- #

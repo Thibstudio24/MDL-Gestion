@@ -618,7 +618,13 @@ def reset_site(request):
     if (request.POST.get("confirmation") or "").strip() != "REINITIALISER":
         messages.error(request, _("Saisissez « REINITIALISER » pour confirmer."))
         return redirect("settings:settings_backup")
-    audit.log(request.user, "settings.site_reset", "settings", None,
+    acteur = request.user
+    courriel = getattr(acteur, "email", "")
+    # Le stockage tiers est lu AVANT le vidage de la base (le réglage y est rangé).
+    from core.storage import purge_all, s3_pret, stockage_cfg
+
+    cfg_stockage = stockage_cfg()
+    audit.log(acteur, "settings.site_reset", "settings", None,
               "Réinitialisation complète du site demandée", level="danger", request=request)
     for dossier in (Path(settings.MEDIA_ROOT), Path(settings.BACKUP_DIR)):
         if dossier.exists():
@@ -636,7 +642,37 @@ def reset_site(request):
     meta.pop("installed_at", None)
     config["meta"] = meta
     instance.write_instance(config)
+    # Base de données : toutes les tables sont vidées (comptes, documents,
+    # écritures, réglages compris), puis le fichier SQLite est reconstruit
+    # physiquement (VACUUM) pour ne laisser aucune page de données anciennes.
     call_command("flush", "--noinput", verbosity=0)
+    from django.db import connections
+
+    if connections["default"].vendor == "sqlite":
+        try:
+            with connections["default"].cursor() as curseur:
+                curseur.execute("VACUUM")
+        except Exception:  # VACUUM refuse de tourner dans une transaction (tests)
+            pass
+    # Fichiers chez un fournisseur tiers : le bucket est purgé aussi.
+    objets_purges = 0
+    if s3_pret(cfg_stockage):
+        try:
+            objets_purges = purge_all(cfg_stockage)
+        except Exception as exc:  # la réinitialisation ne doit pas échouer à moitié
+            objets_purges = -1
+            audit.log(None, "settings.site_reset", "settings", None,
+                      "Purge du bucket impossible (par %s) : %s" % (courriel, exc),
+                      level="danger", request=request)
+    # Après le flush, le compte n'existe plus en base : on journalise sans FK,
+    # l'identité reste dans le libellé.
+    audit.log(None, "settings.site_reset", "settings", None,
+              "Site réinitialisé par %s : base vidée%s, fichiers locaux et sauvegardes effacés%s."
+              % (courriel,
+                 ", fichier SQLite reconstruit" if connections["default"].vendor == "sqlite" else "",
+                 ", bucket purgé (%d objet(s))" % objets_purges if objets_purges >= 0
+                 else ", purge du bucket en échec"),
+              level="danger", request=request)
     logout(request)
     return redirect("/installation/")
 

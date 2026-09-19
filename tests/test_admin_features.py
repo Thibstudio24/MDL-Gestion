@@ -109,3 +109,38 @@ def test_reinitialisation_sans_confirmation_refusee(db, admin_client, admin):
     _reauth_fraiche(admin_client)
     admin_client.post(reverse("settings:settings_reset"), {"confirmation": "non"})
     assert User.objects.filter(pk=admin.pk).exists()
+
+
+def test_reinitialisation_vide_toutes_les_tables(db, admin_client, admin):
+    """La réinitialisation ne laisse aucune table peuplée (docs, réglages compris)."""
+    from core.models import Setting
+    from documents.models import Category, Document
+
+    _reauth_fraiche(admin_client)
+    categorie = Category.objects.create(name="Docs")
+    Document.objects.create(category=categorie, title="Vieux règlement")
+    Setting.update_section("stockage", {"provider": "local"})
+    reponse = admin_client.post(reverse("settings:settings_reset"),
+                                {"confirmation": "REINITIALISER"})
+    assert reponse.status_code == 302 and reponse.url == "/installation/"
+    assert User.objects.count() == 0
+    assert Document.objects.count() == 0 and Category.objects.count() == 0
+    assert Role.objects.count() == 0
+    assert Setting.objects.count() == 0
+    trace = AuditEntry.objects.filter(message__contains="base vidée")
+    assert trace.exists()
+
+
+def test_reinitialisation_purge_le_bucket_tiers(db, admin_client, admin, monkeypatch):
+    from core.models import Setting
+    from tests.test_storage_docs import S3_CFG
+
+    _reauth_fraiche(admin_client)
+    Setting.update_section("stockage", S3_CFG)
+    purges = []
+    monkeypatch.setattr("core.storage.purge_all", lambda cfg: purges.append(cfg["bucket"]) or 2)
+    reponse = admin_client.post(reverse("settings:settings_reset"),
+                                {"confirmation": "REINITIALISER"})
+    assert reponse.status_code == 302
+    assert purges == ["mdl-test"]
+    assert AuditEntry.objects.filter(message__contains="bucket purgé (2 objet(s))").exists()

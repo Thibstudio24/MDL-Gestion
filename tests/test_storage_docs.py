@@ -274,3 +274,32 @@ class TestSuppressionDocument:
         client.force_login(user)
         page = client.get("/documents/%s/" % document.pk)
         assert "Supprimer des documents" in page.content.decode()
+
+
+class TestPurgeDuBucket:
+    def test_liste_les_objets_pages_comprises(self, monkeypatch):
+        import io
+        import urllib.request
+
+        pages = [b'<?xml version="1.0"?><ListBucketResult>'
+                 b'<Contents><Key>a.txt</Key></Contents><Contents><Key>b/c.txt</Key></Contents>'
+                 b'<NextContinuationToken>tok</NextContinuationToken></ListBucketResult>',
+                 b'<ListBucketResult><Contents><Key>d.txt</Key></Contents></ListBucketResult>']
+
+        def urlopen_pages(request, timeout=30):
+            return io.BytesIO(pages.pop(0))
+
+        monkeypatch.setattr(urllib.request, "urlopen", urlopen_pages)
+        from core.storage import list_objects
+
+        assert list_objects(S3_CFG) == ["a.txt", "b/c.txt", "d.txt"]
+
+    def test_purge_supprime_tout(self, monkeypatch):
+        from core.storage import purge_all
+
+        faux = FakeS3()
+        faux.objets.update({"a.txt": b"1", "b.txt": b"2", "c.txt": b"3"})
+        monkeypatch.setattr("core.storage.s3_request", faux)
+        monkeypatch.setattr("core.storage.list_objects", lambda cfg: list(faux.objets))
+        assert purge_all(S3_CFG) == 3
+        assert faux.objets == {}
