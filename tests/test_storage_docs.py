@@ -69,6 +69,44 @@ class TestClientS3:
         assert ("Signature=f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41"
                 in entetes["Authorization"])
 
+    def test_region_b2_detectee_dans_l_endpoint(self):
+        """Un HTTP 403 B2 venait d'une région « auto » signée : la région doit être
+        déduite de l'endpoint (eu-central-003) quand l'utilisateur laisse « auto »."""
+        from core.storage import effective_region
+
+        cfg = {**S3_CFG, "region": "auto", "endpoint": "s3.eu-central-003.backblazeb2.com"}
+        entetes = signed_headers("GET", "s3.eu-central-003.backblazeb2.com", "/o", "cle", "sec",
+                                 effective_region(cfg))
+        assert "/eu-central-003/s3/aws4_request" in entetes["Authorization"]
+
+    def test_region_explicite_prioritaire(self):
+        from core.storage import effective_region
+
+        assert effective_region({"region": "us-west-004",
+                                 "endpoint": "s3.eu-central-003.backblazeb2.com"}) == "us-west-004"
+
+    def test_r2_garde_auto(self):
+        from core.storage import effective_region
+
+        assert effective_region({"region": "auto",
+                                 "endpoint": "abc123.r2.cloudflarestorage.com"}) == "auto"
+
+    def test_le_code_erreur_du_fournisseur_est_expose(self, monkeypatch):
+        import io
+        import urllib.error
+
+        def urlopen_boite(request, timeout=30):
+            raise urllib.error.HTTPError(request.full_url, 403, "Forbidden", {},
+                                         io.BytesIO(b"<Error><Code>SignatureDoesNotMatch</Code>"
+                                                    b"<Message>Signature mismatch</Message></Error>"))
+
+        monkeypatch.setattr("urllib.request.urlopen", urlopen_boite)
+        from core.storage import s3_request
+
+        with pytest.raises(S3Error) as exc:
+            s3_request(S3_CFG, "PUT", "x.txt", payload=b"z")
+        assert "403" in str(exc.value) and "SignatureDoesNotMatch" in str(exc.value)
+
     def test_defaut_sur_le_disque_du_serveur(self, settings):
         chemin = default_storage.save("tests/local.txt", ContentFile(b"bonjour"))
         try:

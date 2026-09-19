@@ -199,7 +199,8 @@ class StorageForm(forms.Form):
         help_text="Ex. : https://s3.eu-west-005.backblazeb2.com (Backblaze B2), "
                   "https://<projet>.supabase.co/storage/v1/s3 (Supabase).")
     region = forms.CharField(label="Région", max_length=60, required=False,
-                             help_text="Laisser « auto » si le fournisseur ne précise rien.")
+                             help_text="Laisser « auto » : la région est alors lue dans l'endpoint "
+                                       "Backblaze (ex. eu-central-003) ; Cloudflare R2 exige « auto ».")
     bucket = forms.CharField(label="Bucket (conteneur)", max_length=120, required=False)
     access_key = forms.CharField(label="Clé d'accès (keyID)", max_length=200, required=False,
                                  widget=forms.TextInput(attrs={"autocomplete": "off"}))

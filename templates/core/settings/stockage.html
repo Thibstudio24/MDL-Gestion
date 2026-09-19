@@ -8,10 +8,12 @@
 {% elif cfg.provider == "s3" %}{% status_badge "pending" "tiers incomplet" %} — remplissez les champs ci-dessous
 {% else %}{% status_badge "active" "disque du serveur" %} (<code>{{ cfg.media_root|default:"media/" }}</code>){% endif %}</p>
 <p class="small muted">Fournisseurs gratuits <strong>sans carte bancaire</strong>, compatibles avec ce formulaire :
-<strong>Backblaze B2</strong> (10 Go offerts — endpoint de type <code>s3.eu-west-005.backblazeb2.com</code>,
-région <code>eu-west-005</code>), <strong>Cloudflare R2</strong> (10 Go offerts), <strong>Supabase</strong>
-(1 Go offert, section Storage → S3). Créez un bucket privé, générez une clé d'application, puis collez
-les quatre valeurs et testez la connexion.</p>
+<strong>Backblaze B2</strong> (10 Go offerts — endpoint de type <code>s3.eu-central-003.backblazeb2.com</code> ;
+la région est détectée automatiquement depuis l'endpoint), <strong>Cloudflare R2</strong> (10 Go offerts,
+région « auto »), <strong>Supabase</strong> (1 Go offert, section Storage → S3). Créez un bucket
+<strong>privé</strong>, générez une clé d'application liée à ce bucket, puis collez les valeurs et testez
+la connexion. En cas d'échec, le code d'erreur exact du fournisseur s'affiche (clé refusée, région
+incompatible, signature à refaire…).</p>
 <button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
 <div class="card"><div class="card-head"><h3>Test de connexion</h3></div>
 <div class="card-body"><form method="post" action="{% url 'settings:settings_storage_test' %}">{% csrf_token %}

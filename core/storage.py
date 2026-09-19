@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
@@ -27,6 +28,28 @@ from django.core.files.storage import FileSystemStorage, Storage
 from django.utils.deconstruct import deconstructible
 
 SERVICE = "s3"
+
+# Endpoint Backblaze B2 : s3.<région>.backblazeb2.com — la région y est lisible.
+_B2_REGION = re.compile(r"^s3\.([a-z]{2}-[a-z]+-\d{3})\.backblazeb2\.com$", re.IGNORECASE)
+
+
+def derive_region(endpoint: str) -> str:
+    """Région lisible dans l'endpoint (B2) ; vide sinon (R2 signe avec « auto »)."""
+    host = (endpoint or "").split("://")[-1].split("/")[0]
+    match = _B2_REGION.match(host)
+    return match.group(1) if match else ""
+
+
+def effective_region(cfg: dict) -> str:
+    """Région signée : celle saisie, sinon celle devinée depuis l'endpoint, sinon « auto ».
+
+    B2 refuse une signature dont la région n'est pas celle du bucket (HTTP 403) ;
+    R2, à l'inverse, exige « auto ».
+    """
+    region = (cfg.get("region") or "").strip()
+    if region and region != "auto":
+        return region
+    return derive_region(cfg.get("endpoint") or "") or "auto"
 
 
 def stockage_cfg() -> dict:
@@ -93,7 +116,7 @@ def s3_request(cfg: dict, method: str, name: str, payload: bytes = b"") -> bytes
         endpoint = "https://" + endpoint
     scheme, _, hostport = endpoint.partition("://")
     host = hostport.split("/")[0]
-    region = cfg.get("region") or "auto"
+    region = effective_region(cfg)
     bucket = cfg["bucket"]
     path = "/%s/%s" % (bucket, name) if name else "/%s" % bucket
     url = "%s://%s%s" % (scheme, host, quote(path, safe="/~"))
@@ -106,7 +129,18 @@ def s3_request(cfg: dict, method: str, name: str, payload: bytes = b"") -> bytes
         with urllib.request.urlopen(request, timeout=30) as response:  # nosec B310 — https forcé
             return response.read()
     except urllib.error.HTTPError as exc:
-        raise S3Error("S3 %s %s : HTTP %s %s" % (method, name, exc.code, exc.reason)) from exc
+        corps = ""
+        try:
+            corps = exc.read(600).decode("utf-8", "replace").strip()
+        except Exception:
+            pass
+        code = ""
+        for balise in ("Code", "Message"):
+            debut = corps.find("<%s>" % balise)
+            if debut != -1:
+                fin = corps.find("</%s>" % balise)
+                code += " %s=%s" % (balise, corps[debut + len(balise) + 2:fin])
+        raise S3Error("S3 %s %s : HTTP %s %s%s" % (method, name, exc.code, exc.reason, code)) from exc
     except urllib.error.URLError as exc:
         raise S3Error("S3 injoignable (%s) : %s" % (host, exc.reason)) from exc
 
