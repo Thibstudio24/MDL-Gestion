@@ -28,6 +28,14 @@ _DEFAULTS = {
         "mode_impose": "",
     },
     "theme": {"palette": "ardoise", "mode": "light", "densite": "confort"},
+    "stockage": {
+        "provider": "local",  # local | s3 (compatible S3 : Backblaze B2, R2, Supabase…)
+        "endpoint": "",
+        "region": "auto",
+        "bucket": "",
+        "access_key": "",
+        "secret_key": "",
+    },
     "app": {
         "maintenance": False,
         "maintenance_message": "",

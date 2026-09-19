@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from core import theme
 from core.models import ClosureDay, LegalDocument, SchoolYear
@@ -182,3 +183,35 @@ class BalanceScheduleForm(forms.Form):
     # Les destinataires ne se choisissent plus : le bilan va aux seuls membres
     # qui peuvent consulter la trésorerie, et la catégorie de documents
     # « Bilans » exige ce même droit (Category.module_gate = "finance").
+
+
+class StorageForm(forms.Form):
+    """Choix du stockage des fichiers : serveur ou fournisseur tiers compatible S3."""
+
+    provider = forms.ChoiceField(
+        label="Stockage des fichiers",
+        choices=[("local", "Sur le serveur (disque de l'hébergement)"),
+                 ("s3", "Chez un fournisseur tiers (compatible S3)")],
+        widget=forms.RadioSelect,
+    )
+    endpoint = forms.CharField(
+        label="Point d'accès (endpoint)", max_length=200, required=False,
+        help_text="Ex. : https://s3.eu-west-005.backblazeb2.com (Backblaze B2), "
+                  "https://<projet>.supabase.co/storage/v1/s3 (Supabase).")
+    region = forms.CharField(label="Région", max_length=60, required=False,
+                             help_text="Laisser « auto » si le fournisseur ne précise rien.")
+    bucket = forms.CharField(label="Bucket (conteneur)", max_length=120, required=False)
+    access_key = forms.CharField(label="Clé d'accès (keyID)", max_length=200, required=False,
+                                 widget=forms.TextInput(attrs={"autocomplete": "off"}))
+    secret_key = forms.CharField(label="Clé secrète (applicationKey)", max_length=200, required=False,
+                                 widget=forms.PasswordInput(render_value=False,
+                                                            attrs={"autocomplete": "new-password"}),
+                                 help_text="Laisser vide pour conserver la clé déjà enregistrée.")
+
+    def clean(self):
+        data = super().clean()
+        if data.get("provider") == "s3":
+            for champ in ("endpoint", "bucket", "access_key"):
+                if not data.get(champ):
+                    self.add_error(champ, _("Obligatoire avec un fournisseur tiers."))
+        return data

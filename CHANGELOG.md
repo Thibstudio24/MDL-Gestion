@@ -76,6 +76,15 @@ Première version livrée d'un bloc.
   de la campagne (ajout/retrait avant publication, cinq tâches types pré-remplies) et réarrange
   chaque attribution (autre membre et/ou autre jour) après publication.
 
+* Stockage des fichiers au choix : disque du serveur (défaut) ou fournisseur tiers compatible
+  S3 sans dépendance (client SigV4 maison, conforme au vecteur officiel AWS) — Backblaze B2
+  10 Go gratuits sans CB, R2, Supabase… Choix à l'installation et dans Réglages → Stockage,
+  avec test de connexion ; les fichiers déjà sur le disque restent servis.
+* Documents : la création de dossier n'exige plus de champs invisibles (« Ce champ est
+  obligatoire » alors que tout était rempli) et propose un dossier parent ; la trame du bureau
+  inclut le droit fin « Supprimer des documents » (corbeille 30 jours) et la fiche d'un document
+  explique comment l'obtenir.
+
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
   aucun compte de démonstration n'est créé. La clé secrète est générée à l'étape 2

@@ -5,6 +5,28 @@
   <h2 class="page-heading">Installation terminée</h2>
   <p class="page-help">Vous pouvez vous connecter avec {{ email }}. Pensez à configurer le cron et le SMTP.</p>
   {% include "installer/_steps.html" %}
+  <h3>Stockage des fichiers</h3>
+  <p class="page-help">Où ranger les documents, photos de ménage et pièces jointes ?
+  Le disque du serveur suffit pour démarrer (1 Go sur l'offre gratuite alwaysdata).
+  Un fournisseur tiers gratuit et sans carte bancaire (Backblaze B2 : 10 Go offerts,
+  Cloudflare R2, Supabase…) évite de saturer ce disque. Modifiable plus tard dans
+  Réglages → Stockage.</p>
+  <form method="post" action="{% url 'installer:storage' %}">{% csrf_token %}
+  <div class="form-grid">
+    <label class="field"><span class="field-label">Emplacement</span>
+      <select name="provider"><option value="local" selected>Sur le serveur (recommandé pour débuter)</option>
+      <option value="s3">Chez un fournisseur tiers (compatible S3)</option></select></label>
+    <label class="field"><span class="field-label">Endpoint (tiers)</span>
+      <input type="text" name="endpoint" maxlength="200" placeholder="https://s3.eu-west-005.backblazeb2.com"></label>
+    <label class="field"><span class="field-label">Région</span><input type="text" name="region" value="auto"></label>
+    <label class="field"><span class="field-label">Bucket</span><input type="text" name="bucket" maxlength="120"></label>
+    <label class="field"><span class="field-label">Clé d'accès</span><input type="text" name="access_key" maxlength="200"></label>
+    <label class="field"><span class="field-label">Clé secrète</span>
+      <input type="password" name="secret_key" maxlength="200" autocomplete="new-password"></label>
+  </div>
+  <p class="small muted">Les champs « tiers » ne servent que si vous choisissez un fournisseur.
+  Le disque du serveur reste le choix par défaut.</p>
+  <button class="btn btn-ghost">Enregistrer le choix de stockage</button></form>
   <ol class="checklist">
     <li>Configurer le cron alwaysdata : <code>python manage.py mdl_cron</code> toutes les heures.</li>
     <li>Renseigner le SMTP dans Réglages → Envois, puis envoyer un courriel de test.</li>

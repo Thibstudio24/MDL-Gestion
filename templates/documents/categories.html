@@ -23,6 +23,7 @@
 {% empty %}<tr><td colspan="5">{% include "partials/_empty.html" with text="Aucun dossier. Créez-en un par club dans « Fiches clubs »." %}</td></tr>{% endfor %}</tbody></table></div></div>
 <div class="card-foot"><form method="post" action="/documents/dossiers/creer/" class="form-row">{% csrf_token %}
 <label class="field"><span class="field-label">Catégorie</span><select name="category">{% for category in categories %}<option value="{{ category.pk }}">{{ category.name }}</option>{% endfor %}</select></label>
+<label class="field"><span class="field-label">Dossier parent (optionnel)</span><select name="parent"><option value="">— à la racine —</option>{% for folder in root_folders %}<option value="{{ folder.pk }}">{{ folder.category.name }} › {{ folder.name }}</option>{% endfor %}</select></label>
 <label class="field"><span class="field-label">Nom</span><input type="text" name="name" required maxlength="140"></label>
 <label class="field"><span class="field-label">Description</span><input type="text" name="description" maxlength="240"></label>
 <button type="submit" class="btn btn-primary">Créer le dossier</button></form></div></div>

@@ -307,9 +307,26 @@ Réglages → **Mises à jour** : vérification depuis les Releases GitHub, appl
 (sauvegarde automatique, vérification SHA-256, retour arrière en cas d'échec). L'application ne
 peut pas redémarrer le service web : cliquez sur *Redémarrer* dans le panneau alwaysdata.
 """),
-    ("24", "FAQ", "voir la page FAQ"),
-    ("25", "Glossaire", "voir la page Glossaire"),
-    ("26", "Check-list de rentrée", """
+    ("24", "Choisir où sont rangés les fichiers", """
+Par défaut, documents, photos de ménage et pièces jointes sont rangés sur le disque du serveur
+(1 Go sur l'offre gratuite alwaysdata). Réglages → **Stockage** — ou la dernière étape de
+l'installation — permet de passer chez un **fournisseur tiers gratuit et sans carte bancaire**,
+compatible S3 :
+
+* **Backblaze B2** : 10 Go offerts. Créez un compte, un bucket **privé**, notez l'endpoint
+  (`s3.eu-west-005.backblazeb2.com`, région `eu-west-005`) et générez une clé d'application.
+* **Cloudflare R2** : 10 Go offerts, endpoint de type `<compte>.r2.cloudflarestorage.com`.
+* **Supabase** : 1 Go offert, section Storage → « S3 Connection ».
+
+Collez endpoint, région, bucket et les deux clés, enregistrez, puis lancez le **test de
+connexion** : il dépose, relit et supprime un petit fichier dans le bucket. Les fichiers déjà
+présents sur le serveur restent consultables ; les nouveaux partent chez le fournisseur, et un
+retour au disque du serveur se fait en un choix. La sauvegarde du site couvre la base de
+données : sauvegardez le bucket chez le fournisseur (B2 propose un miroir gratuit).
+"""),
+    ("25", "FAQ", "voir la page FAQ"),
+    ("26", "Glossaire", "voir la page Glossaire"),
+    ("27", "Check-list de rentrée", """
 - [ ] Compte alwaysdata créé, sous-domaine choisi, limites vérifiées
 - [ ] Base PostgreSQL (ou MariaDB) créée, identifiants recopiés
 - [ ] Boîte `mdl@…` créée et testée (envoi autorisé)

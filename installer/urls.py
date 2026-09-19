@@ -11,4 +11,5 @@ urlpatterns = [
     path("administrateur/", views.administrator, name="admin"),
     path("termine/", views.done, name="done"),
     path("referentiels/", views.seed_defaults, name="seed_defaults"),
+    path("stockage/", views.storage_choice, name="storage"),
 ]

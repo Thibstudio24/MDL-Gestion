@@ -35,6 +35,7 @@ ACTIONS = [
     "mail.broadcast_created", "mail.broadcast_sent", "mail.broadcast_scheduled", "mail.broadcast_cancelled",
     "mail.reminder_sent", "mail.read", "mail.test_sent", "mail.outbox_drained",
     "settings.brand_updated", "settings.quota_updated", "settings.security_updated", "settings.smtp_updated",
+    "settings.storage_updated",
     "settings.push_updated", "settings.matrix_updated", "settings.year_created", "settings.year_locked",
     "settings.year_unlocked", "settings.legal_updated", "settings.maintenance", "settings.backup_created",
     "settings.backup_restored", "settings.backup_deleted", "settings.update_applied",

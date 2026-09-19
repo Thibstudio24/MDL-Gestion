@@ -120,6 +120,18 @@ class FolderForm(forms.ModelForm):
         model = Folder
         fields = ["category", "parent", "name", "description", "locked_read", "order"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Le formulaire de la page Catégories n'envoie que les champs visibles :
+        # ordre, parent et verrou restent optionnels avec leurs valeurs par défaut.
+        self.fields["order"].required = False
+        self.fields["order"].initial = 100
+        self.fields["parent"].required = False
+        self.fields["locked_read"].required = False
+
+    def clean_order(self):
+        return self.cleaned_data.get("order") or 100
+
     def clean(self):
         data = super().clean()
         parent = data.get("parent")

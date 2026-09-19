@@ -62,5 +62,10 @@
 <label class="field"><span class="field-label">Motif (obligatoire)</span><input type="text" name="reason" required maxlength="240"></label>
 <button type="submit" class="btn btn-danger" data-confirm-click="Mettre ce document à la corbeille ?">Mettre à la corbeille</button></form>
 <p class="small muted">Corbeille conservée 30 jours, puis purge automatique.</p></div></div>
+{% elif can_edit %}
+<div class="card"><div class="card-head"><h3>Supprimer</h3></div>
+<div class="card-body"><p class="page-help">La suppression de documents est protégée par le droit fin
+« Supprimer des documents ». Un administrateur peut l'activer pour votre rôle dans
+Comptes → Rôles, ou supprimer lui-même le document (corbeille 30 jours).</p></div></div>
 {% endif %}
 {% endblock %}

@@ -283,6 +283,7 @@ def categories(request):
     return render(request, "documents/categories.html", {
         "categories": Category.objects.annotate(), "form": form,
         "folders": Folder.objects.select_related("category", "parent"),
+        "root_folders": Folder.objects.filter(parent__isnull=True).select_related("category"),
         "page_title": "Catégories et dossiers",
     })
 

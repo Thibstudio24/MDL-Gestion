@@ -220,19 +220,25 @@ def robots(request):
 
 
 def serve_media(request, relpath: str):
-    """Média privé : vérifie les droits du module concerné (jamais public en production)."""
-    root = Path(settings.MEDIA_ROOT).resolve()
-    target = (root / relpath).resolve()
-    if root not in target.parents:
+    """Média privé : vérifie les droits du module concerné (jamais public en production).
+
+    Passe par le stockage par défaut : disque du serveur ou fournisseur S3.
+    """
+    from django.core.files.storage import default_storage
+
+    name = relpath.lstrip("/")
+    if ".." in name.split("/") or name.startswith("/"):
         raise PermissionDenied()
-    if not target.exists() or not target.is_file():
+    if not default_storage.exists(name):
         return HttpResponseNotFound()
-    module = _module_for(target.relative_to(root).as_posix())
+    module = _module_for(name)
     if module and not permissions.can_view(request.user, module):
         raise PermissionDenied()
-    content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
-    response = HttpResponse(target.read_bytes(), content_type=content_type)
-    response["Content-Disposition"] = 'inline; filename="%s"' % target.name
+    filename = name.rsplit("/", 1)[-1]
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    with default_storage.open(name, "rb") as handle:
+        response = HttpResponse(handle.read(), content_type=content_type)
+    response["Content-Disposition"] = 'inline; filename="%s"' % filename
     response["X-Content-Type-Options"] = "nosniff"
     return response
 

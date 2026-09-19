@@ -1,0 +1,32 @@
+{% extends "core/settings/_base.html" %}
+{% load ui %}
+{% block settings_content %}
+<div class="card"><div class="card-head"><h3>Où sont rangés les fichiers ?</h3></div>
+<div class="card-body"><form method="post">{% csrf_token %}<div class="form-grid">{% include "partials/_form.html" %}</div>
+<p class="small muted">État actuel :
+{% if s3_pret %}{% status_badge "success" "fournisseur tiers" %} {{ cfg.bucket }} sur {{ cfg.endpoint }}
+{% elif cfg.provider == "s3" %}{% status_badge "pending" "tiers incomplet" %} — remplissez les champs ci-dessous
+{% else %}{% status_badge "active" "disque du serveur" %} (<code>{{ cfg.media_root|default:"media/" }}</code>){% endif %}</p>
+<p class="small muted">Fournisseurs gratuits <strong>sans carte bancaire</strong>, compatibles avec ce formulaire :
+<strong>Backblaze B2</strong> (10 Go offerts — endpoint de type <code>s3.eu-west-005.backblazeb2.com</code>,
+région <code>eu-west-005</code>), <strong>Cloudflare R2</strong> (10 Go offerts), <strong>Supabase</strong>
+(1 Go offert, section Storage → S3). Créez un bucket privé, générez une clé d'application, puis collez
+les quatre valeurs et testez la connexion.</p>
+<button type="submit" class="btn btn-primary">Enregistrer</button></form></div></div>
+<div class="card"><div class="card-head"><h3>Test de connexion</h3></div>
+<div class="card-body"><form method="post" action="{% url 'settings:settings_storage_test' %}">{% csrf_token %}
+<button type="submit" class="btn btn-primary" {% if not s3_pret %}disabled{% endif %}>Déposer, lire et retirer un fichier de test</button></form>
+<p class="small muted">Le test écrit <code>mdl-test/connexion.txt</code> dans le bucket, le relit puis le supprime.
+L'erreur exacte du fournisseur s'affiche en haut de page en cas d'échec.</p></div></div>
+<div class="card"><div class="card-head"><h3>Bon à savoir</h3></div>
+<div class="card-body"><ul class="page-help" style="margin:0">
+<li>Les fichiers déjà téléversés sur le disque restent consultables après le passage au tiers ;
+les nouveaux partent chez le fournisseur.</li>
+<li>La sauvegarde du site (Réglages → Sauvegarde) contient la base de données ; les fichiers
+tiers sont à sauvegarder chez le fournisseur (B2 propose un miroir gratuit).</li>
+<li>Revenir à « Sur le serveur » à tout moment : les fichiers tiers restent accessibles
+jusqu'à leur suppression côté fournisseur.</li>
+<li>Quota disque alwaysdata Free : 1 Go — le stockage tiers est utile dès que les documents
+et photos de ménage approchent cette limite.</li>
+</ul></div></div>
+{% endblock %}

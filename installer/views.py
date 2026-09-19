@@ -196,6 +196,27 @@ def done(request):
 
 @_guard_close
 @require_POST
+def storage_choice(request):
+    """Choix du stockage des fichiers proposé à l'installation (serveur ou tiers S3)."""
+    from core.forms_settings import StorageForm
+    from core.models import Setting
+
+    form = StorageForm(request.POST)
+    if form.is_valid():
+        Setting.update_section("stockage", dict(form.cleaned_data))
+        if form.cleaned_data.get("provider") == "s3":
+            messages.success(request, _("Stockage tiers enregistré. Vérifiez-le avec le bouton "
+                                        "« Test » dans Réglages → Stockage."))
+        else:
+            messages.success(request, _("Les fichiers seront rangés sur le disque du serveur."))
+    else:
+        messages.error(request, _("Stockage non enregistré : %s") % _(" ; ").join(
+            erreur[0] for erreurs in form.errors.values() for erreur in erreurs))
+    return redirect("installer:done")
+
+
+@_guard_close
+@require_POST
 def seed_defaults(request):
     """Crée les référentiels par défaut (rôles, catégories, comptes) sans données de démonstration."""
     from accounts.services import ensure_admin_role

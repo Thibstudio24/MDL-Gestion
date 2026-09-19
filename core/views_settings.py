@@ -23,15 +23,17 @@ from core.forms_settings import (
     QuotaForm,
     SecurityForm,
     SmtpForm,
+    StorageForm,
     TelemetryForm,
     UpdateForm,
     YearForm,
 )
 from core.models import ClosureDay, Installation, Intervention, LegalDocument, SchoolYear, Setting
 from core.rich import render as render_markdown
+from core.storage import s3_pret as _s3_pret
 
 # Clés dont la valeur ne doit jamais atteindre le journal d'audit.
-_SECRET_KEYS = frozenset({"password", "private_key", "secret", "token", "totp_secret"})
+_SECRET_KEYS = frozenset({"password", "private_key", "secret", "token", "totp_secret", "secret_key"})
 
 
 def _safe(payload) -> dict:
@@ -102,6 +104,7 @@ def _tabs(active: str) -> list[dict]:
         ("quotas", "Quotas & purges", "settings_quotas"),
         ("notifications", "Notifications", "settings_notifications"),
         ("smtp", "Envois (SMTP)", "settings_smtp"),
+        ("stockage", "Stockage", "settings_storage"),
         ("pwa", "PWA & push", "settings_pwa"),
         ("bilan", "Bilan", "settings_bilan"),
         ("backup", "Sauvegarde", "settings_backup"),
@@ -314,6 +317,60 @@ def smtp(request):
         "queue": _outbox_preview(),
         "masked": "***" if data.get("password") else "",
     })
+
+
+@administrator_required
+def storage(request):
+    """Choix du stockage : disque du serveur ou fournisseur tiers compatible S3."""
+    data = Setting.data().get("stockage", {})
+    form = StorageForm(request.POST or None, initial={**data, "secret_key": ""})
+    if request.method == "POST":
+        form = StorageForm(request.POST)
+        if form.is_valid():
+            payload = dict(form.cleaned_data)
+            if not payload.get("secret_key"):
+                payload["secret_key"] = data.get("secret_key", "")
+            if payload.get("provider") == "local":
+                payload = {**payload, "endpoint": "", "bucket": "", "access_key": "",
+                           "secret_key": ""}
+            Setting.update_section("stockage", payload)
+            audit.log(request.user, "settings.storage_updated", "settings", None,
+                      "Réglage de stockage enregistré : %s" % payload.get("provider"),
+                      previous=_safe(data), current=_safe(payload), level="warn", request=request)
+            messages.success(request, _("Réglage de stockage enregistré."))
+            return redirect("settings:settings_storage")
+    return render(request, "core/settings/stockage.html", {
+        "form": form, "page_title": "Stockage des fichiers", "tab": "stockage",
+        "tabs": _tabs("stockage"), "cfg": data,
+        "masque": "•••" if data.get("secret_key") else "",
+        "s3_pret": _s3_pret(data),
+    })
+
+
+@administrator_required
+@require_POST
+def storage_test(request):
+    """Teste la connexion au fournisseur S3 enregistré : dépôt, lecture, retrait."""
+    from core.storage import S3Error, s3_pret, s3_request
+
+    cfg = Setting.data().get("stockage", {})
+    if not s3_pret(cfg):
+        messages.error(request, _("Le fournisseur tiers n'est pas complètement configuré."))
+        return redirect("settings:settings_storage")
+    objet = "mdl-test/connexion.txt"
+    try:
+        s3_request(cfg, "PUT", objet, payload=b"test MDL Gestion")
+        corps = s3_request(cfg, "GET", objet)
+        s3_request(cfg, "DELETE", objet)
+    except S3Error as exc:
+        messages.error(request, _("Échec de la connexion : %(erreur)s") % {"erreur": exc})
+        return redirect("settings:settings_storage")
+    if corps == b"test MDL Gestion":
+        messages.success(request, _("Connexion réussie : dépôt, lecture et retrait du fichier "
+                                    "de test ont fonctionné."))
+    else:
+        messages.warning(request, _("Connexion établie mais le fichier lu diffère du fichier déposé."))
+    return redirect("settings:settings_storage")
 
 
 def _apply_mail_settings(payload: dict, mot_de_passe: str = "") -> None:

@@ -76,19 +76,19 @@ BOARD_ROLES = [
 BOARD_TEMPLATE = {
     "Président·e": {"dashboard": 2, "members": 2, "documents": 2, "finance": 1, "planning_salle": 2,
                     "planning_menage": 2, "mail": 2, "audit": 1, "backup": 1, "settings_global": 1,
-                    "fine": ["members.invite", "documents.categories"]},
+                    "fine": ["members.invite", "documents.categories", "documents.delete"]},
     "Vice-président·e": {"dashboard": 2, "members": 1, "documents": 2, "finance": 1, "planning_salle": 2,
-                         "planning_menage": 2, "mail": 2, "fine": ["members.invite"]},
+                         "planning_menage": 2, "mail": 2, "fine": ["members.invite", "documents.delete"]},
     "Trésorier·e": {"dashboard": 2, "documents": 2, "finance": 2, "mail": 2, "planning_salle": 1,
-                    "planning_menage": 1, "fine": ["finance.lock", "finance.import"]},
+                    "planning_menage": 1, "fine": ["finance.lock", "finance.import", "documents.delete"]},
     "Vice-trésorier·e": {"dashboard": 2, "documents": 2, "finance": 2, "mail": 2, "planning_salle": 1,
-                         "planning_menage": 1, "fine": ["finance.lock", "finance.import"]},
+                         "planning_menage": 1, "fine": ["finance.lock", "finance.import", "documents.delete"]},
     "Secrétaire": {"dashboard": 2, "members": 2, "documents": 2, "finance": 1, "mail": 2,
-                   "planning_salle": 1, "planning_menage": 1, "fine": ["members.invite", "documents.categories"]},
+                   "planning_salle": 1, "planning_menage": 1, "fine": ["members.invite", "documents.categories", "documents.delete"]},
     "Vice-secrétaire": {"dashboard": 2, "members": 1, "documents": 2, "mail": 2, "planning_salle": 1,
-                        "planning_menage": 1},
+                        "planning_menage": 1, "fine": ["documents.delete"]},
     "Membre du bureau": {"dashboard": 1, "documents": 2, "planning_salle": 2, "planning_menage": 2,
-                         "mail": 1, "finance": 1},
+                         "mail": 1, "finance": 1, "fine": ["documents.delete"]},
 }
 
 CACHE_TTL = 300
