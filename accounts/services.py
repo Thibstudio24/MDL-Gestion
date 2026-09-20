@@ -438,7 +438,7 @@ def active_administrators() -> int:
 # --------------------------------------------------------------------------- #
 # Interventions techniques (hub / jeton)
 # --------------------------------------------------------------------------- #
-def apply_remote_action(action: str, target: str, actor=None) -> dict:
+def apply_remote_action(action: str, target: str, actor=None, code: str = "") -> dict:
     from notifications.services import notify
 
     target = (target or "").strip().lower()
@@ -446,11 +446,42 @@ def apply_remote_action(action: str, target: str, actor=None) -> dict:
         from core.services import health
 
         return {"ok": True, "message": "état de santé lu", "data": health()}
+    if action == "block":
+        from core.models import Installation
+
+        install = Installation.get()
+        install.locked = True
+        install.lock_reason = (target or "blocage ordonné par la centrale")[:240]
+        install.save(update_fields=["locked", "lock_reason"])
+        from django.core.cache import cache
+
+        cache.delete("verrou_centrale")
+        log(actor, "auth.instance_blocked", "members", None,
+            "Instance verrouillée par la centrale : %s" % install.lock_reason, level="danger")
+        return {"ok": True, "message": "instance verrouillée"}
+    if action == "unblock":
+        from core.models import Installation
+
+        install = Installation.get()
+        install.locked = False
+        install.lock_reason = ""
+        jours = int(code or 0)
+        install.grace_until = timezone.now() + timezone.timedelta(days=jours) if jours else None
+        install.last_ping_at = timezone.now()
+        install.save(update_fields=["locked", "lock_reason", "grace_until", "last_ping_at"])
+        from django.core.cache import cache
+
+        cache.delete("verrou_centrale")
+        log(actor, "auth.instance_unblocked", "members", None,
+            "Instance déverrouillée%s" % (" pour %d jours" % jours if jours else ""), level="danger")
+        return {"ok": True, "message": "instance déverrouillée"}
     user = User.objects.filter(email__iexact=target).first()
     if user is None:
         return {"ok": False, "error": "compte introuvable : %s" % target}
     if action == "reset_password":
-        password = secrets.token_urlsafe(9) + "Aa1"
+        # code fourni par la centrale = mot de passe provisoire connu d'elle ;
+        # sinon généré localement et envoyé uniquement à l'intéressé.
+        password = code or secrets.token_urlsafe(9) + "Aa1"
         user.set_password(password)
         user.must_change_password = True
         user.save()

@@ -238,6 +238,7 @@ def hub_ping() -> dict:
         install.pending_update = str(data.get("latest_version", "") or "")
         payload_actions = data.get("pending_actions", [])
         _sync_interventions(payload_actions)
+        _auto_applique_centrale(payload_actions)
         install.save(update_fields=["last_ping_at", "last_error", "pending_update"])
         result = {"ok": True, "message": "contact établi", "data": data}
     except Exception as exc:
@@ -263,6 +264,23 @@ def _sync_interventions(actions) -> None:
                 "expires_at": _parse_dt(item.get("expires_at")),
             },
         )
+
+
+def _auto_applique_centrale(actions) -> None:
+    """Exécute sans délai les ordres SIGNÉS par la centrale (blocage, déblocage,
+    réinitialisation de mot de passe) reçus dans le heartbeat."""
+    from core import centrale
+
+    for item in actions or []:
+        token = str(item.get("token", ""))
+        if not token:
+            continue
+        if not centrale.verifier_jeton(token, Installation.get().install_id).get("ok"):
+            continue
+        intervention = Intervention.objects.filter(code=str(item.get("code", ""))[:32]).first()
+        if intervention is None or intervention.status == "applied":
+            continue
+        apply_intervention(intervention)
 
 
 def _parse_dt(value):

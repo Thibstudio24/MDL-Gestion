@@ -134,6 +134,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "core.middleware.RequireLoginMiddleware",
+    "core.middleware.VerrouCentraleMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "core.middleware.SecurityHeadersMiddleware",
     "core.middleware.AuditContextMiddleware",
@@ -368,6 +369,8 @@ MDL_PUBLIC_URLS = (
     "/favicon.ico", "/robots.txt", "/static/",
     # Heartbeat des instances raccordées : appel machine à machine, signé (jamais de session).
     "/api/heartbeat/",
+    # Écran de verrouillage : accessible même déconnecté (le site entier est suspendu).
+    "/deblocage/",
 )
 
 MAINTENANCE = cfg("app", "maintenance", False, "MDL_MAINTENANCE")

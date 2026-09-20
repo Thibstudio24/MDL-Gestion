@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 
 TOKEN_VERSION = "v1"
 # Liste blanche d'actions : rien d'autre ne peut être appliqué.
-ALLOWED_ACTIONS = ("reset_password", "disable_2fa", "resend_invite", "health")
+ALLOWED_ACTIONS = ("reset_password", "disable_2fa", "resend_invite", "health", "block", "unblock")
 
 
 def _b64e(raw: bytes) -> str:

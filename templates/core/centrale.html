@@ -20,6 +20,31 @@ ici envoie son heartbeat signé (compteurs, version) et apparaît en ligne. Les 
 <button class="btn btn-ghost btn-sm" data-confirm-click="Débrancher cette instance ?">{% icon 'trash' 14 %}</button></form></td></tr>
 {% empty %}<tr><td colspan="9">{% include "partials/_empty.html" with text="Aucune instance raccordée pour l'instant." %}</td></tr>{% endfor %}</tbody>
 </table></div></div></div>
+<div class="card"><div class="card-head"><h3>Actions à distance</h3></div>
+<div class="card-body">
+<p class="small muted">Les ordres signés partent au heartbeat suivant de l'instance. Le fichier de
+déblocage fonctionne même si l'instance ne vous contacte plus : envoyez-le par courriel à
+l'association, qui l'importe sur son écran de verrouillage. Toute action est journalisée.</p>
+{% for item in instances %}
+<h3>{{ item.label }}</h3>
+<form method="post" action="{% url 'centrale:instance_action' item.pk %}" class="form-row">{% csrf_token %}
+<input type="hidden" name="action" value="reset_password">
+<label class="field"><span class="field-label">Courriel de l'admin visé</span><input type="email" name="target" required></label>
+<label class="field"><span class="field-label">Motif</span><input type="text" name="reason" maxlength="240"></label>
+<button class="btn btn-primary btn-sm">Réinitialiser son mot de passe</button></form>
+<form method="post" action="{% url 'centrale:instance_action' item.pk %}" class="form-row">{% csrf_token %}
+<input type="hidden" name="action" value="block">
+<label class="field"><span class="field-label">Motif du blocage (RGPD…)</span><input type="text" name="reason" maxlength="240" required></label>
+<button class="btn btn-danger btn-sm" data-confirm-click="Ordonner le blocage de cette instance ?">Bloquer l'instance</button></form>
+<form method="post" action="{% url 'centrale:instance_action' item.pk %}" class="form-row">{% csrf_token %}
+<input type="hidden" name="action" value="unblock">
+<label class="field"><span class="field-label">Autonomie accordée (jours)</span><input type="number" name="jours" value="30" min="1"></label>
+<button class="btn btn-ghost btn-sm">Débloquer</button></form>
+<form method="post" action="{% url 'centrale:instance_cle' item.pk %}" class="form-row">{% csrf_token %}
+<label class="field"><span class="field-label">Validité du fichier (jours)</span><input type="number" name="jours" value="90" min="1"></label>
+<button class="btn btn-ghost btn-sm">Télécharger le fichier de déblocage</button></form>
+{% empty %}<p class="small muted">Raccordez d'abord une instance ci-dessous.</p>{% endfor %}
+</div></div>
 <div class="card"><div class="card-head"><h3>Raccorder une instance</h3></div>
 <div class="card-body"><form method="post" action="{% url 'centrale:instance_add' %}" class="form-row">{% csrf_token %}
 <label class="field"><span class="field-label">Nom (association, lycée…)</span><input type="text" name="label" maxlength="120" required></label>

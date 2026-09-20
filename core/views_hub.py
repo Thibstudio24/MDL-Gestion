@@ -63,13 +63,16 @@ def heartbeat(request):
     instance.version = str(battement.get("version", "") or "")[:20]
     instance.last_ping_at = timezone.now()
     instance.last_error = ""
-    instance.save(update_fields=["counters", "version", "last_ping_at", "last_error"])
+    en_attente = list(instance.pending_actions or [])
+    instance.pending_actions = []
+    instance.save(update_fields=["counters", "version", "last_ping_at", "last_error",
+                                 "pending_actions"])
     from django.conf import settings
 
     return JsonResponse({
         "ok": True,
         "latest_version": getattr(settings, "VERSION", ""),
-        "pending_actions": [],
+        "pending_actions": en_attente,
     })
 
 
@@ -116,3 +119,128 @@ def instance_delete(request, pk):
               "Instance débranchée : %s" % nom, level="warn", request=request)
     messages.success(request, _("Instance « %(nom)s » débranchée.") % {"nom": nom})
     return redirect("centrale:index")
+
+def deblocage(request):
+    """Écran de verrouillage : motif, contact de la centrale, import du fichier
+    de déblocage signé (fonctionne hors connexion)."""
+    from django.core.cache import cache
+
+    from core import centrale
+    from core.models import Installation
+
+    install = Installation.get()
+    verrou, motif = centrale.etat_verrou(install)
+    if request.method == "POST":
+        fichier = request.FILES.get("fichier")
+        if fichier is None:
+            messages.error(request, _("Choisissez le fichier de déblocage reçu par courriel."))
+            return redirect("centrale:deblocage")
+        contenu = fichier.read(20000).decode("utf-8", "replace").strip()
+        try:
+            jeton = json.loads(contenu).get("jeton", contenu)
+        except json.JSONDecodeError:
+            jeton = contenu
+        resultat = centrale.appliquer_jeton(jeton)
+        if resultat.get("ok"):
+            cache.delete("verrou_centrale")
+            messages.success(request, _("Déblocage accepté : %(detail)s.")
+                             % {"detail": resultat.get("message", "")})
+            return redirect("/")
+        messages.error(request, _("Fichier refusé : %(erreur)s.") % {"erreur": resultat.get("error", "?")})
+        return redirect("centrale:deblocage")
+    return render(request, "core/deblocage.html", {
+        "page_title": _("Instance verrouillée"),
+        "verrou": verrou, "motif": motif,
+        "contact": centrale.CONTACT_DEBLOCAGE,
+        "delai": centrale.DELAI_SANS_CENTRALE_JOURS,
+        "grace": install.grace_until,
+    })
+
+
+def cle_privee_centrale() -> str:
+    from core.models import Setting
+
+    return str(Setting.data().get("centrale", {}).get("cle_privee", "") or "")
+
+
+def _jeton_pour(instance, action: str, target: str = "", code: str = "",
+                ttl_minutes: int = 60 * 24 * 14, reason: str = "") -> dict:
+    from core import centrale
+
+    token = centrale.signer_jeton(cle_privee_centrale(), instance.install_id, action,
+                                  target=target, code=code, ttl_minutes=ttl_minutes, reason=reason)
+    return {"code": (instance.install_id + action)[:32], "action": action, "target": target,
+            "token": token, "reason": reason,
+            "expires_at": (timezone.now() + timezone.timedelta(minutes=ttl_minutes)).isoformat()}
+
+
+@administrator_required
+@require_POST
+def instance_action(request, pk):
+    """Prépare un ordre signé (livré au prochain heartbeat de l'instance)."""
+    from core import centrale
+
+    instance = get_object_or_404(HubInstance, pk=pk)
+    if not cle_privee_centrale():
+        messages.error(request, _("La clé privée de la centrale n'est pas initialisée : "
+                                  "lancez « manage.py mdl_centrale_init --cle-privee … »."))
+        return redirect("centrale:index")
+    type_action = request.POST.get("action", "")
+    cible = (request.POST.get("target") or "").strip()
+    if type_action not in centrale.ACTIONS_CENTRALE:
+        messages.error(request, _("Action inconnue."))
+        return redirect("centrale:index")
+    if type_action in ("reset_password", "disable_2fa") and not cible:
+        messages.error(request, _("Précisez le courriel du compte administrateur visé."))
+        return redirect("centrale:index")
+    code = ""
+    raison = (request.POST.get("reason") or "").strip()
+    if type_action == "reset_password":
+        import secrets as _secrets
+
+        code = _secrets.token_urlsafe(9) + "Aa1"
+    if type_action == "unblock":
+        code = str(request.POST.get("jours") or 30)
+    ordre = _jeton_pour(instance, type_action, cible, code,
+                        reason=raison or "décision de la centrale")
+    pending = list(instance.pending_actions or [])
+    pending.append(ordre)
+    instance.pending_actions = pending
+    instance.save(update_fields=["pending_actions"])
+    audit.log(request.user, "centrale.action_queued", "settings", instance,
+              "Ordre %s préparé pour %s%s" % (type_action, instance.label,
+                                              (" (compte %s)" % cible) if cible else ""),
+              level="danger", request=request)
+    if type_action == "reset_password":
+        messages.success(request, _("Ordre prêt. Mot de passe provisoire à transmettre à "
+                                    "l'association : %(mdp)s (livré au prochain heartbeat).") % {"mdp": code})
+    else:
+        messages.success(request, _("Ordre « %(action)s » en file : il partira au prochain "
+                                    "heartbeat de l'instance.") % {"action": type_action})
+    return redirect("centrale:index")
+
+
+@administrator_required
+@require_POST
+def instance_cle(request, pk):
+    """Fichier de déblocage hors ligne à envoyer par courriel à l'association."""
+    from django.http import HttpResponse
+
+    instance = get_object_or_404(HubInstance, pk=pk)
+    if not cle_privee_centrale():
+        messages.error(request, _("La clé privée de la centrale n'est pas initialisée."))
+        return redirect("centrale:index")
+    try:
+        jours = max(1, int(request.POST.get("jours") or 90))
+    except ValueError:
+        jours = 90
+    ordre = _jeton_pour(instance, "unblock", code=str(jours),
+                        ttl_minutes=jours * 24 * 60 + 60,
+                        reason="déblocage hors ligne après courriel")
+    reponse = HttpResponse(json.dumps({"jeton": ordre["token"]}, indent=2),
+                           content_type="application/json")
+    reponse["Content-Disposition"] = 'attachment; filename="deblocage-%s.json"' % instance.install_id[:8]
+    audit.log(request.user, "centrale.action_queued", "settings", instance,
+              "Fichier de déblocage hors ligne (%d jours) téléchargé" % jours,
+              level="danger", request=request)
+    return reponse

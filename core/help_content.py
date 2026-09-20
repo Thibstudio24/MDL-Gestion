@@ -372,6 +372,26 @@ instance », coller install_id + secret. **Côté instance** : Réglages → Mis
 URL du hub = adresse de la centrale ; le cron `mdl_cron` envoie alors le heartbeat signé
 (toutes les 15 min) et l'instance apparaît « en ligne ». Ne raccordez que des sites de
 confiance : l'identifiant et le secret permettent de vérifier la signature des appels.
+
+**Contrôle à distance** (carte « Actions à distance », admins de la centrale). Une fois la
+clé privée enregistrée (`manage.py mdl_centrale_init --cle-privee "…"`), la centrale peut,
+pour chaque instance raccordée :
+- **réinitialiser le mot de passe** d'un administrateur distant (le mot de passe provisoire
+  s'affiche à l'écran pour que vous le transmettiez à l'association) ;
+- **bloquer** l'instance (motif RGPD / non-conformité) ;
+- **débloquer** l'instance (autonomie en jours accordée) ;
+- **désactiver le 2FA** d'un administrateur.
+
+Les ordres sont **signés** avec la clé privée de la centrale et partent au heartbeat suivant
+de l'instance ; ils sont appliqués et journalisés côté instance.
+
+**Filet de sécurité (kill-switch).** Si une instance raccordée reste **14 jours sans contact**
+avec la centrale, elle se verrouille : tout le site renvoie vers l'écran public
+`/deblocage/` (motif + contact). L'association écrit alors à **informatique.mdl33@gmail.com** ;
+la centrale télécharge un **fichier de déblocage signé** (`{"jeton": …}`, validité en jours)
+qu'elle lui envoie par courriel : l'association l'importe sur `/deblocage/` et le site repart —
+même si la connexion avec la centrale n'est pas rétablie. Bloquer une instance depuis la
+centrale produit le même écran de verrouillage.
 """),
 ]
 

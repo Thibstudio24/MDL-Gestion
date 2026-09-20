@@ -157,6 +157,9 @@ class Setting(models.Model):
         except Exception:  # base pas encore migrée
             values = {}
         merged = {section: {**defaults, **(values.get(section) or {})} for section, defaults in _DEFAULTS.items()}
+        for section, stored in (values or {}).items():
+            if section not in merged:
+                merged[section] = dict(stored or {})
         cache.set(CACHE_KEY, merged, CACHE_TTL)
         return merged
 
@@ -345,6 +348,10 @@ class Installation(models.Model):
     private_key_pem = models.TextField(_("clé privée (Ed25519)"), blank=True)
     version = models.CharField(_("version"), max_length=20, blank=True)
     enabled = models.BooleanField(_("canal activé"), default=False)
+    locked = models.BooleanField(_("verrouillée par la centrale"), default=False)
+    lock_reason = models.CharField(_("motif de verrouillage"), max_length=240, blank=True)
+    grace_until = models.DateTimeField(_("déblocage hors ligne valable jusqu'au"), null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
     registered_at = models.DateTimeField(null=True, blank=True)
     last_ping_at = models.DateTimeField(null=True, blank=True)
     last_error = models.TextField(blank=True)
@@ -385,6 +392,7 @@ class HubInstance(models.Model):
     version = models.CharField(_("version"), max_length=20, blank=True)
     last_ping_at = models.DateTimeField(null=True, blank=True)
     last_error = models.CharField(max_length=240, blank=True)
+    pending_actions = models.JSONField(_("ordres en attente de livraison"), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

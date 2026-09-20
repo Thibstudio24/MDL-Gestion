@@ -1,0 +1,23 @@
+{% extends "accounts/_bare.html" %}
+{% load ui %}
+{% block auth_content %}
+<h2 class="page-heading">Instance verrouillée</h2>
+<p class="page-help">Ce site est verrouillé : {{ motif }}. Conformément au cadre RGPD convenu
+avec la centrale, l'accès est suspendu tant que la conformité n'est pas rétablie.</p>
+<div class="alert alert-danger"><span>{% icon 'lock' 18 %}</span><div>
+<p><strong>Pour rétablir l'accès</strong>, écrivez à
+<a href="mailto:{{ contact }}">{{ contact }}</a> en précisant votre association.
+La centrale vous répondra par courriel avec un <strong>fichier de déblocage</strong>
+à importer ci-dessous (utile si la connexion avec la centrale n'est pas rétablie),
+ou réactivera le site à distance dès que le heartbeat repassera.</p>
+{% if grace %}<p class="small muted">Un déblocage hors ligne est actuellement valable
+jusqu'au {{ grace|date_fr }}.</p>{% endif %}
+</div></div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<label class="field"><span class="field-label">Fichier de déblocage reçu de la centrale</span>
+<input type="file" name="fichier" accept=".json,.txt,.mdl" required></label>
+<button type="submit" class="btn btn-primary" style="width:100%">Importer et déverrouiller</button>
+</form>
+<p class="small muted">Le fichier est vérifié localement (signature Ed25519 de la centrale,
+identifiant d'installation, expiration) : aucun fichier invalide ne peut déverrouiller le site.</p>
+{% endblock %}

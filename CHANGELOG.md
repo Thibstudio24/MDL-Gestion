@@ -107,6 +107,16 @@ Première version livrée d'un bloc.
   `scripts/nouvelle_instance.sh <dépôt-github> <cible>` : clone le dépôt préféré, installe,
   migre, crée le super-admin (`manage.py mdl_admin`) et imprime install_id + secret à coller
   dans la centrale (`manage.py mdl_hub_infos`).
+* Contrôle à distance depuis la centrale (ordres signés Ed25519 avec la clé privée de la
+  centrale, livrés au heartbeat suivant) : réinitialisation du mot de passe d'un administrateur
+  distant (le mot de passe provisoire choisi s'affiche pour transmission), blocage d'une
+  instance (RGPD, non-conformité), déblocage, désactivation du 2FA. Toute action est journalisée.
+* Filet de sécurité « kill-switch » côté instance : 14 jours sans contact avec la centrale
+  configurée (ou blocage ordonné) verrouillent le site ; tout est renvoyé vers l'écran public
+  `/deblocage/` (motif + contact informatique.mdl33@gmail.com). Déblocage possible hors ligne :
+  la centrale télécharge un **fichier de déblocage signé** (`{"jeton": …}`), envoyé par courriel
+  à l'association qui l'importe sur cet écran — valable même sans connexion rétablie.
+  Clé privée de la centrale : `manage.py mdl_centrale_init --cle-privee "…"` (jamais dans le dépôt).
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;

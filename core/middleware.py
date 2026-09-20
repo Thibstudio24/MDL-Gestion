@@ -183,3 +183,34 @@ class BaseUrlMiddleware:
         except OSError:  # répertoire config non accessible : on n'insiste pas
             return
         settings.BASE_URL = app["base_url"]
+
+class VerrouCentraleMiddleware:
+    """Instance verrouillée (ordre de la centrale ou 14 jours sans contact) :
+    tout le site renvoie vers l'écran de déblocage, qui reste public."""
+
+    EXEMPTS = ("/deblocage/", "/static/", "/theme.css", "/favicon.ico", "/sante/",
+               "/service-worker.js", "/manifest.webmanifest", "/robots.txt")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not request.path.startswith(self.EXEMPTS) and self._verrou():
+            return redirect("/deblocage/")
+        return self.get_response(request)
+
+    @staticmethod
+    def _verrou() -> bool:
+        from django.core.cache import cache
+
+        from core import centrale
+        from core.models import Installation
+
+        try:
+            etat = cache.get("verrou_centrale")
+            if etat is None:
+                etat = centrale.etat_verrou(Installation.get())[0]
+                cache.set("verrou_centrale", etat, 60)
+            return bool(etat)
+        except Exception:  # base absente, migrations en cours… : jamais bloquant
+            return False
