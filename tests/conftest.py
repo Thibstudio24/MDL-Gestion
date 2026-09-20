@@ -71,6 +71,19 @@ _CLES_MAIL = ["MAIL_ENABLED", "EMAIL_BACKEND", "EMAIL_HOST", "EMAIL_PORT",
 
 
 @pytest.fixture(autouse=True)
+def _hub_coupe(settings):
+    """Aucun test ne doit contacter la vraie centrale (URL par défaut réelle).
+
+    Vide aussi les caches : les réglages (Setting) y sont conservés d'un test
+    à l'autre alors que la base, elle, est déroulée.
+    """
+    from django.core.cache import cache
+
+    cache.clear()
+    settings.HUB_URL = ""
+
+
+@pytest.fixture(autouse=True)
 def _instance_json_en_memoire(monkeypatch):
     """write_instance capture en mémoire au lieu d'écrire config/instance.json."""
     from config import settings as instance

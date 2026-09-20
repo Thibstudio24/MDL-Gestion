@@ -355,43 +355,23 @@ données : sauvegardez le bucket chez le fournisseur (B2 propose un miroir gratu
 - [ ] Sondage de ménage lancé et répartition publiée
 - [ ] Première sauvegarde téléchargée hors du serveur
 """),
-    ("28", "Piloter plusieurs instances : la centrale", """
-Une **centrale** est une instance MDL Gestion comme les autres, dont le super-administrateur
-supervise les autres sites (compteurs membres/documents/écritures, version, dernier ping).
+    ("28", "La liaison avec la centrale MDL", """
+Votre site est une **instance** MDL Gestion reliée à la **centrale MDL** tenue par l'équipe
+informatique (informatique.mdl33@gmail.com). La connexion est **automatique dès
+l'installation** : l'instance s'enrôle auprès de la centrale au premier contact, puis lui
+envoie un heartbeat signé toutes les heures (cron `mdl_cron`) avec sa version et ses
+compteurs — jamais de données personnelles.
 
-**Déployer une autre instance** depuis le dépôt GitHub de votre choix :
-```bash
-scripts/nouvelle_instance.sh VotreCompte/MDL-Gestion ~/mdl-lycee2 \
-    --email bureau@lycee2.fr --hub https://votre-centrale.alwaysdata.net
-```
-Le script clone, installe, migre, crée le super-admin et imprime le bloc **install_id +
-secret** à transmettre à la centrale (idem avec `manage.py mdl_hub_infos`).
+Cette liaison permet à l'équipe informatique de vous assister à distance (réinitialisation
+d'un mot de passe administrateur, désactivation d'un 2FA perdu), sur décision tracée.
 
-**Côté centrale** (menu « Centrale », réservé aux administrateurs) : « Raccorder une
-instance », coller install_id + secret. **Côté instance** : Réglages → Mises à jour →
-URL du hub = adresse de la centrale ; le cron `mdl_cron` envoie alors le heartbeat signé
-(toutes les 15 min) et l'instance apparaît « en ligne ». Ne raccordez que des sites de
-confiance : l'identifiant et le secret permettent de vérifier la signature des appels.
-
-**Contrôle à distance** (carte « Actions à distance », admins de la centrale). Une fois la
-clé privée enregistrée (`manage.py mdl_centrale_init --cle-privee "…"`), la centrale peut,
-pour chaque instance raccordée :
-- **réinitialiser le mot de passe** d'un administrateur distant (le mot de passe provisoire
-  s'affiche à l'écran pour que vous le transmettiez à l'association) ;
-- **bloquer** l'instance (motif RGPD / non-conformité) ;
-- **débloquer** l'instance (autonomie en jours accordée) ;
-- **désactiver le 2FA** d'un administrateur.
-
-Les ordres sont **signés** avec la clé privée de la centrale et partent au heartbeat suivant
-de l'instance ; ils sont appliqués et journalisés côté instance.
-
-**Filet de sécurité (kill-switch).** Si une instance raccordée reste **14 jours sans contact**
-avec la centrale, elle se verrouille : tout le site renvoie vers l'écran public
-`/deblocage/` (motif + contact). L'association écrit alors à **informatique.mdl33@gmail.com** ;
-la centrale télécharge un **fichier de déblocage signé** (`{"jeton": …}`, validité en jours)
-qu'elle lui envoie par courriel : l'association l'importe sur `/deblocage/` et le site repart —
-même si la connexion avec la centrale n'est pas rétablie. Bloquer une instance depuis la
-centrale produit le même écran de verrouillage.
+**Filet de sécurité.** Si l'instance reste **14 jours sans contact** avec la centrale
+(site modifié hors procédure, hub coupé…), elle se verrouille : tout le site renvoie vers
+l'écran `/deblocage/` qui affiche le motif et le contact. Écrivez alors à
+**informatique.mdl33@gmail.com** : un **fichier de déblocage signé** vous est envoyé par
+courriel ; importez-le sur cet écran et le site repart, même sans connexion rétablie.
+Seule la clé privée de la centrale peut produire un fichier valable : personne d'autre ne
+peut déverrouiller — ni verrouiller — votre instance.
 """),
 ]
 

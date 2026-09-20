@@ -228,10 +228,24 @@ def hub_request(endpoint: str, payload: dict, timeout: int = 15) -> dict:
 
 
 def hub_ping() -> dict:
-    """Ping horaire : version disponible, actions en attente, compteurs."""
+    """Ping horaire : version disponible, actions en attente, compteurs.
+
+    Au premier contact réussi, l'instance s'enrôle automatiquement auprès de
+    la centrale (POST /api/enregistrement/) : aucun raccordement manuel.
+    """
+    from core.models import Setting
+
     install = Installation.get()
     result = {"ok": False, "message": ""}
     try:
+        if not Setting.value("hub", "enrole", False):
+            hub_request("enregistrement/", {
+                "install_id": install.install_id,
+                "secret": install.secret,
+                "label": "%s — %s" % (Setting.value("branding", "nom", "MDL"),
+                                      Setting.value("branding", "lycee", "") or install.install_id[:8]),
+            })
+            Setting.set("hub", "enrole", True)
         data = hub_request("heartbeat/", {"heartbeat": heartbeat_payload(), "install_id": install.install_id})
         install.last_ping_at = timezone.now()
         install.last_error = ""

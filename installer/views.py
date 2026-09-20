@@ -184,13 +184,23 @@ def administrator(request):
 
 @_guard_close
 def done(request):
-    """Étape 4 : récapitulatif et prochaines étapes."""
+    """Étape 4 : récapitulatif et prochaines étapes.
+
+    Tente aussitôt la connexion à la centrale (enrôlement automatique +
+    premier heartbeat) ; sans réseau, le cron réessaiera toutes les heures.
+    """
     from core import services
 
+    connexion = None
+    try:
+        connexion = services.hub_ping()
+    except Exception:  # jamais bloquant pour l'installation
+        connexion = None
     return render(request, "installer/done.html", {
         "page_title": _("Installation terminée"), "step": 4,
         "email": request.session.get("install_admin", ""),
         "health": services.health(),
+        "connexion": connexion,
     })
 
 

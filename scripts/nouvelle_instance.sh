@@ -87,11 +87,11 @@ cat << BLOC
   install_id    : $INSTALL_ID
   secret        : $SECRET
 ---------------------------------------------------------------------
-  Côté CENTRALE : Centrale → « Raccorder une instance », coller
-  install_id + secret. Cette instance apparaîtra « en ligne » dès son
-  premier heartbeat.
-  Côté INSTANCE : Réglages → Mises à jour → URL du hub = adresse de la
-  centrale (déjà faite si --hub), puis cron alwaysdata :
+  Rien à transmettre : l'instance s'enrôle TOUTE SEULE auprès de la
+  centrale MDL au premier heartbeat (URL intégrée par défaut, ou
+  --hub ci-dessus). Elle apparaîtra « en ligne » côté centrale
+  dès son premier contact.
+  Il ne reste qu'à planifier le cron alwaysdata de l'instance :
   */15 * * * *  $CIBLE/.venv/bin/python $CIBLE/manage.py mdl_cron
 =====================================================================
 BLOC

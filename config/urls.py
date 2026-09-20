@@ -27,8 +27,6 @@ urlpatterns = [
     path("notifications/", include("notifications.urls")),
     path("reglages/", include("core.urls_settings")),
     path("audit/", include("audit.urls")),
-    path("centrale/", include("core.urls_hub")),
-    path("api/heartbeat/", views_hub.heartbeat, name="hub_heartbeat"),
     path("deblocage/", views_hub.deblocage, name="deblocage"),
     path("aide/", include("core.urls_help")),
     path("installation/", include("installer.urls")),

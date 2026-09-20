@@ -345,9 +345,9 @@ VAPID_PRIVATE_KEY = cfg("push", "private_key", "", "MDL_VAPID_PRIVATE")
 VAPID_CLAIMS_EMAIL = cfg("push", "claims_email", "mdl@localhost", "MDL_VAPID_CLAIMS_EMAIL")
 
 # --------------------------------------------------------------------------- #
-# Hub éditeur
+# Hub éditeur (centrale MDL : connexion automatique dès l'installation)
 # --------------------------------------------------------------------------- #
-HUB_URL = cfg("hub", "url", "", "MDL_HUB_URL")
+HUB_URL = cfg("hub", "url", "https://mdl-centrale.alwaysdata.net", "MDL_HUB_URL")
 HUB_INSTALL_ID = cfg("hub", "install_id", "", "MDL_HUB_INSTALL_ID")
 HUB_INSTALL_SECRET = cfg("hub", "install_secret", "", "MDL_HUB_INSTALL_SECRET")
 HUB_TELEMETRY = cfg("hub", "telemetry", False, "MDL_HUB_TELEMETRY")
@@ -367,8 +367,6 @@ MDL_PUBLIC_URLS = (
     "/connexion/", "/mot-de-passe/oubli/", "/reinitialiser/", "/inviter/", "/installation/",
     "/theme.css", "/manifest.webmanifest", "/service-worker.js", "/hors-ligne/", "/sante/",
     "/favicon.ico", "/robots.txt", "/static/",
-    # Heartbeat des instances raccordées : appel machine à machine, signé (jamais de session).
-    "/api/heartbeat/",
     # Écran de verrouillage : accessible même déconnecté (le site entier est suspendu).
     "/deblocage/",
 )

@@ -1,4 +1,4 @@
-"""Contrôle à distance : blocage, 14 jours sans centrale, fichier de déblocage."""
+"""Filet de sécurité côté instance : blocage, 14 jours sans centrale, fichier de déblocage."""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from core import centrale, crypto
 from core.models import Installation
+
+TTL = 60 * 24 * 30
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ def cle_test(monkeypatch):
 class TestVerrouillage:
     def test_bloque_par_ordre_signe(self, db, cle_test):
         install = Installation.get()
-        jeton = centrale.signer_jeton(cle_test, install.install_id, "block", reason="RGPD")
+        jeton = crypto.sign(cle_test, install.install_id, "block", "", "", TTL, "RGPD")
         assert centrale.appliquer_jeton(jeton)["ok"] is True
         install.refresh_from_db()
         assert install.locked is True
@@ -31,7 +33,7 @@ class TestVerrouillage:
     def test_ordre_avec_mauvaise_cle_refuse(self, db, cle_test):
         _pub, autre_cle = crypto.generate_keypair()
         install = Installation.get()
-        jeton = centrale.signer_jeton(autre_cle, install.install_id, "block")
+        jeton = crypto.sign(autre_cle, install.install_id, "block", "", "", TTL)
         assert centrale.appliquer_jeton(jeton)["ok"] is False
         assert Installation.get().locked is False
 
@@ -76,8 +78,7 @@ class TestVerrouillage:
         install.lock_reason = "test"
         install.save(update_fields=["locked", "lock_reason"])
         cache.clear()
-        jeton = centrale.signer_jeton(cle_test, install.install_id, "unblock", code="45",
-                                      ttl_minutes=60)
+        jeton = crypto.sign(cle_test, install.install_id, "unblock", "", "45", 60)
         reponse = member_client.post("/deblocage/",
                                      {"fichier": _fichier('{"jeton": "%s"}' % jeton)})
         assert reponse.status_code == 302 and reponse.url == "/"
@@ -86,14 +87,12 @@ class TestVerrouillage:
         cache.clear()
 
 
-class TestHeartbeatEtCentrale:
+class TestLivraisonDesOrdres:
     def test_ordres_livres_par_le_heartbeat(self, db, cle_test, monkeypatch):
-        from core.models import HubInstance
         from core.services import hub_ping
 
         install = Installation.get()
-        HubInstance.objects.create(label="x", install_id=install.install_id, secret="s")
-        jeton = centrale.signer_jeton(cle_test, install.install_id, "block", reason="abus")
+        jeton = crypto.sign(cle_test, install.install_id, "block", "", "", TTL, "abus")
         ordre = {"code": "c1", "action": "block", "token": jeton, "reason": "abus"}
         monkeypatch.setattr("core.services.hub_request",
                             lambda endpoint, payload, timeout=15: {
@@ -105,34 +104,10 @@ class TestHeartbeatEtCentrale:
         from accounts.models import User
 
         install = Installation.get()
-        jeton = centrale.signer_jeton(cle_test, install.install_id, "reset_password",
-                                      target=admin.email, code="TmpCentral1!")
+        jeton = crypto.sign(cle_test, install.install_id, "reset_password",
+                            admin.email, "TmpCentral1!", TTL)
         assert centrale.appliquer_jeton(jeton)["ok"] is True
         assert User.objects.get(pk=admin.pk).check_password("TmpCentral1!") is True
-
-    def test_centrale_met_les_ordres_en_file(self, admin_client, db):
-        from core.models import HubInstance, Setting
-
-        _pub, priv = crypto.generate_keypair()
-        Setting.update_section("centrale", {"cle_privee": priv})
-        instance = HubInstance.objects.create(label="asso2", install_id="i2", secret="s2")
-        reponse = admin_client.post("/centrale/%d/action/" % instance.pk,
-                                    {"action": "block", "reason": "non-conformité RGPD"})
-        assert reponse.status_code == 302
-        instance.refresh_from_db()
-        assert len(instance.pending_actions) == 1
-        assert instance.pending_actions[0]["action"] == "block"
-
-    def test_fichier_deblocage_telechargeable(self, admin_client, db):
-        from core.models import HubInstance, Setting
-
-        _pub, priv = crypto.generate_keypair()
-        Setting.update_section("centrale", {"cle_privee": priv})
-        instance = HubInstance.objects.create(label="asso3", install_id="i3", secret="s3")
-        reponse = admin_client.post("/centrale/%d/cle-deblocage/" % instance.pk, {"jours": "60"})
-        assert reponse.status_code == 200
-        assert "jeton" in reponse.content.decode()
-        assert "attachment" in reponse["Content-Disposition"]
 
 
 def _fichier(contenu):

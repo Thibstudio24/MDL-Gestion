@@ -30,15 +30,6 @@ MCowBQYDK2VwAyEAvxXKGTxRohsnvwES+2v3r3SSdHDHca/sGlX80OulGGA=
 -----END PUBLIC KEY-----
 """
 
-ACTIONS_CENTRALE = ("reset_password", "disable_2fa", "block", "unblock")
-
-
-def signer_jeton(private_pem: str, install_id: str, action: str, target: str = "",
-                 code: str = "", ttl_minutes: int = 60 * 24 * 30, reason: str = "") -> str:
-    """Côté centrale : signe un ordre pour une instance précise."""
-    return crypto.sign(private_pem, install_id, action, target, code, ttl_minutes, reason)
-
-
 def verifier_jeton(token: str, install_id: str) -> dict:
     """Côté instance : valide un ordre venu de la centrale."""
     return crypto.verify(token, CENTRALE_PUBLIC_PEM, install_id)

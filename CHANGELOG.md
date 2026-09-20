@@ -101,22 +101,22 @@ Première version livrée d'un bloc.
   horodatée, mentions légales et extrait de règlement, personnalisés avec la marque de
   l'association ; un texte déjà écrit n'est jamais écrasé.
 
-* Centrale super-admin : ce site peut superviser d'autres instances MDL Gestion (menu
-  Centrale, admins) — heartbeat signé sha256 (install_id, secret, corps, horodatage ±5 min),
-  compteurs et version par instance, raccordement/débranchement journalisés. Nouveau script
-  `scripts/nouvelle_instance.sh <dépôt-github> <cible>` : clone le dépôt préféré, installe,
-  migre, crée le super-admin (`manage.py mdl_admin`) et imprime install_id + secret à coller
-  dans la centrale (`manage.py mdl_hub_infos`).
-* Contrôle à distance depuis la centrale (ordres signés Ed25519 avec la clé privée de la
-  centrale, livrés au heartbeat suivant) : réinitialisation du mot de passe d'un administrateur
-  distant (le mot de passe provisoire choisi s'affiche pour transmission), blocage d'une
-  instance (RGPD, non-conformité), déblocage, désactivation du 2FA. Toute action est journalisée.
+* Liaison centrale : connexion **automatique dès l'installation** — l'instance s'enrôle
+  auprès de la centrale MDL (URL intégrée par défaut) au premier heartbeat signé
+  (cron `mdl_cron`), sans raccordement manuel. Script de déploiement
+  `scripts/nouvelle_instance.sh <dépôt-github> <cible>` : clone, installe, migre, crée le
+  super-admin (`manage.py mdl_admin`) ; la connexion à la centrale se fait toute seule
+  (`manage.py mdl_hub_infos` affiche l'identifiant et le secret pour diagnostic). Le code de
+  la centrale (supervision, signature des ordres) est distribué séparément, hors de ce dépôt.
+* Contrôle à distance assisté : la centrale peut ordonner — via des **ordres signés
+  Ed25519** vérifiés par la clé publique embarquée, livrés au heartbeat suivant — la
+  réinitialisation du mot de passe d'un administrateur, la désactivation d'un 2FA, ou le
+  blocage de l'instance (RGPD). Toute action appliquée est journalisée.
 * Filet de sécurité « kill-switch » côté instance : 14 jours sans contact avec la centrale
-  configurée (ou blocage ordonné) verrouillent le site ; tout est renvoyé vers l'écran public
-  `/deblocage/` (motif + contact informatique.mdl33@gmail.com). Déblocage possible hors ligne :
-  la centrale télécharge un **fichier de déblocage signé** (`{"jeton": …}`), envoyé par courriel
-  à l'association qui l'importe sur cet écran — valable même sans connexion rétablie.
-  Clé privée de la centrale : `manage.py mdl_centrale_init --cle-privee "…"` (jamais dans le dépôt).
+  (ou blocage ordonné) verrouillent le site ; tout est renvoyé vers l'écran public
+  `/deblocage/` (motif + contact informatique.mdl33@gmail.com). Déblocage possible hors ligne
+  par **fichier de déblocage signé** (`{"jeton": …}`) envoyé par courriel et importé sur cet
+  écran — valable même sans connexion rétablie.
 
 ### Exploitation
 * Assistant d'installation web en 4 étapes (identité, base, administrateur, récapitulatif) ;
