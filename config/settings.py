@@ -366,6 +366,8 @@ MDL_PUBLIC_URLS = (
     "/connexion/", "/mot-de-passe/oubli/", "/reinitialiser/", "/inviter/", "/installation/",
     "/theme.css", "/manifest.webmanifest", "/service-worker.js", "/hors-ligne/", "/sante/",
     "/favicon.ico", "/robots.txt", "/static/",
+    # Heartbeat des instances raccordées : appel machine à machine, signé (jamais de session).
+    "/api/heartbeat/",
 )
 
 MAINTENANCE = cfg("app", "maintenance", False, "MDL_MAINTENANCE")

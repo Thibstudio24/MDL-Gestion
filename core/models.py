@@ -374,6 +374,28 @@ class Installation(models.Model):
         return obj
 
 
+class HubInstance(models.Model):
+    """Instance distante raccordée à la centrale (mode « centrale » du site)."""
+
+    label = models.CharField(_("nom"), max_length=120)
+    url = models.CharField(_("adresse"), max_length=200, blank=True)
+    install_id = models.CharField(_("identifiant d'installation"), max_length=64, unique=True)
+    secret = models.CharField(_("secret partagé"), max_length=128)
+    counters = models.JSONField(_("compteurs"), default=dict, blank=True)
+    version = models.CharField(_("version"), max_length=20, blank=True)
+    last_ping_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Instance raccordée")
+        verbose_name_plural = _("Instances raccordées")
+        ordering = ["label"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
 class Intervention(models.Model):
     """Intervention technique à distance : prévue puis confirmée, révocable."""
 

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block content %}
+<div class="page-head"><div><h2 class="page-heading">Centrale</h2>
+<p class="page-help">Supervision des autres instances MDL Gestion : chaque site distant déclaré
+ici envoie son heartbeat signé (compteurs, version) et apparaît en ligne. Les infos de raccordement
+(install_id + secret) vous sont transmises par le script de déploiement de l'instance
+(<code>scripts/nouvelle_instance.sh</code> ou <code>manage.py mdl_hub_infos</code>).</p></div></div>
+<div class="card"><div class="card-head"><h3>Instances raccordées</h3></div>
+<div class="card-body tight"><div class="table-wrap"><table class="data">
+<thead><tr><th>Instance</th><th>Adresse</th><th>Version</th><th>Membres</th><th>Documents</th><th>Écritures</th><th>Dernier ping</th><th>État</th><th class="right"></th></tr></thead>
+<tbody>{% for item in instances %}<tr>
+<td>{{ item.label }}</td><td class="small">{{ item.url|default:"—" }}</td><td>{{ item.version|default:"—" }}</td>
+<td>{{ item.counters.members|default:"0" }}</td><td>{{ item.counters.documents|default:"0" }}</td>
+<td>{{ item.counters.entries|default:"0" }}</td>
+<td class="nowrap">{{ item.last_ping_at|date_fr:"%d/%m %H:%M"|default:"jamais" }}</td>
+<td>{% if item.last_error %}{% status_badge "closed" item.last_error %}
+{% elif item.last_ping_at %}{% status_badge "success" "en ligne" %}{% else %}{% status_badge "pending" "en attente" %}{% endif %}</td>
+<td class="right"><form method="post" action="{% url 'centrale:instance_delete' item.pk %}">{% csrf_token %}
+<button class="btn btn-ghost btn-sm" data-confirm-click="Débrancher cette instance ?">{% icon 'trash' 14 %}</button></form></td></tr>
+{% empty %}<tr><td colspan="9">{% include "partials/_empty.html" with text="Aucune instance raccordée pour l'instant." %}</td></tr>{% endfor %}</tbody>
+</table></div></div></div>
+<div class="card"><div class="card-head"><h3>Raccorder une instance</h3></div>
+<div class="card-body"><form method="post" action="{% url 'centrale:instance_add' %}" class="form-row">{% csrf_token %}
+<label class="field"><span class="field-label">Nom (association, lycée…)</span><input type="text" name="label" maxlength="120" required></label>
+<label class="field"><span class="field-label">Adresse du site (optionnel)</span><input type="text" name="url" maxlength="200" placeholder="https://mdl.alwaysdata.net"></label>
+<label class="field"><span class="field-label">install_id</span><input type="text" name="install_id" maxlength="64" required></label>
+<label class="field"><span class="field-label">secret</span><input type="text" name="secret" maxlength="128" required></label>
+<button type="submit" class="btn btn-primary">Raccorder</button></form>
+<p class="small muted">Côté instance, l'administrateur pointe son hub vers cette centrale
+(Réglages → Mises à jour → URL du hub) puis le cron <code>mdl_cron</code> envoie le heartbeat
+horaire. Ne raccordez que des instances de confiance : les compteurs transitent signés.</p></div></div>
+{% endblock %}

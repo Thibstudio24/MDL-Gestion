@@ -22,6 +22,7 @@ NAV_GROUPS = [
         ("settings_global", "settings:settings_brand", "Réglages de l'asso", "sliders"),
         ("audit", "audit:audit_list", "Journal d'audit", "list"),
         ("backup", "settings:settings_backup", "Sauvegarde", "save"),
+        ("centrale", "centrale:index", "Centrale", "grid"),
     ]),
 ]
 
@@ -110,7 +111,10 @@ def nav(request):
     for group_key, entries in NAV_GROUPS:
         items = []
         for module, url_name, label, icon in entries:
-            if not permissions.can_view(user, module):
+            if module == "centrale":
+                if not permissions.is_administrator(user):
+                    continue
+            elif not permissions.can_view(user, module):
                 continue
             try:
                 url = reverse(url_name)

@@ -5,6 +5,7 @@ from django.urls import include, path
 
 from accounts import views_auth as accounts_views
 from core import views as core_views
+from core import views_hub
 
 urlpatterns = [
     path("", core_views.dashboard, name="dashboard"),
@@ -26,6 +27,8 @@ urlpatterns = [
     path("notifications/", include("notifications.urls")),
     path("reglages/", include("core.urls_settings")),
     path("audit/", include("audit.urls")),
+    path("centrale/", include("core.urls_hub")),
+    path("api/heartbeat/", views_hub.heartbeat, name="hub_heartbeat"),
     path("aide/", include("core.urls_help")),
     path("installation/", include("installer.urls")),
     path("aide-intervention/", include("core.urls_devhub")),

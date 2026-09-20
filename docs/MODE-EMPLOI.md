@@ -243,6 +243,24 @@ voir la page Glossaire
 - [ ] Sondage de ménage lancé et répartition publiée
 - [ ] Première sauvegarde téléchargée hors du serveur
 
+## 28. Piloter plusieurs instances : la centrale
+
+Une **centrale** est une instance MDL Gestion comme les autres, dont le super-administrateur
+supervise les autres sites (compteurs membres/documents/écritures, version, dernier ping).
+
+**Déployer une autre instance** depuis le dépôt GitHub de votre choix :
+```bash
+scripts/nouvelle_instance.sh VotreCompte/MDL-Gestion ~/mdl-lycee2     --email bureau@lycee2.fr --hub https://votre-centrale.alwaysdata.net
+```
+Le script clone, installe, migre, crée le super-admin et imprime le bloc **install_id +
+secret** à transmettre à la centrale (idem avec `manage.py mdl_hub_infos`).
+
+**Côté centrale** (menu « Centrale », réservé aux administrateurs) : « Raccorder une
+instance », coller install_id + secret. **Côté instance** : Réglages → Mises à jour →
+URL du hub = adresse de la centrale ; le cron `mdl_cron` envoie alors le heartbeat signé
+(toutes les 15 min) et l'instance apparaît « en ligne ». Ne raccordez que des sites de
+confiance : l'identifiant et le secret permettent de vérifier la signature des appels.
+
 ## FAQ
 
 ### J'ai oublié mon mot de passe
